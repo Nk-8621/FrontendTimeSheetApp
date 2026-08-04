@@ -1,0 +1,122 @@
+.btn {
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 5px 11px;
+  border-radius: var(--r);
+  border: 1px solid var(--ruleStrong);
+  background: var(--paper);
+  color: var(--ink2);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.btn:hover {
+  border-color: var(--slate2);
+  background: #fafcfe;
+}
+.btn:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+.btn:disabled:hover {
+  background: var(--paper);
+  border-color: var(--ruleStrong);
+}
+
+.pri {
+  background: var(--oxide);
+  border-color: var(--oxide);
+  color: #fff;
+  font-weight: 600;
+}
+.pri:hover:not(:disabled) {
+  background: #1d5480;
+  border-color: #1d5480;
+}
+
+.ok {
+  background: var(--verd);
+  border-color: var(--verd);
+  color: #fff;
+  font-weight: 600;
+}
+.ok:hover:not(:disabled) {
+  filter: brightness(1.12);
+}
+
+.dgr {
+  background: var(--paper);
+  border-color: var(--clayLine);
+  color: var(--clay);
+  font-weight: 600;
+}
+.dgr:hover:not(:disabled) {
+  background: var(--clayTint);
+}
+
+.gh {
+  border-color: transparent;
+  background: transparent;
+  color: var(--oxide);
+  font-weight: 600;
+}
+.gh:hover {
+  background: var(--oxideTint);
+}
+
+.sm {
+  padding: 3px 8px;
+  font-size: 11px;
+}
+
+.select,
+.textInput,
+.textarea {
+  width: 100%;
+  border: 1px solid var(--ruleStrong);
+  border-radius: var(--r);
+  padding: 7px 9px;
+  font-size: 12.5px;
+  background: var(--paper);
+  color: var(--ink);
+}
+.select:focus,
+.textInput:focus,
+.textarea:focus {
+  outline: none;
+  border-color: var(--oxideMid);
+}
+.select:disabled,
+.textInput:disabled {
+  background: var(--canvas);
+  color: var(--slate2);
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 64px;
+  font-family: var(--sans);
+}
+
+.field {
+  margin-bottom: 12px;
+}
+.field label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink2);
+  margin-bottom: 4px;
+}
+.field .req {
+  color: var(--clay);
+}
+.hint {
+  font-size: 10.5px;
+  color: var(--slate);
+  margin-top: 3px;
+}

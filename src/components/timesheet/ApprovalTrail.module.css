@@ -1,0 +1,39 @@
+.trail {
+  border-left: 2px solid var(--rule);
+  margin-left: 6px;
+  padding-left: 14px;
+}
+.ev {
+  position: relative;
+  padding-bottom: 13px;
+}
+.ev:last-child {
+  padding-bottom: 0;
+}
+.ev::before {
+  content: "";
+  position: absolute;
+  left: -20px;
+  top: 4px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ruleStrong);
+  border: 2px solid var(--paper);
+}
+.ev.ok::before { background: var(--verd); }
+.ev.rj::before { background: var(--clay); }
+.ev.pd::before { background: var(--amber); }
+.t {
+  font-size: 12px;
+  font-weight: 600;
+}
+.m {
+  font-size: 10.5px;
+  color: var(--slate);
+  font-family: var(--mono);
+}
+.empty {
+  font-size: 12px;
+  color: var(--slate);
+}

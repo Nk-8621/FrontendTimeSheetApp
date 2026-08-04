@@ -1,0 +1,231 @@
+.gridWrap {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--rLg);
+  overflow: hidden;
+  box-shadow: var(--sh1);
+}
+.cardHd {
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--rule);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.cardHd h3 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+.sub {
+  font-size: 11px;
+  color: var(--slate);
+}
+.gridScroll {
+  overflow-x: auto;
+}
+
+.wk {
+  min-width: 1080px;
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+}
+.wk th, .wk td {
+  border-bottom: 1px solid var(--rule);
+}
+.wk th {
+  text-align: left;
+  font-size: 9.5px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--slate);
+  font-weight: 600;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--ruleStrong);
+  background: #FAFBFD;
+  white-space: nowrap;
+}
+.wk td {
+  padding: 8px 10px;
+  vertical-align: middle;
+}
+.wk tbody tr:last-child td {
+  border-bottom: 0;
+}
+.wk tbody tr:hover td {
+  background: #FAFCFE;
+}
+
+.hier { width: 38%; min-width: 330px; }
+.bcol { width: 88px; text-align: center; }
+.dcol { width: 74px; }
+.tcol { width: 66px; background: #F7F9FC; }
+.acol { width: 38px; }
+.tc { text-align: center; }
+
+/* day column header */
+.dayHd {
+  padding: 0 !important;
+  background: #FAFBFD;
+  border-left: 1px solid var(--rule);
+  vertical-align: top;
+}
+.dayHd .inner {
+  padding: 6px 4px 0;
+  text-align: center;
+}
+.dn {
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--slate);
+  font-weight: 600;
+}
+.dd {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.15;
+}
+.wknd .dd { color: var(--slate2); }
+.today .dd { color: var(--oxide); }
+.today .inner { box-shadow: inset 0 2px 0 var(--oxide); }
+
+.dtBtn {
+  width: 100%;
+  border: 0;
+  border-top: 1px solid var(--rule);
+  padding: 2.5px 2px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  margin-top: 5px;
+  background: #EEF1F5;
+  color: var(--slate);
+}
+.dtBtn:hover { filter: brightness(0.96); }
+.dtBtn:disabled { cursor: not-allowed; }
+.dtBtn.wfh { background: var(--violetTint); color: var(--violet); }
+.dtBtn.lv { background: var(--clayTint); color: var(--clay); }
+.dtBtn.hd { background: var(--amberTint); color: var(--amber); }
+
+.capBar { height: 3px; background: #E7EBF0; }
+.capBar i { display: block; height: 100%; background: var(--oxideMid); transition: width 0.18s; }
+.capBar.full i { background: var(--verd); }
+.capBar.over i { background: var(--clay); }
+
+/* hierarchy cell */
+.hcell { display: flex; flex-direction: column; gap: 2px; }
+.hpath { font-size: 10px; color: var(--slate); letter-spacing: 0.01em; }
+.hpath b { color: var(--ink2); font-weight: 600; }
+.htask { font-size: 12.5px; font-weight: 600; color: var(--ink); }
+.hnote { font-size: 10.5px; color: var(--slate); font-style: italic; }
+
+/* billable/non-billable chip */
+.bt {
+  display: inline-flex;
+  align-items: center;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 1.5px 6px;
+  border-radius: 2px;
+  border: 1px solid;
+  text-transform: uppercase;
+  background: none;
+  cursor: pointer;
+}
+.bt.b { background: var(--oxide); border-color: var(--oxide); color: #fff; }
+.bt.n {
+  border-color: var(--ruleStrong);
+  color: var(--slate);
+  background: repeating-linear-gradient(45deg, #F4F6F9 0 3px, #E7EBF0 3px 6px);
+}
+
+/* hour cell */
+.hr { padding: 0 !important; border-left: 1px solid var(--rule); text-align: center; }
+.hr input {
+  width: 100%;
+  height: 37px;
+  border: 0;
+  background: transparent;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  padding: 0;
+}
+.hr input:focus {
+  background: var(--oxideTint);
+  box-shadow: inset 0 0 0 2px var(--oxide);
+  position: relative;
+  z-index: 2;
+  outline: none;
+}
+.hr input::placeholder { color: #D3DAE2; }
+.hr.locked { background: repeating-linear-gradient(45deg, #F4F6F9 0 4px, #E9EDF2 4px 8px); }
+.hr.locked input { color: var(--slate2); cursor: not-allowed; }
+.hr.wknd { background: #FBFCFD; }
+.hr.blocked { background: repeating-linear-gradient(45deg, #FBEAE8 0 5px, #F6DDDA 5px 10px); }
+.hr.blockedH { background: repeating-linear-gradient(45deg, #FCF2E1 0 5px, #F7E8CD 5px 10px); }
+.hr.blocked input, .hr.blockedH input { cursor: not-allowed; color: transparent; }
+
+.rowT {
+  background: #F7F9FC;
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  border-left: 1px solid var(--rule);
+}
+
+.totRow td { background: var(--oxideDeep) !important; color: #fff; font-weight: 700; border-bottom: 0; }
+.totRow td.dt { font-family: var(--mono); font-size: 14px; text-align: center; border-left: 1px solid rgba(255, 255, 255, 0.14); }
+.totRow td.dt.short { color: #F0C078; }
+.totRow td.dt.over { color: #FF9B9B; }
+.totRow td.gt { font-family: var(--mono); font-size: 15px; text-align: center; background: var(--oxide) !important; border-left: 1px solid rgba(255, 255, 255, 0.2); }
+
+.subRow td {
+  background: #EDF1F5;
+  font-size: 10px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--oxide);
+  font-weight: 700;
+  padding: 5px 10px;
+}
+
+.empty { padding: 44px 20px; text-align: center; color: var(--slate); }
+.empty .big { font-size: 14px; font-weight: 600; color: var(--ink2); margin-bottom: 4px; }
+
+.gridFoot {
+  padding: 9px 12px;
+  border-top: 1px solid var(--rule);
+  background: #FAFBFD;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 10.5px; color: var(--slate); }
+.legend span { display: inline-flex; align-items: center; gap: 5px; }
+.sw { width: 10px; height: 10px; border-radius: 2px; flex: none; }
+.sw.b { background: var(--oxide); }
+.sw.n { background: repeating-linear-gradient(45deg, #B7C3CF 0 3px, #CBD4DE 3px 6px); border: 1px solid var(--ruleStrong); }
+
+.editBtn {
+  padding: 2px 5px;
+  background: none;
+  border: none;
+  color: var(--oxide);
+  cursor: pointer;
+  border-radius: var(--r);
+}
+.editBtn:hover { background: var(--oxideTint); }
+
+.removeCell { width: 30px; text-align: center; }

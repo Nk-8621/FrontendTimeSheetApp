@@ -1,0 +1,29 @@
+.wkNav {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  border: 1px solid var(--ruleStrong);
+  border-radius: var(--r);
+  overflow: hidden;
+  background: var(--paper);
+}
+.wkNav button {
+  border: 0;
+  background: var(--paper);
+  padding: 5px 9px;
+  color: var(--ink2);
+  font-weight: 600;
+}
+.wkNav button:hover {
+  background: var(--oxideTint);
+}
+.lbl {
+  padding: 5px 11px;
+  border-left: 1px solid var(--rule);
+  border-right: 1px solid var(--rule);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  min-width: 172px;
+  text-align: center;
+}

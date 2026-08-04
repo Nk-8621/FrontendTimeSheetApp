@@ -1,0 +1,89 @@
+.chain {
+  font-size: 11px;
+  color: var(--slate);
+  margin-bottom: 14px;
+  line-height: 1.6;
+}
+.chain b {
+  color: var(--oxide);
+  font-weight: 600;
+}
+.chain i {
+  font-style: normal;
+  color: var(--slate2);
+  margin: 0 4px;
+}
+.ph {
+  color: var(--slate2);
+}
+
+.segBill {
+  display: flex;
+  border: 1px solid var(--ruleStrong);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+.segBill button {
+  flex: 1;
+  border: none;
+  background: var(--paper);
+  padding: 7px 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink2);
+  cursor: pointer;
+}
+.segBill button + button {
+  border-left: 1px solid var(--ruleStrong);
+}
+.segBill button.on {
+  background: var(--oxide);
+  color: #fff;
+}
+
+.dayPick {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+}
+.dayPick label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  font-size: 9.5px;
+  color: var(--slate);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.dayPick label.off {
+  opacity: 0.4;
+}
+.dayPick input {
+  width: 100%;
+  text-align: center;
+  border: 1px solid var(--ruleStrong);
+  border-radius: var(--r);
+  padding: 6px 2px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+}
+.dayPick input:focus {
+  outline: none;
+  border-color: var(--oxide);
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 0 0;
+  margin-top: 14px;
+  border-top: 1px solid var(--rule);
+}
+
+.errMsg {
+  font-size: 10.5px;
+  color: var(--clay);
+  margin-top: 3px;
+}

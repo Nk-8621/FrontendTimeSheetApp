@@ -1,0 +1,25 @@
+.card {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--rLg);
+  box-shadow: var(--sh1);
+}
+.cardHd {
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--rule);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.cardHd h3 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+.sub {
+  font-size: 11px;
+  color: var(--slate);
+}
+.cardBd {
+  padding: 14px;
+}
