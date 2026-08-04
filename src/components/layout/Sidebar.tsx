@@ -32,8 +32,8 @@ export function Sidebar() {
   return (
     <aside className={styles.rail}>
       <div className={styles.brand}>
-        <h1>Meridian</h1>
-        <div className={styles.tag}>Carbynetech</div>
+        <h1>CARBYNETECH</h1>
+        <div className={styles.tag}>Timesheet</div>
       </div>
 
       <div className={styles.railScroll}>
