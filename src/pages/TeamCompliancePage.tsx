@@ -9,7 +9,7 @@ import { mondayOf, addDays, toISO } from '../lib/dates';
 import styles from '../components/approvals/ApprovalQueue.module.css';
 
 export function TeamCompliancePage() {
-  const { roleId } = useSession();
+  const { isAdmin } = useSession();
   const [weekStart, setWeekStart] = useState(() => mondayOf(toISO(new Date())));
   const { data: rows, isLoading, isError } = useTeamCompliance(weekStart);
 
@@ -23,7 +23,7 @@ export function TeamCompliancePage() {
       </PageHeader>
       <div className="page-content">
         <Banner>
-          {roleId === 'ADMIN' ? 'Showing every employee in the organization.' : 'Showing your direct reports.'}
+          {isAdmin ? 'Showing every employee in the organization.' : 'Showing your direct reports.'}
         </Banner>
         {isLoading && <Banner>Loading compliance data…</Banner>}
         {isError && <Banner kind="reject">Couldn't load compliance data — check that the backend API is reachable.</Banner>}

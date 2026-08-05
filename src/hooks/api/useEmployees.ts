@@ -1,6 +1,22 @@
 import { useQuery } from '@tanstack/react-query';
 import { employeesApi } from '../../api/employees';
 
+/** Every employee — backs the Master Data "Resources" tab (read-only). */
+export function useAllEmployees() {
+  return useQuery({ queryKey: ['employees', 'all'], queryFn: employeesApi.getAll, staleTime: 5 * 60 * 1000 });
+}
+
+/** RBAC — what this employee is actually allowed to see, computed server-side
+ * from their real position in the org hierarchy. This is the source of truth
+ * for navigation; SessionContext consumes it directly. */
+export function useAccessProfile(employeeCode: string | undefined) {
+  return useQuery({
+    queryKey: ['employee', employeeCode, 'access'],
+    queryFn: () => employeesApi.getAccess(employeeCode!),
+    enabled: Boolean(employeeCode),
+  });
+}
+
 export function useEmployee(employeeCode: string | undefined) {
   return useQuery({
     queryKey: ['employee', employeeCode],

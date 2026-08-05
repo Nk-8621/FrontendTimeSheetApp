@@ -3,8 +3,7 @@ import { teamApi } from '../../api/team';
 import { useSession } from '../../session/SessionContext';
 
 export function useTeamCompliance(weekStart: string) {
-  const { roleId } = useSession();
-  const isAdmin = roleId === 'ADMIN';
+  const { isAdmin } = useSession();
 
   return useQuery({
     queryKey: ['team-compliance', weekStart, isAdmin],

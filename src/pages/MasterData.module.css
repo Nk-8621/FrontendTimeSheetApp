@@ -1,0 +1,90 @@
+.tabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 14px;
+}
+.tabs button {
+  border: 0;
+  background: none;
+  padding: 8px 13px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--slate);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+}
+.tabs button:hover {
+  color: var(--ink);
+}
+.tabs button.on {
+  color: var(--oxide);
+  border-bottom-color: var(--oxide);
+}
+
+.card {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--rLg);
+  box-shadow: var(--sh1);
+  overflow: hidden;
+}
+.gridFoot {
+  padding: 9px 12px;
+  border-top: 1px solid var(--rule);
+  background: #FAFBFD;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: var(--slate);
+}
+
+/* Table meant to sit INSIDE .card — no border/shadow/radius of its own,
+   since .card already provides that (avoids doubling up). */
+.plainTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+.plainTable th {
+  text-align: left;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--slate);
+  font-weight: 600;
+  padding: 10px 14px;
+  background: #FAFBFD;
+  border-bottom: 1px solid var(--ruleStrong);
+}
+.plainTable td {
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--rule);
+  font-size: 13px;
+  vertical-align: middle;
+}
+.plainTable tr:last-child td {
+  border-bottom: none;
+}
+.emptyRow {
+  padding: 40px;
+  text-align: center;
+  color: var(--slate);
+}
+
+.editCol {
+  width: 40px;
+  text-align: right;
+}
+.editBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--slate);
+}
+.editBtn:hover {
+  color: var(--oxide);
+}

@@ -31,6 +31,80 @@ export interface ProjectDto {
   code: string;
   name: string;
   defaultBillable: boolean;
+  isActive: boolean;
+}
+
+export interface TaskCategoryDto {
+  id: number;
+  code: string;
+  name: string;
+}
+
+export interface HolidayDto {
+  id: number;
+  date: string;
+  name: string;
+  location: string;
+}
+
+// ---- Admin-only create/update requests (Master Data screen) ----
+
+export interface CreateAccountRequest {
+  departmentId: number;
+  name: string;
+  accountType: 'Customer' | 'Internal';
+}
+export interface UpdateAccountRequest {
+  departmentId?: number;
+  name?: string;
+  accountType?: 'Customer' | 'Internal';
+}
+
+export interface CreateProjectRequest {
+  accountId: number;
+  code: string;
+  name: string;
+  defaultBillable: boolean;
+  /** If supplied, auto-creates a starter "General" module pre-populated with
+   * that category's task list (matching the original wireframe). Pass
+   * undefined/null to create an empty project with no modules yet. */
+  initialModuleTaskCategoryCode?: string | null;
+}
+export interface UpdateProjectRequest {
+  accountId?: number;
+  code?: string;
+  name?: string;
+  defaultBillable?: boolean;
+  isActive?: boolean;
+}
+
+export interface CreateModuleRequest {
+  projectId: number;
+  name: string;
+  taskCategoryCode: string;
+}
+export interface UpdateModuleRequest {
+  name?: string;
+  taskCategoryCode?: string;
+}
+
+export interface CreateTaskRequest {
+  moduleId: number;
+  name: string;
+}
+export interface UpdateTaskRequest {
+  name?: string;
+}
+
+export interface CreateHolidayRequest {
+  holidayDate: string;
+  name: string;
+  location: string;
+}
+export interface UpdateHolidayRequest {
+  holidayDate?: string;
+  name?: string;
+  location?: string;
 }
 
 export interface ModuleDto {
@@ -170,4 +244,13 @@ export interface WeekValidationResult {
   errors: string[];
   warnings: string[];
   canSubmit: boolean;
+}
+
+export interface AccessProfileDto {
+  employeeCode: string;
+  isAdmin: boolean;
+  requiresTimesheet: boolean;
+  isLevel1ApproverForSomeone: boolean;
+  isLevel2ApproverForSomeone: boolean;
+  navKeys: string[];
 }

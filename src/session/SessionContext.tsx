@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { setDevEmployeeCode } from '../api/authBridge';
+import { useAccessProfile } from '../hooks/api/useEmployees';
 import type { RoleId } from '../types/meridian';
 
 /**
@@ -9,19 +10,27 @@ import type { RoleId } from '../types/meridian';
  * DEMO_ROLE_EMPLOYEES). Once real Entra login is switched on, this whole
  * switcher goes away and EmployeeCode comes from the authenticated token
  * instead — see auth/LoginGate.tsx and api/authBridge.ts.
+ *
+ * Note there's no `nav` array here anymore — navigation access (RBAC) is
+ * computed entirely server-side from each employee's real position in the
+ * org hierarchy (see IAccessControlService), not from a fixed role. These
+ * four labels are just a convenience for the "Viewing as" switcher UI.
  */
-export const DEMO_IDENTITIES: { roleId: RoleId; employeeCode: string; roleLabel: string; nav: string[] }[] = [
-  { roleId: 'EMP', employeeCode: 'CBT1267', roleLabel: 'Consultant — logs time', nav: ['ts', 'hist', 'notif'] },
-  { roleId: 'LEAD', employeeCode: 'CBT1152', roleLabel: 'Reporting Lead / PM — Level 1', nav: ['ts', 'hist', 'ap1', 'team', 'rep', 'notif'] },
-  { roleId: 'L2', employeeCode: 'CBT1000', roleLabel: 'Delivery Head — Level 2', nav: ['ap2', 'team', 'rep', 'notif'] },
-  { roleId: 'ADMIN', employeeCode: 'CBT1268', roleLabel: 'System Administrator', nav: ['mast', 'team', 'rep', 'notif'] },
+export const DEMO_IDENTITIES: { roleId: RoleId; employeeCode: string; roleLabel: string }[] = [
+  { roleId: 'EMP', employeeCode: 'CBT1267', roleLabel: 'Consultant — logs time' },
+  { roleId: 'LEAD', employeeCode: 'CBT1152', roleLabel: 'Reporting Lead / PM — Level 1' },
+  { roleId: 'L2', employeeCode: 'CBT1000', roleLabel: 'Delivery Head — Level 2' },
+  { roleId: 'ADMIN', employeeCode: 'CBT1268', roleLabel: 'System Administrator' },
 ];
+
+const FALLBACK_NAV = ['notif']; // shown only while the access profile is still loading
 
 interface SessionValue {
   roleId: RoleId;
   employeeCode: string;
   roleLabel: string;
   nav: string[];
+  isAdmin: boolean;
   setRoleId: (roleId: RoleId) => void;
 }
 
@@ -38,11 +47,17 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     return () => setDevEmployeeCode(null);
   }, [identity.employeeCode]);
 
+  // RBAC: fetch the real, server-computed access profile for this employee.
+  // This is the single source of truth for navigation — see
+  // Meridian.Application.Services.AccessControlService for how it's derived.
+  const { data: access } = useAccessProfile(identity.employeeCode);
+
   const value: SessionValue = {
     roleId,
     employeeCode: identity.employeeCode,
     roleLabel: identity.roleLabel,
-    nav: identity.nav,
+    nav: access?.navKeys ?? FALLBACK_NAV,
+    isAdmin: access?.isAdmin ?? false,
     setRoleId,
   };
 

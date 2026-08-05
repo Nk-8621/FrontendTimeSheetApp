@@ -29,7 +29,7 @@ function AzureGate({ children }: { children: ReactNode }) {
   return (
     <div className={styles.screen}>
       <div className={styles.card}>
-        <div className={styles.brand}>MERIDIAN</div>
+        <div className={styles.brand}>CARBYNETECH</div>
         <h1>Sign in to continue</h1>
         <p>Use your Carbynetech Microsoft account to access the timesheet.</p>
         <button className={styles.signInBtn} onClick={() => instance.loginRedirect(loginRequest)}>
