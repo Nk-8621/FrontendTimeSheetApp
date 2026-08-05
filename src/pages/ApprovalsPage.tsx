@@ -1,7 +1,12 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '../components/layout/PageHeader';
 import { Banner } from '../components/timesheet/Banner';
-import { ApprovalQueueRow } from '../components/approvals/ApprovalQueueRow';
-import { usePendingApprovals } from '../hooks/api/useApprovals';
+import { ApprovalQueueItem } from '../components/approvals/ApprovalQueueItem';
+import { useApprovalQueue } from '../hooks/api/useApprovals';
+import { useUI } from '../components/ui/UIProvider';
+import { approvalsApi } from '../api/approvals';
+import controls from '../styles/controls.module.css';
+import kpiStyles from '../components/timesheet/KpiStrip.module.css';
 import styles from '../components/approvals/ApprovalQueue.module.css';
 
 interface ApprovalsPageProps {
@@ -10,40 +15,100 @@ interface ApprovalsPageProps {
 }
 
 export function ApprovalsPage({ level2, title }: ApprovalsPageProps) {
-  const { data: pending, isLoading, isError } = usePendingApprovals(level2);
+  const { data: queue, isLoading, isError } = useApprovalQueue(level2);
+  const { toast } = useUI();
+  const queryClient = useQueryClient();
+
+  const flagged = queue?.filter((q) => q.flags.length > 0) ?? [];
+  const clean = queue?.filter((q) => q.flags.length === 0) ?? [];
+  const totalHours = queue?.reduce((sum, q) => sum + q.totalHours, 0) ?? 0;
+  const billableHours = queue?.reduce((sum, q) => sum + q.billableHours, 0) ?? 0;
+  const pctBillable = totalHours ? Math.round((billableHours / totalHours) * 100) : 0;
+
+  async function handleBulkApprove() {
+    let succeeded = 0;
+    for (const item of clean) {
+      try {
+        if (level2) await approvalsApi.approveLevel2(item.employeeCode, item.weekStartDate);
+        else await approvalsApi.approveLevel1(item.employeeCode, item.weekStartDate);
+        succeeded++;
+      } catch {
+        // continue with the rest; we report how many actually succeeded below
+      }
+    }
+    queryClient.invalidateQueries({ queryKey: ['approval-queue'] });
+    queryClient.invalidateQueries({ queryKey: ['pending-approvals'] });
+    if (succeeded > 0) toast(`${succeeded} timesheet${succeeded > 1 ? 's' : ''} approved at Level ${level2 ? 2 : 1}`, 'ok');
+    if (succeeded < clean.length) toast(`${clean.length - succeeded} could not be approved — please check them individually`, 'bad');
+  }
 
   return (
     <>
-      <PageHeader crumb="Approvals" title={title} />
+      <PageHeader crumb="Approvals" title={title}>
+        {clean.length > 0 && (
+          <button className={`${controls.btn} ${controls.ok} ${controls.sm}`} onClick={handleBulkApprove}>
+            Approve {clean.length} with no flags
+          </button>
+        )}
+      </PageHeader>
       <div className="page-content">
+        <Banner kind={level2 ? undefined : 'warn'}>
+          {level2
+            ? <><b>Level 2 — delivery head.</b> These weeks already cleared Level 1. Your approval locks the week.</>
+            : <><b>Level 1 — reporting lead / project manager.</b> You are approving that the effort is real and correctly attributed. Approved weeks move to Level 2.</>}
+        </Banner>
+
         {isLoading && <Banner>Loading the queue…</Banner>}
         {isError && <Banner kind="reject">Couldn't load the approval queue — check that the backend API is reachable.</Banner>}
 
-        {pending && (
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Employee</th>
-                <th>Week</th>
-                <th style={{ textAlign: 'right' }}>Total</th>
-                <th style={{ textAlign: 'right' }}>Billable</th>
-                <th style={{ textAlign: 'right' }}>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pending.length === 0 ? (
-                <tr>
-                  <td colSpan={5}>
-                    <div className={styles.empty}>Nothing waiting on you right now.</div>
-                  </td>
-                </tr>
-              ) : (
-                pending.map((item) => (
-                  <ApprovalQueueRow key={`${item.employeeCode}-${item.weekStartDate}`} item={item} level2={level2} />
-                ))
-              )}
-            </tbody>
-          </table>
+        {queue && (
+          <>
+            <div className={kpiStyles.kpis}>
+              <div className={`${kpiStyles.kpi} ${kpiStyles.w}`}>
+                <div className={kpiStyles.k}>Awaiting you</div>
+                <div className={kpiStyles.v}>{queue.length}</div>
+                <div className={kpiStyles.d}>timesheet week{queue.length !== 1 ? 's' : ''}</div>
+              </div>
+              <div className={`${kpiStyles.kpi} ${kpiStyles.a}`}>
+                <div className={kpiStyles.v}>{totalHours.toFixed(1)}<small> h</small></div>
+                <div className={kpiStyles.k} style={{ order: -1, marginBottom: 3 }}>Hours in queue</div>
+                <div className={kpiStyles.d}>{pctBillable}% billable</div>
+              </div>
+              <div className={`${kpiStyles.kpi} ${kpiStyles.r}`}>
+                <div className={kpiStyles.k}>With flags</div>
+                <div className={kpiStyles.v}>{flagged.length}</div>
+                <div className={kpiStyles.d}>need a closer look</div>
+              </div>
+              <div className={`${kpiStyles.kpi} ${kpiStyles.g}`}>
+                <div className={kpiStyles.k}>No flags</div>
+                <div className={kpiStyles.v}>{clean.length}</div>
+                <div className={kpiStyles.d}>safe to bulk approve</div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 9 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--slate)' }}>
+                Queue — most flags first
+              </div>
+              <div style={{ flex: 1 }} />
+              <span style={{ fontSize: 11, color: 'var(--slate)' }}>Click a row to see the hours behind it</span>
+            </div>
+
+            {queue.length === 0 ? (
+              <div className={styles.table}>
+                <div className={styles.empty}>
+                  <div style={{ fontWeight: 600, marginBottom: 4 }}>Queue is clear</div>
+                  Nothing is waiting on your approval right now.
+                </div>
+              </div>
+            ) : (
+              <div className={styles.queue}>
+                {queue.map((item) => (
+                  <ApprovalQueueItem key={`${item.employeeCode}-${item.weekStartDate}`} item={item} level2={level2} />
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
     </>

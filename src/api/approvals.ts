@@ -1,5 +1,5 @@
 import { http } from './httpClient';
-import type { WeekRecordDto, WeekValidationResult } from './types';
+import type { ApprovalQueueItemDto, WeekRecordDto, WeekValidationResult } from './types';
 
 export const approvalsApi = {
   validate: (employeeCode: string, weekStart: string) =>
@@ -22,4 +22,7 @@ export const approvalsApi = {
 
   getPending: (level2: boolean) =>
     http.get<WeekRecordDto[]>(`/api/approvals/pending?level2=${level2}`),
+
+  getQueue: (level2: boolean) =>
+    http.get<ApprovalQueueItemDto[]>(`/api/approvals/queue?level2=${level2}`),
 };

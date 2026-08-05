@@ -14,6 +14,7 @@ export function useApprovalMutations(employeeCode: string | undefined, weekStart
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['week', employeeCode, weekStart] });
     queryClient.invalidateQueries({ queryKey: ['pending-approvals'] });
+    queryClient.invalidateQueries({ queryKey: ['approval-queue'] });
   };
 
   const submit = useMutation({
@@ -48,5 +49,14 @@ export function usePendingApprovals(level2: boolean) {
   return useQuery({
     queryKey: ['pending-approvals', level2],
     queryFn: () => approvalsApi.getPending(level2),
+  });
+}
+
+/** The full-detail queue — flags, line-level breakdown, billable split —
+ * backing the Approvals screen. */
+export function useApprovalQueue(level2: boolean) {
+  return useQuery({
+    queryKey: ['approval-queue', level2],
+    queryFn: () => approvalsApi.getQueue(level2),
   });
 }

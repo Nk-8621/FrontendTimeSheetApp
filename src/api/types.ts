@@ -224,9 +224,76 @@ export interface TeamComplianceRowDto {
   employeeCode: string;
   fullName: string;
   designation: string;
+  departmentName: string;
   status: string; // NotStarted, Draft, PendingL1, PendingL2, Approved, Rejected
   totalHours: number;
   hasLogged: boolean;
+  dailyHours: WeekHours;
+  dailyDayTypes: ApiDayType[];
+  capacityHours: number;
+  billableHours: number;
+  nonBillableHours: number;
+}
+
+/** One logged line, with every level of the hierarchy resolved to a display
+ * name — backs the Approval Queue's expandable row detail. */
+export interface ApprovalQueueLineDto {
+  departmentCode: string;
+  accountName: string;
+  accountType: string;
+  projectName: string;
+  projectCode: string;
+  moduleName: string;
+  taskName: string;
+  isBillable: boolean;
+  hoursByDay: WeekHours;
+  note: string | null;
+}
+
+/** One week in an approver's queue — flags, billable split, and full line
+ * detail all in one object (no separate per-row fetches needed). */
+export interface ApprovalQueueItemDto {
+  employeeCode: string;
+  fullName: string;
+  designation: string;
+  departmentName: string;
+  weekStartDate: string;
+  submittedAt: string | null;
+  status: string;
+  totalHours: number;
+  billableHours: number;
+  nonBillableHours: number;
+  projectCount: number;
+  lineCount: number;
+  flags: string[];
+  lines: ApprovalQueueLineDto[];
+  dayTypes: DayTypeDto[];
+}
+
+/** One row in any of the Reports screen's five rollup tabs. */
+export interface ReportRollupRowDto {
+  key: string;
+  subLabel: string;
+  totalHours: number;
+  billableHours: number;
+  nonBillableHours: number;
+  resourceCount: number;
+}
+
+export type ReportApprovalStatus = 'all' | 'sub' | 'ok';
+
+export interface ReportsSummaryDto {
+  actualHours: number;
+  billableHours: number;
+  nonBillableHours: number;
+  resourcesReporting: number;
+  projectsInScope: number;
+  taskLineCount: number;
+  departmentWise: ReportRollupRowDto[];
+  accountWise: ReportRollupRowDto[];
+  projectWise: ReportRollupRowDto[];
+  resourceWise: ReportRollupRowDto[];
+  taskWise: ReportRollupRowDto[];
 }
 
 export interface ProjectHoursReportRowDto {
@@ -246,6 +313,8 @@ export interface WeekValidationResult {
   canSubmit: boolean;
 }
 
+/** What this employee is allowed to see (RBAC), computed server-side from
+ * their real position in the org hierarchy — not a fixed role. */
 export interface AccessProfileDto {
   employeeCode: string;
   isAdmin: boolean;
