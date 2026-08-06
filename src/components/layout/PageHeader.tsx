@@ -27,7 +27,7 @@ export function PageHeader({ crumb, title, children }: PageHeaderProps) {
         <div className={styles.avatar}>{employee?.initials ?? '…'}</div>
         <div>
           <div className={styles.nm}>{employee?.fullName ?? 'Loading…'}</div>
-          <div className={styles.rl}>{roleLabel.split(' — ')[0]}</div>
+          <div className={styles.rl}>{roleLabel.split(' — ')[1]}</div>
         </div>
       </div>
       {isAzureConfigured() && <AzureUserBadge />}
