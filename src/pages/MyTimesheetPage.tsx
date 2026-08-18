@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { PageHeader } from '../components/layout/PageHeader';
 import { WeekNav } from '../components/timesheet/WeekNav';
 import { StatusPill } from '../components/ui/StatusPill';
@@ -22,7 +23,11 @@ import controls from '../styles/controls.module.css';
 export function MyTimesheetPage() {
   const { employeeCode } = useSession();
   const { openDrawer, closeDrawer, toast } = useUI();
-  const [weekStart, setWeekStart] = useState(() => mondayOf(toISO(new Date())));
+  const [searchParams] = useSearchParams();
+  const [weekStart, setWeekStart] = useState(() => {
+    const requested = searchParams.get('week');
+    return requested ? mondayOf(requested) : mondayOf(toISO(new Date()));
+  });
   const thisWeek = mondayOf(toISO(new Date()));
 
   const { data: week, isLoading, isError } = useWeek(employeeCode, weekStart);

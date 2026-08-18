@@ -20,8 +20,8 @@
   background: var(--paper);
   border-radius: var(--rLg);
   box-shadow: var(--sh3);
-  padding: 40px 36px;
-  width: 360px;
+  padding: 48px 40px;
+  width: 560px;
   text-align: center;
 }
 
@@ -96,4 +96,13 @@
   font-size: 11px;
   color: var(--slate2, #9AA5B1);
   margin-top: 16px;
+}
+.screenFooter {
+  position: absolute;
+  bottom: 20px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 10px;
+  color: #6E88A0; /* lighter tone, since this sits on the dark background, not inside the white card */
 }
