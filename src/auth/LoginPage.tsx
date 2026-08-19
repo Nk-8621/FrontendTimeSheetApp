@@ -4,10 +4,11 @@ import { ApiError } from '../api/httpClient';
 import styles from './LoginGate.module.css';
 
 interface LoginPageProps {
-  onSuccess: (employeeCode: string) => void;
+  onSuccess: (employeeCode: string, token: string, expiresAtUtc: string, fullName: string) => void;
+  onRequiresOtpVerification: (employeeCode: string) => void;
 }
 
-export function LoginPage({ onSuccess }: LoginPageProps) {
+export function LoginPage({ onSuccess, onRequiresOtpVerification }: LoginPageProps) {
   const [employeeCode, setEmployeeCode] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -22,8 +23,12 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
     setIsSubmitting(true);
     setError('');
     try {
-      const employee = await authApi.login(employeeCode.trim().toUpperCase(), password);
-      onSuccess(employee.employeeCode);
+      const result = await authApi.login(employeeCode.trim().toUpperCase(), password);
+      if (result.requiresOtpVerification) {
+        onRequiresOtpVerification(result.employeeCode);
+      } else {
+        onSuccess(result.employeeCode, result.token!, result.expiresAtUtc!, result.fullName);
+      }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Could not sign in — check your connection and try again.');
     } finally {
@@ -34,7 +39,7 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
   return (
     <div className={styles.screen}>
       <form className={styles.card} onSubmit={handleSubmit}>
-        <div className={styles.brand}>CARBYNETECH</div>
+        <div className={styles.brand}>MERIDIAN</div>
         <h1>Sign in to continue</h1>
         <p>Enter your employee ID and password.</p>
 
@@ -67,9 +72,9 @@ export function LoginPage({ onSuccess }: LoginPageProps) {
         <button className={styles.signInBtn} type="submit" disabled={isSubmitting}>
           {isSubmitting ? 'Signing in…' : 'Sign in'}
         </button>
-
-        <div className={styles.hint}>Carbynetech Timesheet · dev-phase login</div>
+        <div className={styles.hint}>Carbynetech Timesheet</div>
       </form>
+      <div className={styles.screenFooter}>&copy; {new Date().getFullYear()} Carbynetech.com. All rights reserved.</div>
     </div>
   );
 }

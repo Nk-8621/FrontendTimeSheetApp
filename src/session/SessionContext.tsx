@@ -1,5 +1,5 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { setDevEmployeeCode, getStoredEmployeeCode, clearStoredEmployeeCode } from '../api/authBridge';
+import { createContext, useContext, useState, type ReactNode } from 'react';
+import { getStoredAuth, clearStoredAuth, setAccessTokenGetter } from '../api/authBridge';
 import { useAccessProfile, useEmployee } from '../hooks/api/useEmployees';
 
 const FALLBACK_NAV = ['notif']; // shown only while the access profile is still loading
@@ -10,6 +10,7 @@ interface SessionValue {
   roleLabel: string;
   nav: string[];
   isAdmin: boolean;
+  isLoading: boolean;
   logout: () => void;
 }
 
@@ -17,21 +18,16 @@ const SessionContext = createContext<SessionValue | null>(null);
 
 export function SessionProvider({ children }: { children: ReactNode }) {
   // By the time this mounts, LoginGate has already confirmed a real login
-  // happened and stored the resulting employee code — see auth/LoginGate.tsx.
-  const [employeeCode] = useState(() => getStoredEmployeeCode() ?? '');
+  // happened and stored the resulting session — see auth/LoginGate.tsx.
+  const [employeeCode] = useState(() => getStoredAuth()?.employeeCode ?? '');
 
-  useEffect(() => {
-    setDevEmployeeCode(employeeCode);
-    return () => setDevEmployeeCode(null);
-  }, [employeeCode]);
-
-  const { data: access } = useAccessProfile(employeeCode);
+  const { data: access, isLoading } = useAccessProfile(employeeCode);
   const { data: employee } = useEmployee(employeeCode);
   const roleLabel = employee ? `${employee.fullName} — ${employee.designation}` : employeeCode;
 
   function logout() {
-    clearStoredEmployeeCode();
-    setDevEmployeeCode(null);
+    clearStoredAuth();
+    setAccessTokenGetter(null);
     window.location.reload(); // simplest reliable way back to LoginGate's login screen
   }
 
@@ -40,6 +36,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     roleLabel,
     nav: access?.navKeys ?? FALLBACK_NAV,
     isAdmin: access?.isAdmin ?? false,
+    isLoading,
     logout,
   };
 

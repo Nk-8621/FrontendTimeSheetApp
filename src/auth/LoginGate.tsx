@@ -1,60 +1,78 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useMsal, useIsAuthenticated } from '@azure/msal-react';
 import { isAzureConfigured, loginRequest } from './authConfig';
-import { getStoredEmployeeCode, storeEmployeeCode } from '../api/authBridge';
+import { getStoredAuth, storeAuth, setAccessTokenGetter, type StoredAuth } from '../api/authBridge';
 import { LoginPage } from './LoginPage';
+import { VerifyOtpPage } from './VerifyOtpPage';
 import styles from './LoginGate.module.css';
 
 export function LoginGate({ children }: { children: ReactNode }) {
   if (!isAzureConfigured()) {
-    // Dev mode: no Azure AD wired up yet. A real login page (employee ID +
-    // shared dev-phase password) stands in for it — see LoginPage.tsx —
-    // rather than the earlier "Viewing as" switcher, so each person only
-    // ever sees their own role-appropriate screens.
     return <DevLoginGate>{children}</DevLoginGate>;
   }
 
   return <AzureGate>{children}</AzureGate>;
 }
 
-function DevLoginGate({ children }: { children: ReactNode }) {
-  const [employeeCode, setEmployeeCode] = useState<string | null>(() => getStoredEmployeeCode());
+type Screen = { step: 'login' } | { step: 'verify-otp'; employeeCode: string };
 
-  if (!employeeCode) {
+function DevLoginGate({ children }: { children: ReactNode }) {
+  const [auth, setAuth] = useState<StoredAuth | null>(() => getStoredAuth());
+  const [screen, setScreen] = useState<Screen>({ step: 'login' });
+
+  useEffect(() => {
+    if (auth) setAccessTokenGetter(async () => getStoredAuth()?.token ?? null);
+  }, [auth]);
+
+  function handleSuccess(employeeCode: string, token: string, expiresAtUtc: string, fullName: string) {
+    const newAuth: StoredAuth = { token, expiresAtUtc, employeeCode, fullName };
+    storeAuth(newAuth);
+    setAccessTokenGetter(async () => getStoredAuth()?.token ?? null);
+    setAuth(newAuth);
+  }
+
+  if (!auth) {
+    if (screen.step === 'verify-otp') {
+      return (
+        <VerifyOtpPage
+          employeeCode={screen.employeeCode}
+          onSuccess={handleSuccess}
+          onBackToLogin={() => setScreen({ step: 'login' })}
+        />
+      );
+    }
     return (
       <LoginPage
-        onSuccess={(code) => {
-          storeEmployeeCode(code);
-          setEmployeeCode(code);
-        }}
+        onSuccess={handleSuccess}
+        onRequiresOtpVerification={(employeeCode) => setScreen({ step: 'verify-otp', employeeCode })}
       />
     );
   }
 
   return (
     <>
-      {/* <div className={styles.devBanner}>Dev-phase login — shared password, standing in for Microsoft sign-in.</div> */}
       {children}
     </>
   );
 }
 
 function AzureGate({ children }: { children: ReactNode }) {
-  const { instance } = useMsal();
   const isAuthenticated = useIsAuthenticated();
+  const { instance } = useMsal();
 
-  if (isAuthenticated) return <>{children}</>;
-
-  return (
-    <div className={styles.screen}>
-      <div className={styles.card}>
-        <div className={styles.brand}>MERIDIAN</div>
-        <h1>Sign in to continue</h1>
-        <p>Use your Carbynetech Microsoft account to access the timesheet.</p>
-        <button className={styles.signInBtn} onClick={() => instance.loginRedirect(loginRequest)}>
-          Sign in with Microsoft
-        </button>
+  if (!isAuthenticated) {
+    return (
+      <div className={styles.screen}>
+        <div className={styles.card}>
+          <div className={styles.brand}>MERIDIAN</div>
+          <h1>Sign in with Microsoft</h1>
+          <button className={styles.signInBtn} onClick={() => instance.loginRedirect(loginRequest)}>
+            Sign in with Microsoft
+          </button>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  return <>{children}</>;
 }
