@@ -60,3 +60,11 @@ export function useApprovalQueue(level2: boolean) {
     queryFn: () => approvalsApi.getQueue(level2),
   });
 }
+
+export function useWeekDetail(employeeCode: string, weekStart: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ['week-detail', employeeCode, weekStart],
+    queryFn: () => approvalsApi.getWeekDetail(employeeCode, weekStart),
+    enabled,
+  });
+}

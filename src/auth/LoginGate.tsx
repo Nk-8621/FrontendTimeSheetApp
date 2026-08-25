@@ -4,6 +4,8 @@ import { isAzureConfigured, loginRequest } from './authConfig';
 import { getStoredAuth, storeAuth, setAccessTokenGetter, type StoredAuth } from '../api/authBridge';
 import { LoginPage } from './LoginPage';
 import { VerifyOtpPage } from './VerifyOtpPage';
+import { RequestPasswordResetPage } from './RequestPasswordResetPage';
+import { ResetPasswordPage } from './ResetPasswordPage';
 import styles from './LoginGate.module.css';
 
 export function LoginGate({ children }: { children: ReactNode }) {
@@ -14,7 +16,11 @@ export function LoginGate({ children }: { children: ReactNode }) {
   return <AzureGate>{children}</AzureGate>;
 }
 
-type Screen = { step: 'login' } | { step: 'verify-otp'; employeeCode: string };
+type Screen =
+  | { step: 'login' }
+  | { step: 'verify-otp'; employeeCode: string }
+  | { step: 'forgot-password-request' }
+  | { step: 'forgot-password-reset'; identifier: string };
 
 function DevLoginGate({ children }: { children: ReactNode }) {
   const [auth, setAuth] = useState<StoredAuth | null>(() => getStoredAuth());
@@ -41,21 +47,45 @@ function DevLoginGate({ children }: { children: ReactNode }) {
         />
       );
     }
+
+    if (screen.step === 'forgot-password-request') {
+      return (
+        <RequestPasswordResetPage
+          onSubmitted={(identifier) => setScreen({ step: 'forgot-password-reset', identifier })}
+          onBackToLogin={() => setScreen({ step: 'login' })}
+        />
+      );
+    }
+
+    if (screen.step === 'forgot-password-reset') {
+      return (
+        <ResetPasswordPage
+          identifier={screen.identifier}
+          onSuccess={handleSuccess}
+          onBackToLogin={() => setScreen({ step: 'login' })}
+        />
+      );
+    }
+
     return (
       <LoginPage
         onSuccess={handleSuccess}
         onRequiresOtpVerification={(employeeCode) => setScreen({ step: 'verify-otp', employeeCode })}
+        onForgotPassword={() => setScreen({ step: 'forgot-password-request' })}
       />
     );
   }
 
   return (
     <>
+      <div className={styles.devBanner}>Signed in - OTP-based authentication active.</div>
       {children}
     </>
   );
 }
 
+// --- Real Microsoft Entra login - dormant until VITE_AZURE_CLIENT_ID /
+// VITE_AZURE_TENANT_ID are configured. Kept as-is; not part of this change. ---
 function AzureGate({ children }: { children: ReactNode }) {
   const isAuthenticated = useIsAuthenticated();
   const { instance } = useMsal();

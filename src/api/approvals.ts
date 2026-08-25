@@ -25,4 +25,7 @@ export const approvalsApi = {
 
   getQueue: (level2: boolean) =>
     http.get<ApprovalQueueItemDto[]>(`/api/approvals/queue?level2=${level2}`),
+
+  getWeekDetail: (employeeCode: string, weekStart: string) =>
+  http.get<ApprovalQueueItemDto>(`/api/approvals/${employeeCode}/${weekStart}/detail`),
 };

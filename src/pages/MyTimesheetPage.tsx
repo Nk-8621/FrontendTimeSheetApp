@@ -19,6 +19,7 @@ import { ApiError } from '../api/httpClient';
 import type { TimeEntryDto } from '../api/types';
 import { mondayOf, addDays, toISO } from '../lib/dates';
 import controls from '../styles/controls.module.css';
+import { ImportExcelButton } from '../components/timesheet/ImportExcelButton';
 
 export function MyTimesheetPage() {
   const { employeeCode } = useSession();
@@ -188,8 +189,11 @@ export function MyTimesheetPage() {
         {weekStart !== thisWeek && (
           <button className={`${controls.btn} ${controls.sm}`} onClick={() => setWeekStart(thisWeek)}>This week</button>
         )}
+        {week && (week.week.status === 'Draft' || week.week.status === 'Rejected') && (
+          <ImportExcelButton employeeCode={employeeCode} weekStart={weekStart} />
+        )}
         {week && <StatusPill status={week.week.status} />}
-      </PageHeader>
+    </PageHeader>
 
       <div className="page-content">
         {isLoading && <Banner>Loading your timesheet…</Banner>}
