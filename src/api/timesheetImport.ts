@@ -20,7 +20,7 @@ export const timesheetImportApi = {
       headers: { ...authHeaders }, // no Content-Type here — see comment above
       body: formData,
     });
-
+      console.log('Response from timesheet import:', response);
     if (!response.ok) {
       const errorBody = await response.json().catch(() => null);
       throw new ApiError(response.status, errorBody?.title ?? 'Could not import the Excel file.');

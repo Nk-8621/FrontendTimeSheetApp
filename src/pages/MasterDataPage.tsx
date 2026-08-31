@@ -5,7 +5,7 @@ import { useUI } from '../components/ui/UIProvider';
 import {
   useDepartments, useAccounts, useProjects, useModules, useTasks, useHolidays, useTaskCategories, useMasterDataMutations,
 } from '../hooks/api/useMasterData';
-import { useAllEmployees, useManager, useSkipManager } from '../hooks/api/useEmployees';
+import { useAllEmployees, useManager, useSkipManager, useSetPrimaryAccount } from '../hooks/api/useEmployees';
 import { ApiError } from '../api/httpClient';
 import type { AccountDto, ModuleDto, ProjectDto, WorkTaskDto, HolidayDto } from '../api/types';
 import { AccountDrawer } from '../components/masterdata/AccountDrawer';
@@ -150,22 +150,27 @@ export function MasterDataPage() {
   }
 
   function handleAddOrEditHoliday(existing?: HolidayDto) {
+    console.log('handleAddOrEditHoliday called with existing:', existing);
     openDrawer({
       title: existing ? 'Edit holiday' : 'New holiday',
       body: (
         <HolidayDrawer
           existing={existing}
+          accounts={accounts.data ?? []}
           onCancel={closeDrawer}
           onSave={(data) => {
             const action = existing
-              ? mutations.updateHoliday.mutateAsync({ id: existing.id, body: data })
+              ? mutations.updateHoliday.mutateAsync({ id: existing.holidayId, body: {
+          ...data,
+          id: existing.holidayId,
+        }, })
               : mutations.createHoliday.mutateAsync(data);
             action
               .then(() => { closeDrawer(); toast(existing ? 'Holiday updated' : 'Holiday added', 'ok'); })
               .catch((err) => showError(err, 'Could not save this holiday'));
           }}
           onDelete={existing ? () => {
-            mutations.deleteHoliday.mutate(existing.id, {
+            mutations.deleteHoliday.mutate(existing.holidayId, {
               onSuccess: () => { closeDrawer(); toast('Holiday removed'); },
               onError: (err) => showError(err, 'Could not remove this holiday'),
             });
@@ -300,22 +305,25 @@ export function MasterDataPage() {
 
             {tab === 'res' && (
               <RecordsCard count={employees.data?.length ?? 0}>
-                <thead><tr><th>Resource</th><th>Designation</th><th>Department</th><th>Level 1 approver</th><th>Level 2 approver</th></tr></thead>
+                <thead><tr><th>Resource</th><th>Designation</th><th>Department</th><th>Level 1 approver</th><th>Level 2 approver</th><th>Primary client</th></tr></thead>
                 <tbody>
-                  {(employees.data ?? []).map((e) => <ResourceRow key={e.id} employee={e} deptName={deptName} />)}
+                  {(employees.data ?? []).map((e) => (
+                    <ResourceRow key={e.id} employee={e} deptName={deptName} accounts={accounts.data ?? []} onShowError={showError} />
+                  ))}
                 </tbody>
               </RecordsCard>
             )}
 
             {tab === 'hol' && (
               <RecordsCard count={holidays.data?.length ?? 0}>
-                <thead><tr><th>Date</th><th>Holiday</th><th>Applies to</th><th className={styles.editCol} /></tr></thead>
+                <thead><tr><th>Date</th><th>Holiday</th><th>Applies to</th><th>Client</th><th className={styles.editCol} /></tr></thead>
                 <tbody>
                   {holidays.data?.map((h) => (
-                    <tr key={h.id}>
+                    <tr key={h.holidayId}>
                       <td className="num">{new Date(h.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })}</td>
                       <td>{h.name}</td>
                       <td style={{ color: 'var(--slate)' }}>{h.location}</td>
+                      <td style={{ color: 'var(--slate)' }}>{h.accountId ? accName(h.accountId) : 'All clients'}</td>
                       <td className={styles.editCol}><button className={styles.editBtn} onClick={() => handleAddOrEditHoliday(h)}>✎</button></td>
                     </tr>
                   ))}
@@ -331,11 +339,29 @@ export function MasterDataPage() {
 
 interface ResourceEmployee {
   id: number; employeeCode: string; fullName: string; initials: string; designation: string; departmentId: number;
+  primaryAccountId?: number | null;
 }
 
-function ResourceRow({ employee, deptName }: { employee: ResourceEmployee; deptName: (id: number) => string }) {
+function ResourceRow({
+  employee, deptName, accounts, onShowError,
+}: {
+  employee: ResourceEmployee;
+  deptName: (id: number) => string;
+  accounts: AccountDto[];
+  onShowError: (err: unknown, fallback: string) => void;
+}) {
   const { data: manager } = useManager(employee.employeeCode);
   const { data: skipManager } = useSkipManager(employee.employeeCode);
+  const setPrimaryAccount = useSetPrimaryAccount();
+
+  function handleChange(value: string) {
+    const accountId = value === '' ? null : Number(value);
+    setPrimaryAccount.mutate(
+      { employeeCode: employee.employeeCode, accountId },
+      { onError: (err) => onShowError(err, "Could not update this resource's primary client") },
+    );
+  }
+
   return (
     <tr>
       <td>
@@ -348,6 +374,20 @@ function ResourceRow({ employee, deptName }: { employee: ResourceEmployee; deptN
       <td style={{ color: 'var(--slate)' }}>{deptName(employee.departmentId)}</td>
       <td>{manager?.fullName ?? '—'}</td>
       <td>{skipManager?.fullName ?? '—'}</td>
+      <td>
+        <select
+          className={controls.select}
+          value={employee.primaryAccountId ?? ''}
+          onChange={(e) => handleChange(e.target.value)}
+          disabled={setPrimaryAccount.isPending}
+          style={{ fontSize: 12 }}
+        >
+          <option value="">No client set</option>
+          {accounts.map((a) => (
+            <option key={a.id} value={a.id}>{a.name}</option>
+          ))}
+        </select>
+      </td>
     </tr>
   );
 }

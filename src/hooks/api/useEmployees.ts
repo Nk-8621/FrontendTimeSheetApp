@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { employeesApi } from '../../api/employees';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 /** Every employee — backs the Master Data "Resources" tab (read-only). */
 export function useAllEmployees() {
@@ -45,4 +46,13 @@ export function useSkipManager(employeeCode: string | undefined) {
     retry: false,
   });
   return skipManager;
+}
+
+export function useSetPrimaryAccount() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ employeeCode, accountId }: { employeeCode: string; accountId: number | null }) =>
+      employeesApi.setPrimaryAccount(employeeCode, accountId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['employees'] }),
+  });
 }

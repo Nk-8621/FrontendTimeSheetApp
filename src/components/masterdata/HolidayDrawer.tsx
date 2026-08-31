@@ -1,19 +1,21 @@
 import { useState } from 'react';
-import type { HolidayDto } from '../../api/types';
+import type { HolidayDto, AccountDto } from '../../api/types';
 import controls from '../../styles/controls.module.css';
 import styles from '../timesheet/EntryDrawer.module.css';
 
 interface HolidayDrawerProps {
   existing?: HolidayDto;
-  onSave: (data: { holidayDate: string; name: string; location: string }) => void;
+  accounts: AccountDto[];
+  onSave: (data: { holidayId: number; holidayDate: string; name: string; location: string; accountId: number | null }) => void;
   onDelete?: () => void;
   onCancel: () => void;
 }
 
-export function HolidayDrawer({ existing, onSave, onDelete, onCancel }: HolidayDrawerProps) {
+export function HolidayDrawer({ existing, accounts, onSave, onDelete, onCancel }: HolidayDrawerProps) {
   const [date, setDate] = useState(existing?.date ?? '');
   const [name, setName] = useState(existing?.name ?? '');
   const [location, setLocation] = useState(existing?.location ?? 'All India');
+  const [accountId, setAccountId] = useState<number | null>(existing?.accountId ?? null);
   const [error, setError] = useState('');
 
   function handleSave() {
@@ -21,7 +23,7 @@ export function HolidayDrawer({ existing, onSave, onDelete, onCancel }: HolidayD
       setError('Date, name, and location are all required.');
       return;
     }
-    onSave({ holidayDate: date, name: name.trim(), location: location.trim() });
+    onSave({ holidayId: existing?.holidayId ?? 0, holidayDate: date, name: name.trim(), location: location.trim(), accountId });
   }
 
   return (
@@ -37,6 +39,23 @@ export function HolidayDrawer({ existing, onSave, onDelete, onCancel }: HolidayD
       <div className={controls.field}>
         <label>Applies to <span className={controls.req}>*</span></label>
         <input className={controls.textInput} type="text" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="e.g. All India, or Hyderabad" />
+      </div>
+      <div className={controls.field}>
+        <label>Specific client (optional)</label>
+        <select
+          className={controls.select}
+          value={accountId ?? ''}
+          onChange={(e) => setAccountId(e.target.value === '' ? null : Number(e.target.value))}
+        >
+          <option value="">All clients - company-wide holiday</option>
+          {accounts.map((a) => (
+            <option key={a.id} value={a.id}>{a.name}</option>
+          ))}
+        </select>
+        <div style={{ fontSize: 11, color: 'var(--slate)', marginTop: 4 }}>
+          Leave as "All clients" for a normal company-wide holiday. Only pick a client if this holiday should
+          apply exclusively to employees staffed on that client's projects.
+        </div>
       </div>
       {error && <div className={styles.errMsg}>{error}</div>}
       <div className={styles.footer}>

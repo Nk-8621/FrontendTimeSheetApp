@@ -1,8 +1,8 @@
 :root {
   --ink: #151A21;
   --ink2: #39424E;
-  --slate: #69737F;
-  --slate2: #96A0AC;
+  --slate: #616B77;
+  --slate2: #748092;
   --rule: #E2E7ED;
   --ruleStrong: #C8D1DA;
   --canvas: #F1F4F8;
@@ -38,4 +38,25 @@
 
   --mono: 'IBM Plex Mono', ui-monospace, monospace;
   --sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* ---- Liquid glass effect ---- 
+  --glass-blur: 22px;
+  --glass-saturate: 165%;
+
+  --glass-bg: rgba(255, 255, 255, 0.55);
+  --glass-bg-strong: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.4);
+  --glass-highlight: rgba(255, 255, 255, 0.65);
+
+  --glass-bg-dark: rgba(13, 44, 69, 0.55);
+  --glass-border-dark: rgba(255, 255, 255, 0.14);
+  --glass-highlight-dark: rgba(255, 255, 255, 0.10);
+
+  --glass-shadow: 0 10px 34px rgba(13, 44, 69, 0.16), 0 2px 8px rgba(13, 44, 69, 0.08);
+  --glass-shadow-deep: 0 24px 64px rgba(13, 44, 69, 0.24), 0 6px 18px rgba(13, 44, 69, 0.12);
+
+  /* Much softer, rounder corners for the droplet look — was 3px/5px 
+  --r: 14px;
+  --rLg: 20px;
+  --rPill: 999px; */
 }

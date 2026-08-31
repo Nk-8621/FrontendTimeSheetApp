@@ -40,12 +40,12 @@ export interface TaskCategoryDto {
   name: string;
 }
 
-export interface HolidayDto {
-  id: number;
-  date: string;
-  name: string;
-  location: string;
-}
+// export interface HolidayDto {
+//   id: number;
+//   date: string;
+//   name: string;
+//   location: string;
+// }
 
 // ---- Admin-only create/update requests (Master Data screen) ----
 
@@ -102,7 +102,8 @@ export interface CreateHolidayRequest {
   location: string;
 }
 export interface UpdateHolidayRequest {
-  holidayDate?: string;
+  id : number;
+  holidayDate: string;
   name?: string;
   location?: string;
 }
@@ -322,4 +323,12 @@ export interface AccessProfileDto {
   isLevel1ApproverForSomeone: boolean;
   isLevel2ApproverForSomeone: boolean;
   navKeys: string[];
+}
+
+export interface HolidayDto {
+  holidayId: number;
+  date: string;
+  name: string;
+  location: string;
+  accountId: number | null;
 }

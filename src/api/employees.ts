@@ -8,4 +8,7 @@ export const employeesApi = {
   getManager: (code: string) => http.get<EmployeeDto>(`/api/employees/${code}/manager`),
   getDirectReports: (code: string) => http.get<EmployeeDto[]>(`/api/employees/${code}/direct-reports`),
   getAccess: (code: string) => http.get<AccessProfileDto>(`/api/employees/${code}/access`),
+  setPrimaryAccount: (employeeCode: string, accountId: number | null) =>
+  http.put<void>(`/api/employees/${employeeCode}/primary-account`, { accountId }),
 };
+

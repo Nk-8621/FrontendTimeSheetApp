@@ -78,7 +78,7 @@ function DevLoginGate({ children }: { children: ReactNode }) {
 
   return (
     <>
-      <div className={styles.devBanner}>Signed in - OTP-based authentication active.</div>
+      {/* <div className={styles.devBanner}>Signed in - OTP-based authentication active.</div> */}
       {children}
     </>
   );
