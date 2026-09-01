@@ -18,7 +18,7 @@ export const timesheetImportApi = {
     const response = await fetch(`${API_BASE_URL}/api/timesheet-import/${employeeCode}/${weekStart}`, {
       method: 'POST',
       headers: { ...authHeaders }, // no Content-Type here — see comment above
-      body: formData,
+      body: formData, // Include employeeCode in the request body if needed 
     });
       console.log('Response from timesheet import:', response);
     if (!response.ok) {
@@ -27,5 +27,22 @@ export const timesheetImportApi = {
     }
 
     return response.json();
+  },
+
+  /** Fetches the blank .xlsx template as a Blob for the browser to save —
+   * same GET-a-file pattern as the import POST above, just without a body. */
+  async downloadTemplate(): Promise<Blob> {
+    const authHeaders = await getAuthHeaders();
+    const response = await fetch(`${API_BASE_URL}/api/timesheet-import/template`, {
+      method: 'GET',
+      headers: { ...authHeaders },
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => null);
+      throw new ApiError(response.status, errorBody?.title ?? 'Could not download the template.');
+    }
+
+    return response.blob();
   },
 };

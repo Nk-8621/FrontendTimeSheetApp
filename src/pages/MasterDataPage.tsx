@@ -5,7 +5,10 @@ import { useUI } from '../components/ui/UIProvider';
 import {
   useDepartments, useAccounts, useProjects, useModules, useTasks, useHolidays, useTaskCategories, useMasterDataMutations,
 } from '../hooks/api/useMasterData';
-import { useAllEmployees, useManager, useSkipManager, useSetPrimaryAccount } from '../hooks/api/useEmployees';
+import {
+  useAllEmployees, useManager, useSkipManager, useSetPrimaryAccount,
+  useCreateEmployee, useDeactivateEmployee, useReactivateEmployee,
+} from '../hooks/api/useEmployees';
 import { ApiError } from '../api/httpClient';
 import type { AccountDto, ModuleDto, ProjectDto, WorkTaskDto, HolidayDto } from '../api/types';
 import { AccountDrawer } from '../components/masterdata/AccountDrawer';
@@ -13,6 +16,7 @@ import { ProjectDrawer } from '../components/masterdata/ProjectDrawer';
 import { ModuleDrawer } from '../components/masterdata/ModuleDrawer';
 import { TaskDrawer } from '../components/masterdata/TaskDrawer';
 import { HolidayDrawer } from '../components/masterdata/HolidayDrawer';
+import { EmployeeDrawer } from '../components/masterdata/EmployeeDrawer';
 import controls from '../styles/controls.module.css';
 import styles from './MasterData.module.css';
 
@@ -48,6 +52,7 @@ export function MasterDataPage() {
   const taskCategories = useTaskCategories();
   const employees = useAllEmployees();
   const mutations = useMasterDataMutations();
+  const createEmployee = useCreateEmployee();
 
   const isLoading = [departments, accounts, projects, modules, tasks, holidays, taskCategories, employees].some((q) => q.isLoading);
   const isError = [departments, accounts, projects, modules, tasks, holidays, taskCategories, employees].some((q) => q.isError);
@@ -150,7 +155,6 @@ export function MasterDataPage() {
   }
 
   function handleAddOrEditHoliday(existing?: HolidayDto) {
-    console.log('handleAddOrEditHoliday called with existing:', existing);
     openDrawer({
       title: existing ? 'Edit holiday' : 'New holiday',
       body: (
@@ -160,10 +164,7 @@ export function MasterDataPage() {
           onCancel={closeDrawer}
           onSave={(data) => {
             const action = existing
-              ? mutations.updateHoliday.mutateAsync({ id: existing.holidayId, body: {
-          ...data,
-          id: existing.holidayId,
-        }, })
+              ? mutations.updateHoliday.mutateAsync({ id: existing.holidayId, body: { ...data, id: existing.holidayId } })
               : mutations.createHoliday.mutateAsync(data);
             action
               .then(() => { closeDrawer(); toast(existing ? 'Holiday updated' : 'Holiday added', 'ok'); })
@@ -180,13 +181,32 @@ export function MasterDataPage() {
     });
   }
 
+  function handleAddEmployee() {
+    openDrawer({
+      title: 'New employee',
+      body: (
+        <EmployeeDrawer
+          departments={departments.data ?? []}
+          employees={employees.data ?? []}
+          onCancel={closeDrawer}
+          onSave={(data) => {
+            createEmployee.mutate(data, {
+              onSuccess: () => { closeDrawer(); toast('Employee created', 'ok'); },
+              onError: (err) => showError(err, 'Could not create this employee'),
+            });
+          }}
+        />
+      ),
+    });
+  }
+
   const addHandlers: Record<Tab, (() => void) | null> = {
     dept: null,
     acc: () => handleAddOrEditAccount(),
     proj: () => handleAddOrEditProject(),
     mod: () => handleAddOrEditModule(),
     task: () => handleAddOrEditTask(),
-    res: null,
+    res: () => handleAddEmployee(),
     hol: () => handleAddOrEditHoliday(),
   };
 
@@ -200,9 +220,8 @@ export function MasterDataPage() {
       <div className="page-content">
         <Banner>
           Every level of the hierarchy is maintained here, so a new customer, project, or module never needs a
-          code change. Departments, locations, and employee records are sourced from the real org chart and stay
-          read-only. Leave is not maintained in Meridian — it is read from Keka and appears on the grid as a
-          closed day.
+          code change. Departments and locations are sourced from the real org chart and stay read-only. Leave is
+          not maintained in Meridian — it is read from Keka and appears on the grid as a closed day.
         </Banner>
         {isLoading && <Banner>Loading master data…</Banner>}
         {isError && <Banner kind="reject">Couldn't load master data — check that the backend API is reachable.</Banner>}
@@ -305,7 +324,7 @@ export function MasterDataPage() {
 
             {tab === 'res' && (
               <RecordsCard count={employees.data?.length ?? 0}>
-                <thead><tr><th>Resource</th><th>Designation</th><th>Department</th><th>Level 1 approver</th><th>Level 2 approver</th><th>Primary client</th></tr></thead>
+                <thead><tr><th>Resource</th><th>Designation</th><th>Department</th><th>Level 1 approver</th><th>Level 2 approver</th><th>Primary client</th><th>Status</th><th style={{ width: 100 }} /></tr></thead>
                 <tbody>
                   {(employees.data ?? []).map((e) => (
                     <ResourceRow key={e.id} employee={e} deptName={deptName} accounts={accounts.data ?? []} onShowError={showError} />
@@ -339,7 +358,7 @@ export function MasterDataPage() {
 
 interface ResourceEmployee {
   id: number; employeeCode: string; fullName: string; initials: string; designation: string; departmentId: number;
-  primaryAccountId?: number | null;
+  primaryAccountId?: number | null; isActive: boolean;
 }
 
 function ResourceRow({
@@ -353,6 +372,8 @@ function ResourceRow({
   const { data: manager } = useManager(employee.employeeCode);
   const { data: skipManager } = useSkipManager(employee.employeeCode);
   const setPrimaryAccount = useSetPrimaryAccount();
+  const deactivate = useDeactivateEmployee();
+  const reactivate = useReactivateEmployee();
 
   function handleChange(value: string) {
     const accountId = value === '' ? null : Number(value);
@@ -362,8 +383,20 @@ function ResourceRow({
     );
   }
 
+  function handleDeactivate() {
+    const confirmed = window.confirm(
+      `Deactivate ${employee.fullName}? Anyone reporting directly to them will be reassigned to their manager's manager. This does not delete any of their historical timesheet data.`,
+    );
+    if (!confirmed) return;
+    deactivate.mutate(employee.employeeCode, { onError: (err) => onShowError(err, 'Could not deactivate this employee') });
+  }
+
+  function handleReactivate() {
+    reactivate.mutate(employee.employeeCode, { onError: (err) => onShowError(err, 'Could not reactivate this employee') });
+  }
+
   return (
-    <tr>
+    <tr style={{ opacity: employee.isActive ? 1 : 0.55 }}>
       <td>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ width: 23, height: 23, borderRadius: '50%', background: 'var(--oxideTint)', color: 'var(--oxide)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9.5, fontWeight: 700 }}>{employee.initials}</div>
@@ -379,7 +412,7 @@ function ResourceRow({
           className={controls.select}
           value={employee.primaryAccountId ?? ''}
           onChange={(e) => handleChange(e.target.value)}
-          disabled={setPrimaryAccount.isPending}
+          disabled={setPrimaryAccount.isPending || !employee.isActive}
           style={{ fontSize: 12 }}
         >
           <option value="">No client set</option>
@@ -387,6 +420,20 @@ function ResourceRow({
             <option key={a.id} value={a.id}>{a.name}</option>
           ))}
         </select>
+      </td>
+      <td style={{ color: employee.isActive ? 'var(--verd)' : 'var(--clay)', fontWeight: 600, fontSize: 12 }}>
+        {employee.isActive ? 'Active' : 'Inactive'}
+      </td>
+      <td>
+        {employee.isActive ? (
+          <button className={`${controls.btn} ${controls.sm} ${controls.dgr}`} onClick={handleDeactivate} disabled={deactivate.isPending}>
+            Deactivate
+          </button>
+        ) : (
+          <button className={`${controls.btn} ${controls.sm}`} onClick={handleReactivate} disabled={reactivate.isPending}>
+            Reactivate
+          </button>
+        )}
       </td>
     </tr>
   );

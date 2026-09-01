@@ -2,10 +2,14 @@ import { Fragment } from 'react';
 import type { TimeEntryDto, DayTypeDto } from '../../api/types';
 import { DAY_NAMES, DAY_TYPE_LABELS } from '../../types/meridian';
 import { useMasterDataLookup } from '../../hooks/api/useMasterDataLookup';
+import { ImportExcelButton } from './ImportExcelButton';
+import { DownloadTemplateButton } from './DownloadTemplateButton';
 import controls from '../../styles/controls.module.css';
 import styles from './WeekGrid.module.css';
 
 interface WeekGridProps {
+  employeeCode: string;
+  weekStart: string;
   rows: TimeEntryDto[];
   dayTypes: DayTypeDto[];
   editable: boolean;
@@ -15,7 +19,6 @@ interface WeekGridProps {
   onCycleDayType: (date: string) => void;
   onEditLine: (entryId: number) => void;
   onAddLine: () => void;
-  onCopyLastWeek: () => void;
   onSubmit: () => void;
   canSubmit: boolean;
   onRecall: () => void;
@@ -26,6 +29,8 @@ const fmtH = (n: number) => (n ? (Math.round(n * 100) / 100).toString() : '—')
 const today = () => new Date().toISOString().slice(0, 10);
 
 export function WeekGrid({
+  employeeCode,
+  weekStart,
   rows,
   dayTypes,
   editable,
@@ -35,7 +40,6 @@ export function WeekGrid({
   onCycleDayType,
   onEditLine,
   onAddLine,
-  onCopyLastWeek,
   onSubmit,
   canSubmit,
   onRecall,
@@ -62,7 +66,8 @@ export function WeekGrid({
         <div style={{ flex: 1 }} />
         {editable && (
           <>
-            <button className={`${controls.btn} ${controls.sm}`} onClick={onCopyLastWeek}>Copy last week's lines</button>
+            <ImportExcelButton employeeCode={employeeCode} weekStart={weekStart} />
+            <DownloadTemplateButton />
             <button className={`${controls.btn} ${controls.pri} ${controls.sm}`} onClick={onAddLine}>+ Add task line</button>
           </>
         )}
@@ -111,7 +116,7 @@ export function WeekGrid({
                 <td colSpan={11}>
                   <div className={styles.empty}>
                     <div className={styles.big}>No hours logged for this week</div>
-                    Add your first task line, or copy last week's structure to get started.
+                    Add your first task line, or download the template and import a filled-in Excel sheet to get started.
                   </div>
                 </td>
               </tr>

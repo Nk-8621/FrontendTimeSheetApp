@@ -56,3 +56,27 @@ export function useSetPrimaryAccount() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['employees'] }),
   });
 }
+
+// useEmployees.ts
+export function useDeactivateEmployee() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: employeesApi.deactivate,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['employees'] }),
+  });
+}
+
+export function useReactivateEmployee() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: employeesApi.reactivate,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['employees'] }),
+  });
+}
+export function useCreateEmployee() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: employeesApi.create,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['employees'] }),
+  });
+}

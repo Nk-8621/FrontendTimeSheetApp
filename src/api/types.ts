@@ -132,6 +132,7 @@ export interface EmployeeDto {
   grade: string | null;
   managerEmployeeId: number | null;
   managerName: string | null;
+  isActive: boolean;
 }
 
 /** Monday..Sunday, matching the backend's HoursByDay array order. */

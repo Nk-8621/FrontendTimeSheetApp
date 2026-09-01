@@ -19,6 +19,12 @@ export function ImportExcelButton({ employeeCode, weekStart }: ImportExcelButton
     e.target.value = '';
     if (!file) return;
 
+    if (!file.name.toLowerCase().endsWith('.xlsx')) {
+    toast('Please select a valid .xlsx Excel file.', 'bad');
+    return;
+  }
+
+
     importMutation.mutate(file, {
       onSuccess: (result) => {
         if (result.errors.length === 0) {
@@ -62,7 +68,7 @@ export function ImportExcelButton({ employeeCode, weekStart }: ImportExcelButton
       <input
         ref={fileInputRef}
         type="file"
-        accept=".xlsx,.xls"
+        accept=".xlsx"
         onChange={handleFileSelected}
         hidden
       />

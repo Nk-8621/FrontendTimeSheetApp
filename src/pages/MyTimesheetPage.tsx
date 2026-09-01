@@ -19,7 +19,6 @@ import { ApiError } from '../api/httpClient';
 import type { TimeEntryDto } from '../api/types';
 import { mondayOf, addDays, toISO } from '../lib/dates';
 import controls from '../styles/controls.module.css';
-import { ImportExcelButton } from '../components/timesheet/ImportExcelButton';
 
 export function MyTimesheetPage() {
   const { employeeCode } = useSession();
@@ -133,14 +132,6 @@ export function MyTimesheetPage() {
     });
   }
 
-  function handleCopyLastWeek() {
-    mutations.copyLastWeek.mutate(undefined, {
-      onSuccess: (result) =>
-        toast(result.linesAdded ? `${result.linesAdded} line${result.linesAdded > 1 ? 's' : ''} copied — hours left blank` : 'All those lines already exist', result.linesAdded ? 'ok' : 'bad'),
-      onError: (err) => showError(err, 'Could not copy last week'),
-    });
-  }
-
   function handleSubmit() {
     if (!week) return;
     openDrawer({
@@ -189,9 +180,6 @@ export function MyTimesheetPage() {
         {weekStart !== thisWeek && (
           <button className={`${controls.btn} ${controls.sm}`} onClick={() => setWeekStart(thisWeek)}>This week</button>
         )}
-        {week && (week.week.status === 'Draft' || week.week.status === 'Rejected') && (
-          <ImportExcelButton employeeCode={employeeCode} weekStart={weekStart} />
-        )}
         {week && <StatusPill status={week.week.status} />}
     </PageHeader>
 
@@ -227,6 +215,8 @@ export function MyTimesheetPage() {
             />
 
             <WeekGrid
+              employeeCode={employeeCode}
+              weekStart={weekStart}
               rows={week.entries}
               dayTypes={week.dayTypes}
               editable={week.week.status === 'Draft' || week.week.status === 'Rejected'}
@@ -236,7 +226,6 @@ export function MyTimesheetPage() {
               onCycleDayType={handleCycleDayType}
               onEditLine={handleEditLine}
               onAddLine={handleAddLine}
-              onCopyLastWeek={handleCopyLastWeek}
               onSubmit={handleSubmit}
               canSubmit={canSubmit}
               onRecall={handleRecall}
