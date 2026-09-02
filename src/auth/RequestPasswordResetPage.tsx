@@ -36,7 +36,7 @@ export function RequestPasswordResetPage({ onSubmitted, onBackToLogin }: Request
   return (
     <div className={styles.screen}>
       <form className={styles.card} onSubmit={handleSubmit}>
-        <div className={styles.brand}>MERIDIAN</div>
+        <div className={styles.brand}>CARBYNETECH TIMESHEET</div>
         <h1>Reset your password</h1>
         <p>Enter your employee ID or email and we'll send a code to your registered email.</p>
 

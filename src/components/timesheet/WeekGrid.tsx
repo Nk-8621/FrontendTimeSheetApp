@@ -18,6 +18,7 @@ interface WeekGridProps {
   onCycleClassification: (entry: TimeEntryDto) => void;
   onCycleDayType: (date: string) => void;
   onEditLine: (entryId: number) => void;
+  onDuplicateLine: (entryId: number) => void;
   onAddLine: () => void;
   onSubmit: () => void;
   canSubmit: boolean;
@@ -39,6 +40,7 @@ export function WeekGrid({
   onCycleClassification,
   onCycleDayType,
   onEditLine,
+  onDuplicateLine,
   onAddLine,
   onSubmit,
   canSubmit,
@@ -162,11 +164,18 @@ export function WeekGrid({
                       {days.map((_, i) => {
                         const t = dayTypes[i].dayType;
                         const blocked = t === 'L' || t === 'H';
+                        // A day cell is only directly editable in the grid once this line
+                        // already has hours on it. An unclaimed day (still 0) is locked —
+                        // logging hours for this task on a new day has to go through
+                        // "+ Add task line" or the duplicate (⧉) button, which creates a
+                        // separate line with its own description, rather than silently
+                        // stretching this line's existing description across another day.
+                        const claimed = r.hoursByDay[i] > 0;
                         const cls = [
                           styles.hr,
                           blocked ? (t === 'L' ? styles.blocked : styles.blockedH) : '',
                           t === 'O' ? styles.wknd : '',
-                          !editable ? styles.locked : '',
+                          !editable || (!blocked && !claimed) ? styles.locked : '',
                         ].join(' ');
                         return (
                           <td key={i} className={cls}>
@@ -175,7 +184,8 @@ export function WeekGrid({
                               inputMode="decimal"
                               value={fmtH(r.hoursByDay[i]) === '—' ? '' : fmtH(r.hoursByDay[i])}
                               placeholder="·"
-                              readOnly={!editable || blocked}
+                              readOnly={!editable || blocked || !claimed}
+                              title={editable && !blocked && !claimed ? 'No hours logged here yet for this task line — use \"+ Add task line\" or the duplicate (⧉) button to add a new line for this day.' : undefined}
                               aria-label={`${DAY_NAMES[i]} hours`}
                               onChange={(e) => {
                                 let v = parseFloat(e.target.value);
@@ -190,9 +200,14 @@ export function WeekGrid({
                       <td className={styles.rowT}>{fmtH(sum(r.hoursByDay))}</td>
                       <td className={styles.tc}>
                         {editable && (
-                          <button className={styles.editBtn} title="Edit line" onClick={() => onEditLine(r.id)}>
-                            ✎
-                          </button>
+                          <>
+                           <button className={styles.editBtn} title="Edit line" onClick={() => onEditLine(r.id)}>
+                              ✎
+                            </button>
+                            <button className={styles.editBtn} title="Duplicate line — same task, blank hours & description" onClick={() => onDuplicateLine(r.id)}>
+                              ⧉
+                           </button>
+                          </>
                         )}
                       </td>
                     </tr>

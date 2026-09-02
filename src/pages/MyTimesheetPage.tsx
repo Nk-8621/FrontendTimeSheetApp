@@ -134,6 +134,27 @@ export function MyTimesheetPage() {
     });
   }
 
+    function handleDuplicateLine(entryId: number) {
+    const entry = week?.entries.find((e) => e.id === entryId);
+    if (!entry || !week) return;
+    openDrawer({
+      title: 'Add task line',
+      body: (
+        <EntryDrawer
+          dayTypes={week.dayTypes}
+          duplicateFrom={entry}
+          onCancel={closeDrawer}
+          onSave={(data) => {
+            mutations.addEntry.mutate(data, {
+              onSuccess: () => { closeDrawer(); toast('Task line added', 'ok'); },
+              onError: (err) => showError(err, 'Could not add line'),
+            });
+          }}
+        />
+      ),
+    });
+  }
+
   function handleSubmit() {
     if (!week) return;
     openDrawer({
@@ -229,6 +250,7 @@ export function MyTimesheetPage() {
               onCycleClassification={handleCycleClassification}
               onCycleDayType={handleCycleDayType}
               onEditLine={handleEditLine}
+              onDuplicateLine={handleDuplicateLine}
               onAddLine={handleAddLine}
               onSubmit={handleSubmit}
               canSubmit={canSubmit}

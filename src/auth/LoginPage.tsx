@@ -40,7 +40,7 @@ export function LoginPage({ onSuccess, onRequiresOtpVerification, onForgotPasswo
   return (
     <div className={styles.screen}>
       <form className={styles.card} onSubmit={handleSubmit}>
-        <div className={styles.brand}>MERIDIAN</div>
+        <div className={styles.brand}>CARBYNETECH TIMESHEET</div>
         <h1>Sign in to continue</h1>
         <p>Enter your employee ID or email, and your password.</p>
 
