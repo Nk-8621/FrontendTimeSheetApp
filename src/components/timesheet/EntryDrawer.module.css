@@ -41,6 +41,28 @@
   color: #fff;
 }
 
+.segCat {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+.segCat button {
+  border: 1px solid var(--ruleStrong);
+  border-radius: var(--r);
+  background: var(--paper);
+  padding: 4px 10px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--slate);
+  cursor: pointer;
+}
+.segCat button.on {
+  background: var(--oxideTint);
+  border-color: var(--oxide);
+  color: var(--oxide);
+}
+
 .dayPick {
   display: grid;
   grid-template-columns: repeat(7, 1fr);

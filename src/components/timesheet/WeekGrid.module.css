@@ -139,6 +139,7 @@
   cursor: pointer;
 }
 .bt.b { background: var(--oxide); border-color: var(--oxide); color: #fff; }
+.bt.pb { background: var(--verd); border-color: var(--verd); color: #fff; }
 .bt.n {
   border-color: var(--ruleStrong);
   color: var(--slate);
@@ -216,6 +217,7 @@
 .legend span { display: inline-flex; align-items: center; gap: 5px; }
 .sw { width: 10px; height: 10px; border-radius: 2px; flex: none; }
 .sw.b { background: var(--oxide); }
+.sw.pb { background: var(--verd); }
 .sw.n { background: repeating-linear-gradient(45deg, #B7C3CF 0 3px, #CBD4DE 3px 6px); border: 1px solid var(--ruleStrong); }
 
 .editBtn {

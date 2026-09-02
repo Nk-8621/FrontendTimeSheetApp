@@ -15,7 +15,7 @@ interface WeekGridProps {
   editable: boolean;
   status: string; // WeekStatusDto
   onHourChange: (entryId: number, dayIndex: number, value: number) => void;
-  onToggleBillable: (entry: TimeEntryDto) => void;
+  onCycleClassification: (entry: TimeEntryDto) => void;
   onCycleDayType: (date: string) => void;
   onEditLine: (entryId: number) => void;
   onAddLine: () => void;
@@ -36,7 +36,7 @@ export function WeekGrid({
   editable,
   status,
   onHourChange,
-  onToggleBillable,
+  onCycleClassification,
   onCycleDayType,
   onEditLine,
   onAddLine,
@@ -146,11 +146,17 @@ export function WeekGrid({
                       </td>
                       <td className={styles.tc}>
                         {editable ? (
-                          <button className={`${styles.bt} ${r.isBillable ? styles.b : styles.n}`} onClick={() => onToggleBillable(r)} title="Click to switch">
-                            {r.isBillable ? 'Billable' : 'Non-bill'}
+                          <button
+                            className={`${styles.bt} ${r.classification === 'Billable' ? styles.b : r.classification === 'PartialBillable' ? styles.pb : styles.n}`}
+                            onClick={() => onCycleClassification(r)}
+                            title="Click to cycle Billable / Non-billable / Partial Billable"
+                          >
+                            {r.classification === 'Billable' ? 'Billable' : r.classification === 'PartialBillable' ? 'Partial' : 'Non-bill'}
                           </button>
                         ) : (
-                          <span className={`${styles.bt} ${r.isBillable ? styles.b : styles.n}`}>{r.isBillable ? 'Billable' : 'Non-bill'}</span>
+                          <span className={`${styles.bt} ${r.classification === 'Billable' ? styles.b : r.classification === 'PartialBillable' ? styles.pb : styles.n}`}>
+                            {r.classification === 'Billable' ? 'Billable' : r.classification === 'PartialBillable' ? 'Partial' : 'Non-bill'}
+                          </span>
                         )}
                       </td>
                       {days.map((_, i) => {
@@ -224,6 +230,7 @@ export function WeekGrid({
       <div className={styles.gridFoot}>
         <div className={styles.legend}>
           <span><i className={`${styles.sw} ${styles.b}`} /> Billable</span>
+          <span><i className={`${styles.sw} ${styles.pb}`} /> Partial Billable</span>
           <span><i className={`${styles.sw} ${styles.n}`} /> Non-billable</span>
           <span><i className={styles.sw} style={{ background: 'var(--violetTint)', border: '1px solid var(--violetLine)' }} /> WFH</span>
           <span><i className={styles.sw} style={{ background: 'repeating-linear-gradient(45deg,#FBE9E7 0 4px,#F5D9D6 4px 8px)' }} /> Leave (from Keka)</span>

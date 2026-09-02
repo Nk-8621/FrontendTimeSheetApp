@@ -27,7 +27,10 @@ export function EntryDrawer({ dayTypes, existing, onSave, onDelete, onCancel }: 
   const [proj, setProj] = useState<number | ''>(existing?.projectId ?? '');
   const [mod, setMod] = useState<number | ''>(existing?.moduleId ?? '');
   const [task, setTask] = useState<number | ''>(existing?.taskId ?? '');
-  const [billable, setBillable] = useState(existing?.isBillable ?? true);
+  const [classification, setClassification] = useState<'Billable' | 'NonBillable' | 'PartialBillable'>(
+    existing?.classification ?? 'Billable',
+  );
+  const [billingCategory, setBillingCategory] = useState<string | null>(existing?.billingCategory ?? null);
   const [note, setNote] = useState(existing?.note ?? '');
   const [hours, setHours] = useState<number[]>(existing ? [...existing.hoursByDay] : [0, 0, 0, 0, 0, 0, 0]);
   const [showTaskError, setShowTaskError] = useState(false);
@@ -41,6 +44,11 @@ export function EntryDrawer({ dayTypes, existing, onSave, onDelete, onCancel }: 
   const projectsForAcc = acc !== '' ? projects.filter((p) => p.accountId === acc) : [];
   const modulesForProj = proj !== '' ? modules.filter((m) => m.projectId === proj) : [];
   const tasksForMod = mod !== '' ? tasks.filter((t) => t.moduleId === mod) : [];
+
+  function updateClassification(next: 'Billable' | 'NonBillable' | 'PartialBillable') {
+    setClassification(next);
+    setBillingCategory(null);
+  }
 
   function capacityClosed(i: number) {
     const t = dayTypes[i]?.dayType;
@@ -56,7 +64,8 @@ export function EntryDrawer({ dayTypes, existing, onSave, onDelete, onCancel }: 
       projectId: proj as number,
       moduleId: mod as number,
       taskId: task as number,
-      isBillable: billable,
+      classification,
+      billingCategory: classification === 'PartialBillable' ? null : billingCategory,
       note: note.trim() || null,
       hoursByDay: hours as WeekHours,
     });
@@ -104,7 +113,7 @@ export function EntryDrawer({ dayTypes, existing, onSave, onDelete, onCancel }: 
             setAcc(id); setProj(''); setMod(''); setTask('');
             if (id !== '') {
               const a = accById(id);
-              if (a) setBillable(a.accountType !== 'Internal');
+              if (a) updateClassification(a.accountType !== 'Internal' ? 'Billable' : 'NonBillable');
             }
           }}
         >
@@ -131,7 +140,7 @@ export function EntryDrawer({ dayTypes, existing, onSave, onDelete, onCancel }: 
             setProj(id); setMod(''); setTask('');
             if (id !== '') {
               const p = projById(id);
-              if (p) setBillable(p.defaultBillable);
+              if (p) updateClassification(p.defaultBillable ? 'Billable' : 'NonBillable');
             }
           }}
         >
@@ -182,9 +191,23 @@ export function EntryDrawer({ dayTypes, existing, onSave, onDelete, onCancel }: 
       <div className={controls.field}>
         <label>Classification</label>
         <div className={styles.segBill}>
-          <button className={billable ? styles.on : ''} onClick={() => setBillable(true)}>Billable</button>
-          <button className={!billable ? styles.on : ''} onClick={() => setBillable(false)}>Non-billable</button>
+          <button className={classification === 'Billable' ? styles.on : ''} onClick={() => updateClassification('Billable')}>Billable</button>
+          <button className={classification === 'NonBillable' ? styles.on : ''} onClick={() => updateClassification('NonBillable')}>Non-billable</button>
+          <button className={classification === 'PartialBillable' ? styles.on : ''} onClick={() => updateClassification('PartialBillable')}>Partial Billable</button>
         </div>
+        {classification !== 'PartialBillable' && (
+          <div className={styles.segCat}>
+            {(classification === 'Billable' ? ['AMS', 'T&M', 'FB'] : ['OH']).map((opt) => (
+              <button
+                key={opt}
+                className={billingCategory === opt ? styles.on : ''}
+                onClick={() => setBillingCategory((cur) => (cur === opt ? null : opt))}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+        )}
         {proj !== '' && projectObj && (
           <div className={controls.hint}>
             Project default is {projectObj.defaultBillable ? 'billable' : 'non-billable'} — you can override it for this line.

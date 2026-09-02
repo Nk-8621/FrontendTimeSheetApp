@@ -26,6 +26,7 @@ export function MyTimesheetsPage() {
                 <th>Status</th>
                 <th style={{ textAlign: 'right' }}>Total</th>
                 <th style={{ textAlign: 'right' }}>Billable</th>
+                <th style={{ textAlign: 'right' }}>Partial Billable</th>
                 <th style={{ textAlign: 'right' }}>Submitted</th>
                 <th />
               </tr>
@@ -33,7 +34,7 @@ export function MyTimesheetsPage() {
             <tbody>
               {weeks.length === 0 ? (
                 <tr>
-                  <td colSpan={6}>
+                  <td colSpan={7}>
                     <div className={styles.empty}>No timesheet history yet — log some hours on My Timesheet to get started.</div>
                   </td>
                 </tr>
@@ -44,6 +45,7 @@ export function MyTimesheetsPage() {
                     <td><StatusPill status={w.status} /></td>
                     <td className="num" style={{ textAlign: 'right' }}>{w.totalHours.toFixed(1)} h</td>
                     <td className="num" style={{ textAlign: 'right' }}>{w.billableHours.toFixed(1)} h</td>
+                    <td className="num" style={{ textAlign: 'right' }}>{w.partialBillableHours.toFixed(1)} h</td>
                     <td className="num" style={{ textAlign: 'right', color: 'var(--slate)' }}>
                       {w.submittedAt ? new Date(w.submittedAt).toLocaleDateString() : '—'}
                     </td>

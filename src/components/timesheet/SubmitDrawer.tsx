@@ -9,6 +9,7 @@ interface SubmitDrawerProps {
   entryCount: number;
   totalHours: number;
   billableHours: number;
+  partialBillableHours: number;
   leadName: string;
   l2Name: string;
   onConfirm: () => void;
@@ -25,13 +26,14 @@ export function SubmitDrawer({
   entryCount,
   totalHours,
   billableHours,
+  partialBillableHours,
   leadName,
   l2Name,
   onConfirm,
   onCancel,
 }: SubmitDrawerProps) {
   const { data: validation, isLoading } = useValidateWeek(employeeCode, weekStart, true);
-  const nonBillable = totalHours - billableHours;
+  const nonBillable = totalHours - billableHours - partialBillableHours;
   const errors = validation?.errors ?? [];
   const warnings = validation?.warnings ?? [];
 
@@ -71,6 +73,7 @@ export function SubmitDrawer({
           <tbody>
             <tr><td style={{ color: 'var(--slate)' }}>Total hours</td><td style={{ textAlign: 'right', fontWeight: 600 }}>{fmt(totalHours)} h</td></tr>
             <tr><td style={{ color: 'var(--slate)' }}>Billable</td><td style={{ textAlign: 'right', fontWeight: 600 }}>{fmt(billableHours)} h</td></tr>
+            <tr><td style={{ color: 'var(--slate)' }}>Partial Billable</td><td style={{ textAlign: 'right', fontWeight: 600 }}>{fmt(partialBillableHours)} h</td></tr>
             <tr><td style={{ color: 'var(--slate)' }}>Non-billable</td><td style={{ textAlign: 'right', fontWeight: 600 }}>{fmt(nonBillable)} h</td></tr>
             <tr><td style={{ color: 'var(--slate)' }}>Task lines</td><td style={{ textAlign: 'right', fontWeight: 600 }}>{entryCount}</td></tr>
             <tr><td style={{ color: 'var(--slate)' }}>Level 1 approver</td><td style={{ textAlign: 'right', fontWeight: 600 }}>{leadName}</td></tr>

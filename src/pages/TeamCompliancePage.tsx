@@ -35,6 +35,8 @@ function TeamComplianceRow({ row, weekStart }: TeamComplianceRowProps) {
   const { data: detail, isLoading: isDetailLoading } = useWeekDetail(row.employeeCode, weekStart, isOpen);
 
   const pctBill = row.totalHours ? Math.round((row.billableHours / row.totalHours) * 100) : 0;
+  const pctPartial = row.totalHours ? Math.round((row.partialBillableHours / row.totalHours) * 100) : 0;
+  const pctNon = Math.max(0, 100 - pctBill - pctPartial);
   const initials = row.fullName.trim().split(/\s+/).slice(0, 2).map((p) => p[0]).join('').toUpperCase();
 
   return (
@@ -66,9 +68,10 @@ function TeamComplianceRow({ row, weekStart }: TeamComplianceRowProps) {
             <>
               <div className={styles.bar}>
                 <i style={{ width: `${pctBill}%`, background: 'var(--oxide)', display: 'block', height: '100%' }} />
-                <i style={{ width: `${100 - pctBill}%`, background: 'var(--slate2, #C7CEDA)', display: 'block', height: '100%' }} />
+                <i style={{ width: `${pctPartial}%`, background: 'var(--violet)', display: 'block', height: '100%' }} />
+                <i style={{ width: `${pctNon}%`, background: 'var(--slate2, #C7CEDA)', display: 'block', height: '100%' }} />
               </div>
-              <div className="num" style={{ fontSize: 10, color: 'var(--slate)', marginTop: 2 }}>{pctBill}% billable</div>
+              <div className="num" style={{ fontSize: 10, color: 'var(--slate)', marginTop: 2 }}>{pctBill}% billable · {pctPartial}% partial</div>
             </>
           ) : <span style={{ color: 'var(--slate2)' }}>-</span>}
         </td>
@@ -100,10 +103,12 @@ export function TeamCompliancePage() {
   const totalHours = rows?.reduce((sum, r) => sum + r.totalHours, 0) ?? 0;
   const totalCapacity = rows?.reduce((sum, r) => sum + r.capacityHours, 0) ?? 0;
   const totalBillable = rows?.reduce((sum, r) => sum + r.billableHours, 0) ?? 0;
+  const totalPartialBillable = rows?.reduce((sum, r) => sum + r.partialBillableHours, 0) ?? 0;
   const submittedCount = rows?.filter((r) => r.status !== 'Draft' && r.status !== 'Rejected' && r.status !== 'NotStarted').length ?? 0;
   const elapsedDays = days.filter((d) => d <= today).length;
   const pctOfCapacity = totalCapacity ? Math.round((totalHours / totalCapacity) * 100) : 0;
   const pctBillable = totalHours ? Math.round((totalBillable / totalHours) * 100) : 0;
+  const pctPartialBillable = totalHours ? Math.round((totalPartialBillable / totalHours) * 100) : 0;
 
   return (
     <>
@@ -136,6 +141,11 @@ export function TeamCompliancePage() {
                 <div className={kpiStyles.k}>Billable share</div>
                 <div className={kpiStyles.v}>{pctBillable}<small>%</small></div>
                 <div className={kpiStyles.d}>{totalBillable.toFixed(0)} h billable of {totalHours.toFixed(0)} h</div>
+              </div>
+              <div className={`${kpiStyles.kpi} ${kpiStyles.p}`}>
+                <div className={kpiStyles.k}>Partial billable share</div>
+                <div className={kpiStyles.v}>{pctPartialBillable}<small>%</small></div>
+                <div className={kpiStyles.d}>{totalPartialBillable.toFixed(0)} h partial of {totalHours.toFixed(0)} h</div>
               </div>
               <div className={`${kpiStyles.kpi} ${submittedCount === rows.length ? kpiStyles.g : kpiStyles.w}`}>
                 <div className={kpiStyles.k}>Submitted</div>

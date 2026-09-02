@@ -45,7 +45,10 @@ export function WeekDetailTable({ item }: { item: ApprovalQueueItemDto }) {
                 </div>
               </td>
               <td>
-                <span className={styles.ft}>{line.isBillable ? 'Bill' : 'Non-b'}</span>
+                <span className={styles.ft}>
+                  {line.classification === 'Billable' ? 'Bill' : line.classification === 'PartialBillable' ? 'Partial' : 'Non-b'}
+                </span>
+                {line.billingCategory && <div style={{ fontSize: 9, color: 'var(--slate2)', marginTop: 2 }}>{line.billingCategory}</div>}
               </td>
               {line.hoursByDay.map((v, i) => {
                 const dayCap = item.dayTypes[i]?.capacityHours ?? 0;

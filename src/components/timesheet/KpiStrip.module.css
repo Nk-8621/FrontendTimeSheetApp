@@ -24,6 +24,7 @@
 }
 .a::before { background: var(--oxide); }
 .g::before { background: var(--verd); }
+.p::before { background: var(--violet); }
 .w::before { background: var(--amber); }
 .r::before { background: var(--clay); }
 .k {

@@ -58,9 +58,9 @@ export function ReportsPage() {
     if (!activeRows.length) return;
     downloadCsv(
       `report-${activeTabMeta[1].toLowerCase().replace(/[^a-z]+/g, '-')}-${weekFrom}-to-${weekTo}.csv`,
-      ['Name', 'Detail', 'Total Hours', 'Billable', 'Non-billable', 'Bill %', 'Resources'],
+      ['Name', 'Detail', 'Total Hours', 'Billable', 'Partial Billable', 'Non-billable', 'Bill %', 'Resources'],
       activeRows.map((r) => [
-        r.key, r.subLabel, r.totalHours, r.billableHours, r.nonBillableHours,
+        r.key, r.subLabel, r.totalHours, r.billableHours, r.partialBillableHours, r.nonBillableHours,
         r.totalHours ? Math.round((r.billableHours / r.totalHours) * 100) : 0, r.resourceCount,
       ]),
     );
@@ -118,6 +118,11 @@ export function ReportsPage() {
                 <div className={kpiStyles.v}>{data.billableHours.toFixed(0)}<small> h</small></div>
                 <div className={kpiStyles.d}>{data.actualHours ? Math.round((data.billableHours / data.actualHours) * 100) : 0}% of actual</div>
               </div>
+              <div className={`${kpiStyles.kpi} ${kpiStyles.p}`}>
+                <div className={kpiStyles.k}>Partial Billable</div>
+                <div className={kpiStyles.v}>{data.totalPartialBillableHours.toFixed(0)}<small> h</small></div>
+                <div className={kpiStyles.d}>{data.actualHours ? Math.round((data.totalPartialBillableHours / data.actualHours) * 100) : 0}% of actual</div>
+              </div>
               <div className={`${kpiStyles.kpi} ${kpiStyles.w}`}>
                 <div className={kpiStyles.k}>Non-billable</div>
                 <div className={kpiStyles.v}>{data.nonBillableHours.toFixed(0)}<small> h</small></div>
@@ -150,6 +155,7 @@ export function ReportsPage() {
                       <th>{activeTabMeta[1].replace(/-wise.*/, '').replace(' / Task', '').replace('Module & ', '')}</th>
                       <th style={{ textAlign: 'right' }}>Total h</th>
                       <th style={{ textAlign: 'right' }}>Billable</th>
+                      <th style={{ textAlign: 'right' }}>Partial</th>
                       <th style={{ textAlign: 'right' }}>Non-bill</th>
                       <th style={{ textAlign: 'right' }}>Bill %</th>
                       <th>Share</th>
@@ -168,6 +174,7 @@ export function ReportsPage() {
                           </td>
                           <td className="num" style={{ textAlign: 'right', fontWeight: 600 }}>{r.totalHours.toFixed(1)}</td>
                           <td className="num" style={{ textAlign: 'right' }}>{r.billableHours.toFixed(1) === '0.0' ? '—' : r.billableHours.toFixed(1)}</td>
+                          <td className="num" style={{ textAlign: 'right' }}>{r.partialBillableHours.toFixed(1) === '0.0' ? '—' : r.partialBillableHours.toFixed(1)}</td>
                           <td className="num" style={{ textAlign: 'right' }}>{r.nonBillableHours.toFixed(1) === '0.0' ? '—' : r.nonBillableHours.toFixed(1)}</td>
                           <td className="num" style={{ textAlign: 'right', fontWeight: 600, color: billPct >= 70 ? 'var(--verd)' : billPct < 40 ? 'var(--amber)' : 'var(--ink2)' }}>
                             {billPct}%
@@ -175,6 +182,7 @@ export function ReportsPage() {
                           <td style={{ width: 170 }}>
                             <div className={styles.shareBar} style={{ width: `${shareWidth}%` }}>
                               <i style={{ width: `${r.totalHours ? (r.billableHours / r.totalHours) * 100 : 0}%`, background: 'var(--oxide)' }} />
+                              <i style={{ width: `${r.totalHours ? (r.partialBillableHours / r.totalHours) * 100 : 0}%`, background: 'var(--violet)' }} />
                               <i style={{ width: `${r.totalHours ? (r.nonBillableHours / r.totalHours) * 100 : 0}%`, background: 'var(--slate2, #C7CEDA)' }} />
                             </div>
                           </td>
@@ -189,6 +197,7 @@ export function ReportsPage() {
 
             <div className={styles.legend}>
               <span><i className={styles.sw} style={{ background: 'var(--oxide)' }} /> Billable</span>
+              <span><i className={styles.sw} style={{ background: 'var(--violet)' }} /> Partial Billable</span>
               <span><i className={styles.sw} style={{ background: 'var(--slate2, #C7CEDA)' }} /> Non-billable</span>
               <span style={{ color: 'var(--slate2)' }}>Billing rates are maintained outside Meridian — this reports hours only.</span>
             </div>
