@@ -58,9 +58,11 @@ export function MyTimesheetPage() {
     );
   }
 
-  function handleToggleBillable(entry: TimeEntryDto) {
+  function handleCycleClassification(entry: TimeEntryDto) {
+    const order: Array<TimeEntryDto['classification']> = ['Billable', 'NonBillable', 'PartialBillable'];
+    const next = order[(order.indexOf(entry.classification) + 1) % order.length];
     mutations.updateEntry.mutate(
-      { id: entry.id, body: { isBillable: !entry.isBillable } },
+      { id: entry.id, body: { classification: next } },
       { onError: (err) => showError(err, 'Could not update billing') },
     );
   }
@@ -132,6 +134,27 @@ export function MyTimesheetPage() {
     });
   }
 
+    function handleDuplicateLine(entryId: number) {
+    const entry = week?.entries.find((e) => e.id === entryId);
+    if (!entry || !week) return;
+    openDrawer({
+      title: 'Add task line',
+      body: (
+        <EntryDrawer
+          dayTypes={week.dayTypes}
+          duplicateFrom={entry}
+          onCancel={closeDrawer}
+          onSave={(data) => {
+            mutations.addEntry.mutate(data, {
+              onSuccess: () => { closeDrawer(); toast('Task line added', 'ok'); },
+              onError: (err) => showError(err, 'Could not add line'),
+            });
+          }}
+        />
+      ),
+    });
+  }
+
   function handleSubmit() {
     if (!week) return;
     openDrawer({
@@ -143,6 +166,7 @@ export function MyTimesheetPage() {
           entryCount={week.entries.length}
           totalHours={week.totalHours}
           billableHours={week.billableHours}
+          partialBillableHours={week.partialBillableHours}
           leadName={leadName}
           l2Name={l2Name}
           onCancel={closeDrawer}
@@ -209,6 +233,7 @@ export function MyTimesheetPage() {
               totalHours={week.totalHours}
               capacityHours={week.capacityHours}
               billableHours={week.billableHours}
+              partialBillableHours={week.partialBillableHours}
               leaveDays={week.dayTypes.filter((d) => d.dayType === 'L').length}
               holidayDays={week.dayTypes.filter((d) => d.dayType === 'H').length}
               wfhDays={week.dayTypes.filter((d) => d.dayType === 'WFH').length}
@@ -222,9 +247,10 @@ export function MyTimesheetPage() {
               editable={week.week.status === 'Draft' || week.week.status === 'Rejected'}
               status={week.week.status}
               onHourChange={handleHourChange}
-              onToggleBillable={handleToggleBillable}
+              onCycleClassification={handleCycleClassification}
               onCycleDayType={handleCycleDayType}
               onEditLine={handleEditLine}
+              onDuplicateLine={handleDuplicateLine}
               onAddLine={handleAddLine}
               onSubmit={handleSubmit}
               canSubmit={canSubmit}

@@ -64,7 +64,7 @@ export function ResetPasswordPage({ identifier, onSuccess, onBackToLogin }: Rese
   return (
     <div className={styles.screen}>
       <form className={styles.card} onSubmit={handleSubmit}>
-        <div className={styles.brand}>MERIDIAN</div>
+        <div className={styles.brand}>CARBYNETECH TIMESHEET</div>
         <h1>Enter your reset code</h1>
         <p>
           If an account exists for <b>{identifier}</b>, a 6-digit code has been sent to its registered email.

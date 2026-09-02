@@ -138,6 +138,9 @@ export interface EmployeeDto {
 /** Monday..Sunday, matching the backend's HoursByDay array order. */
 export type WeekHours = [number, number, number, number, number, number, number];
 
+export type TimeEntryClassification = 'Billable' | 'NonBillable' | 'PartialBillable';
+export type TimeEntryBillingCategory = 'AMS' | 'T&M' | 'FB' | 'OH';
+
 export interface TimeEntryDto {
   id: number;
   employeeCode: string;
@@ -145,7 +148,8 @@ export interface TimeEntryDto {
   projectId: number;
   moduleId: number;
   taskId: number;
-  isBillable: boolean;
+  classification: TimeEntryClassification;
+  billingCategory: TimeEntryBillingCategory | null;
   note: string | null;
   hoursByDay: WeekHours;
 }
@@ -154,7 +158,8 @@ export interface CreateTimeEntryRequest {
   projectId: number;
   moduleId: number;
   taskId: number;
-  isBillable: boolean;
+  classification: TimeEntryClassification;
+  billingCategory: string | null;
   note: string | null;
   hoursByDay: WeekHours;
 }
@@ -163,7 +168,8 @@ export interface UpdateTimeEntryRequest {
   projectId?: number;
   moduleId?: number;
   taskId?: number;
-  isBillable?: boolean;
+  classification?: TimeEntryClassification | null;
+  billingCategory?: string | null;
   note?: string | null;
   hoursByDay?: WeekHours;
 }
@@ -201,6 +207,7 @@ export interface WeekSummaryDto {
   dayTypes: DayTypeDto[];
   totalHours: number;
   billableHours: number;
+  partialBillableHours: number;
   capacityHours: number;
 }
 
@@ -209,6 +216,7 @@ export interface WeekHistoryItemDto {
   status: WeekStatusDto;
   totalHours: number;
   billableHours: number;
+  partialBillableHours: number;
   submittedAt: string | null;
 }
 
@@ -234,6 +242,7 @@ export interface TeamComplianceRowDto {
   dailyDayTypes: ApiDayType[];
   capacityHours: number;
   billableHours: number;
+  partialBillableHours: number;
   nonBillableHours: number;
 }
 
@@ -247,7 +256,8 @@ export interface ApprovalQueueLineDto {
   projectCode: string;
   moduleName: string;
   taskName: string;
-  isBillable: boolean;
+  classification: TimeEntryClassification;
+  billingCategory: TimeEntryBillingCategory | null;
   hoursByDay: WeekHours;
   note: string | null;
 }
@@ -265,6 +275,7 @@ export interface ApprovalQueueItemDto {
   totalHours: number;
   billableHours: number;
   nonBillableHours: number;
+  partialBillableHours: number;
   projectCount: number;
   lineCount: number;
   flags: string[];
@@ -278,6 +289,7 @@ export interface ReportRollupRowDto {
   subLabel: string;
   totalHours: number;
   billableHours: number;
+  partialBillableHours: number;
   nonBillableHours: number;
   resourceCount: number;
 }
@@ -287,6 +299,7 @@ export type ReportApprovalStatus = 'all' | 'sub' | 'ok';
 export interface ReportsSummaryDto {
   actualHours: number;
   billableHours: number;
+  totalPartialBillableHours: number;
   nonBillableHours: number;
   resourcesReporting: number;
   projectsInScope: number;
@@ -304,6 +317,7 @@ export interface ProjectHoursReportRowDto {
   projectName: string;
   accountName: string;
   billableHours: number;
+  partialBillableHours: number;
   nonBillableHours: number;
   totalHours: number;
   employeeCount: number;

@@ -4,6 +4,7 @@ interface KpiStripProps {
   totalHours: number;
   capacityHours: number;
   billableHours: number;
+  partialBillableHours: number;
   leaveDays: number;
   holidayDays: number;
   wfhDays: number;
@@ -11,8 +12,8 @@ interface KpiStripProps {
 
 const fmt = (n: number) => (n ? (Math.round(n * 100) / 100).toString() : '0');
 
-export function KpiStrip({ totalHours, capacityHours, billableHours, leaveDays, holidayDays, wfhDays }: KpiStripProps) {
-  const nonBillable = totalHours - billableHours;
+export function KpiStrip({ totalHours, capacityHours, billableHours, partialBillableHours, leaveDays, holidayDays, wfhDays }: KpiStripProps) {
+  const nonBillable = totalHours - billableHours - partialBillableHours;
   const pctOfCap = capacityHours ? Math.round((totalHours / capacityHours) * 100) : 0;
   const pctBillable = totalHours ? Math.round((billableHours / totalHours) * 100) : 0;
   const gap = Math.max(0, capacityHours - totalHours);
@@ -35,6 +36,15 @@ export function KpiStrip({ totalHours, capacityHours, billableHours, leaveDays, 
           <small> h</small>
         </div>
         <div className={styles.d}>{pctBillable}% of logged hours</div>
+      </div>
+
+      <div className={`${styles.kpi} ${styles.p}`}>
+        <div className={styles.k}>Partial Billable</div>
+        <div className={styles.v}>
+          {fmt(partialBillableHours)}
+          <small> h</small>
+        </div>
+        <div className={styles.d}>{totalHours ? Math.round((partialBillableHours / totalHours) * 100) : 0}% of logged hours</div>
       </div>
 
       <div className={styles.kpi}>

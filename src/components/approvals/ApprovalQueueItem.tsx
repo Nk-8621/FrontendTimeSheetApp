@@ -94,6 +94,7 @@ export function ApprovalQueueItem({ item, level2 }: ApprovalQueueItemProps) {
         <div style={{ minWidth: 120 }}>
           <div className={styles.bar}>
             <i style={{ width: `${item.totalHours ? (item.billableHours / item.totalHours) * 100 : 0}%`, background: 'var(--oxide)', display: 'block', height: '100%' }} />
+            <i style={{ width: `${item.totalHours ? (item.partialBillableHours / item.totalHours) * 100 : 0}%`, background: 'var(--violet)', display: 'block', height: '100%' }} />
             <i style={{ width: `${item.totalHours ? (item.nonBillableHours / item.totalHours) * 100 : 0}%`, background: 'var(--slate2, #C7CEDA)', display: 'block', height: '100%' }} />
           </div>
           <div className={`${styles.mt} num`}>{pctBillable}% billable</div>
@@ -146,7 +147,7 @@ export function ApprovalQueueItem({ item, level2 }: ApprovalQueueItemProps) {
                       {line.note || 'No description'}
                     </div>
                   </td>
-                  <td><span className={`${controls.btn} ${controls.sm}`} style={{ pointerEvents: 'none', padding: '2px 8px', fontSize: 10.5 }}>{line.isBillable ? 'Bill' : 'Non-b'}</span></td>
+                  <td><span className={`${controls.btn} ${controls.sm}`} style={{ pointerEvents: 'none', padding: '2px 8px', fontSize: 10.5 }}>{line.classification === 'Billable' ? 'Bill' : line.classification === 'PartialBillable' ? 'Partial' : 'Non-b'}</span></td>
                   {line.hoursByDay.map((v, i) => {
                     const dayCap = item.dayTypes[i]?.capacityHours ?? 0;
                     const mismatch = dayCap === 0 && v > 0;

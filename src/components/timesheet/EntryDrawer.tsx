@@ -8,6 +8,7 @@ import styles from './EntryDrawer.module.css';
 interface EntryDrawerProps {
   dayTypes: DayTypeDto[];
   existing?: TimeEntryDto;
+  duplicateFrom?: TimeEntryDto;
   onSave: (data: CreateTimeEntryRequest) => void;
   onDelete?: () => void;
   onCancel: () => void;
@@ -18,19 +19,25 @@ const dayMonth = (iso: string) => {
   return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', timeZone: 'UTC' });
 };
 
-export function EntryDrawer({ dayTypes, existing, onSave, onDelete, onCancel }: EntryDrawerProps) {
+export function EntryDrawer({ dayTypes, existing, duplicateFrom, onSave, onDelete, onCancel }: EntryDrawerProps) {
   const { departments, accounts, projects, modules, tasks, accById, projById, modById, taskById, projAccountId, projDeptId } =
     useMasterDataLookup();
 
-  const [dept, setDept] = useState<number | ''>(existing ? projDeptId(existing.projectId) ?? '' : '');
-  const [acc, setAcc] = useState<number | ''>(existing ? projAccountId(existing.projectId) ?? '' : '');
-  const [proj, setProj] = useState<number | ''>(existing?.projectId ?? '');
-  const [mod, setMod] = useState<number | ''>(existing?.moduleId ?? '');
-  const [task, setTask] = useState<number | ''>(existing?.taskId ?? '');
-  const [billable, setBillable] = useState(existing?.isBillable ?? true);
+  const source = existing ?? duplicateFrom;
+
+  const [dept, setDept] = useState<number | ''>(source ? projDeptId(source.projectId) ?? '' : '');
+  const [acc, setAcc] = useState<number | ''>(source ? projAccountId(source.projectId) ?? '' : '');
+  const [proj, setProj] = useState<number | ''>(source?.projectId ?? '');
+  const [mod, setMod] = useState<number | ''>(source?.moduleId ?? '');
+  const [task, setTask] = useState<number | ''>(source?.taskId ?? '');
+  const [classification, setClassification] = useState<'Billable' | 'NonBillable' | 'PartialBillable'>(
+    source?.classification ?? 'Billable',
+  );
+  const [billingCategory, setBillingCategory] = useState<string | null>(source?.billingCategory ?? null);
   const [note, setNote] = useState(existing?.note ?? '');
   const [hours, setHours] = useState<number[]>(existing ? [...existing.hoursByDay] : [0, 0, 0, 0, 0, 0, 0]);
   const [showTaskError, setShowTaskError] = useState(false);
+  const [showNoteError, setShowNoteError] = useState(false);
 
   const accountObj = acc !== '' ? accById(acc) : undefined;
   const projectObj = proj !== '' ? projById(proj) : undefined;
@@ -42,6 +49,11 @@ export function EntryDrawer({ dayTypes, existing, onSave, onDelete, onCancel }: 
   const modulesForProj = proj !== '' ? modules.filter((m) => m.projectId === proj) : [];
   const tasksForMod = mod !== '' ? tasks.filter((t) => t.moduleId === mod) : [];
 
+  function updateClassification(next: 'Billable' | 'NonBillable' | 'PartialBillable') {
+    setClassification(next);
+    setBillingCategory(null);
+  }
+
   function capacityClosed(i: number) {
     const t = dayTypes[i]?.dayType;
     return !(t === 'W' || t === 'WFH');
@@ -52,11 +64,16 @@ export function EntryDrawer({ dayTypes, existing, onSave, onDelete, onCancel }: 
       setShowTaskError(true);
       return;
     }
+    if (note.trim() === '') {
+      setShowNoteError(true);
+      return;
+    }
     onSave({
       projectId: proj as number,
       moduleId: mod as number,
       taskId: task as number,
-      isBillable: billable,
+      classification,
+      billingCategory: classification === 'PartialBillable' ? null : billingCategory,
       note: note.trim() || null,
       hoursByDay: hours as WeekHours,
     });
@@ -104,7 +121,7 @@ export function EntryDrawer({ dayTypes, existing, onSave, onDelete, onCancel }: 
             setAcc(id); setProj(''); setMod(''); setTask('');
             if (id !== '') {
               const a = accById(id);
-              if (a) setBillable(a.accountType !== 'Internal');
+              if (a) updateClassification(a.accountType !== 'Internal' ? 'Billable' : 'NonBillable');
             }
           }}
         >
@@ -131,7 +148,7 @@ export function EntryDrawer({ dayTypes, existing, onSave, onDelete, onCancel }: 
             setProj(id); setMod(''); setTask('');
             if (id !== '') {
               const p = projById(id);
-              if (p) setBillable(p.defaultBillable);
+              if (p) updateClassification(p.defaultBillable ? 'Billable' : 'NonBillable');
             }
           }}
         >
@@ -182,9 +199,23 @@ export function EntryDrawer({ dayTypes, existing, onSave, onDelete, onCancel }: 
       <div className={controls.field}>
         <label>Classification</label>
         <div className={styles.segBill}>
-          <button className={billable ? styles.on : ''} onClick={() => setBillable(true)}>Billable</button>
-          <button className={!billable ? styles.on : ''} onClick={() => setBillable(false)}>Non-billable</button>
+          <button className={classification === 'Billable' ? styles.on : ''} onClick={() => updateClassification('Billable')}>Billable</button>
+          <button className={classification === 'NonBillable' ? styles.on : ''} onClick={() => updateClassification('NonBillable')}>Non-billable</button>
+          <button className={classification === 'PartialBillable' ? styles.on : ''} onClick={() => updateClassification('PartialBillable')}>Partial Billable</button>
         </div>
+        {classification !== 'PartialBillable' && (
+          <div className={styles.segCat}>
+            {(classification === 'Billable' ? ['AMS', 'T&M', 'FB'] : ['OH']).map((opt) => (
+              <button
+                key={opt}
+                className={billingCategory === opt ? styles.on : ''}
+                onClick={() => setBillingCategory((cur) => (cur === opt ? null : opt))}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+        )}
         {proj !== '' && projectObj && (
           <div className={controls.hint}>
             Project default is {projectObj.defaultBillable ? 'billable' : 'non-billable'} — you can override it for this line.
@@ -221,14 +252,18 @@ export function EntryDrawer({ dayTypes, existing, onSave, onDelete, onCancel }: 
       </div>
 
       <div className={controls.field}>
-        <label>What did you work on?</label>
+        <label>What did you work on? <span className={controls.req}>*</span></label>
         <textarea
           className={controls.textarea}
           value={note}
-          onChange={(e) => setNote(e.target.value)}
+          onChange={(e) => {
+            setNote(e.target.value);
+            setShowNoteError(false);
+          }}
           placeholder="Be specific — this is what your lead reads when approving."
         />
-        <div className={controls.hint}>Required when a line totals 8 hours or more.</div>
+        {showNoteError && <div className={styles.errMsg}>Add a description of what you worked on.</div>}
+        <div className={controls.hint}>Required for every line.</div>
       </div>
 
       <div className={styles.footer}>

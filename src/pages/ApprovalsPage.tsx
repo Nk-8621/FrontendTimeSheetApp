@@ -38,7 +38,9 @@ export function ApprovalsPage({ level2, title }: ApprovalsPageProps) {
   const clean = weekQueue.filter((q) => q.flags.length === 0);
   const totalHours = weekQueue.reduce((sum, q) => sum + q.totalHours, 0);
   const billableHours = weekQueue.reduce((sum, q) => sum + q.billableHours, 0);
+  const partialBillableHours = weekQueue.reduce((sum, q) => sum + q.partialBillableHours, 0);
   const pctBillable = totalHours ? Math.round((billableHours / totalHours) * 100) : 0;
+  const pctPartialBillable = totalHours ? Math.round((partialBillableHours / totalHours) * 100) : 0;
 
   const otherWeeksCount = (queue?.length ?? 0) - weekQueue.length;
 
@@ -96,7 +98,7 @@ export function ApprovalsPage({ level2, title }: ApprovalsPageProps) {
               <div className={`${kpiStyles.kpi} ${kpiStyles.a}`}>
                 <div className={kpiStyles.v}>{totalHours.toFixed(1)}<small> h</small></div>
                 <div className={kpiStyles.k} style={{ order: -1, marginBottom: 3 }}>Hours in queue</div>
-                <div className={kpiStyles.d}>{pctBillable}% billable</div>
+                <div className={kpiStyles.d}>{pctBillable}% billable · {pctPartialBillable}% partial</div>
               </div>
               <div className={`${kpiStyles.kpi} ${kpiStyles.r}`}>
                 <div className={kpiStyles.k}>With flags</div>

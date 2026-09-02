@@ -64,7 +64,7 @@ export function VerifyOtpPage({ employeeCode, onSuccess, onBackToLogin }: Verify
   return (
     <div className={styles.screen}>
       <form className={styles.card} onSubmit={handleSubmit}>
-        <div className={styles.brand}>MERIDIAN</div>
+        <div className={styles.brand}>CARBYNETECH TIMESHEET</div>
         <h1>Verify your email</h1>
         <p>
           We've sent a 6-digit code to the email on file for <b>{employeeCode}</b>. Enter it below along with a new
