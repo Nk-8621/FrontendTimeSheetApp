@@ -16,13 +16,34 @@ import styles from './TeamCompliance.module.css';
 const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const COLUMN_COUNT = 13; // Resource, Department, 7 days, Logged, Cap., Billable split, Status
 
-function cellClass(hours: number, dayType: string) {
+function cellClass(hours: number, dayType: string, leaveHalf: string | null) {
   if (dayType === 'L') return styles.lv;
   if (dayType === 'H') return styles.hd;
+  if (dayType === 'LH' && leaveHalf) return styles.split;
+  if (dayType === 'LH' && hours === 0) return styles.lh;
+  if (dayType === 'WFH' && hours === 0) return styles.wfh;
   if (hours === 0) return styles.z;
   if (hours < 4) return styles.lo;
   if (hours < 8) return styles.md;
   return styles.hi;
+}
+
+// For a half-day-leave cell where we know which half was requested, render
+// a split box: the requested half colored with "L", the other half showing
+// worked hours logged so far (or a dash if none yet). Falls back to the
+// plain "L½" label if the half isn't known for some reason.
+function cellContent(hours: number, dayType: string, leaveHalf: string | null) {
+  if (dayType === 'LH' && leaveHalf) {
+    const leaf = <span key="leaf" className={styles.leaf}>L</span>;
+    const rest = <span key="rest" className={styles.rest}>{hours ? hours.toFixed(1).replace(/\.0$/, '') : '–'}</span>;
+    return leaveHalf === 'LeaveSecondHalf' ? <>{rest}{leaf}</> : <>{leaf}{rest}</>;
+  }
+  if (dayType === 'L') return 'L';
+  if (dayType === 'H') return 'H';
+  if (hours) return hours.toFixed(1).replace(/\.0$/, '');
+  if (dayType === 'LH') return 'L½';
+  if (dayType === 'WFH') return 'WFH';
+  return '·';
 }
 
 interface TeamComplianceRowProps {
@@ -52,13 +73,19 @@ function TeamComplianceRow({ row, weekStart }: TeamComplianceRowProps) {
           </div>
         </td>
         <td style={{ padding: '9px 14px', borderTop: '1px solid var(--rule)', fontSize: 11, color: 'var(--slate)' }}>{row.departmentName}</td>
-        {row.dailyHours.map((h, i) => (
-          <td key={i} style={{ padding: '4px', borderTop: '1px solid var(--rule)', textAlign: 'center' }}>
-            <div className={`${styles.hc} ${cellClass(h, row.dailyDayTypes[i])}`} title={`${DAY_NAMES[i]} - ${row.dailyDayTypes[i]}`}>
-              {row.dailyDayTypes[i] === 'L' ? 'L' : row.dailyDayTypes[i] === 'H' ? 'H' : (h ? h.toFixed(1).replace(/\.0$/, '') : '·')}
-            </div>
-          </td>
-        ))}
+        {row.dailyHours.map((h, i) => {
+          const leaveHalf = row.dailyLeaveHalf[i];
+          return (
+            <td key={i} style={{ padding: '4px', borderTop: '1px solid var(--rule)', textAlign: 'center' }}>
+              <div
+                className={`${styles.hc} ${cellClass(h, row.dailyDayTypes[i], leaveHalf)}`}
+                title={`${DAY_NAMES[i]} - ${row.dailyDayTypes[i]}${leaveHalf ? ` (${leaveHalf})` : ''}`}
+              >
+                {cellContent(h, row.dailyDayTypes[i], leaveHalf)}
+              </div>
+            </td>
+          );
+        })}
         <td className="num" style={{ padding: '9px 14px', borderTop: '1px solid var(--rule)', textAlign: 'right', fontWeight: 600, color: row.totalHours < row.capacityHours ? 'var(--amber)' : undefined }}>
           {row.totalHours.toFixed(1) || '0'}
         </td>
@@ -193,6 +220,8 @@ export function TeamCompliancePage() {
                 <span><i className={styles.sw} style={{ background: '#FCF2E1' }} /> under 4 h</span>
                 <span><i className={styles.sw} style={{ background: '#F1F4F8' }} /> nothing logged</span>
                 <span><i className={styles.sw} style={{ background: 'repeating-linear-gradient(45deg,#FBE9E7 0 4px,#F5D9D6 4px 8px)' }} /> Leave</span>
+                <span><i className={styles.sw} style={{ background: 'repeating-linear-gradient(45deg,#FBE9E7 0 4px,#FCF7F6 4px 8px)' }} /> Half-day leave</span>
+                <span><i className={styles.sw} style={{ background: 'var(--violetTint)', border: '1px solid var(--violetLine)' }} /> WFH</span>
                 <span><i className={styles.sw} style={{ background: 'repeating-linear-gradient(45deg,#FCF2E1 0 4px,#F6E7CB 4px 8px)' }} /> Holiday</span>
               </div>
             </div>

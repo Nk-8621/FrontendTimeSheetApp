@@ -94,6 +94,23 @@
   outline: none;
   border-color: var(--oxide);
 }
+.dayPick label:not(.off) {
+  cursor: pointer;
+}
+.dayPick label.on > span:first-child {
+  color: var(--oxide);
+}
+.dayTileDash {
+  display: block;
+  width: 100%;
+  text-align: center;
+  border: 1px dashed var(--ruleStrong);
+  border-radius: var(--r);
+  padding: 6px 2px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  color: var(--slate2);
+}
 
 .footer {
   display: flex;
