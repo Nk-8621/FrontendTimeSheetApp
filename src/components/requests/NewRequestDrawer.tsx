@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { DayTypeRequestType } from '../../api/types';
 import { DAY_TYPE_REQUEST_LABELS } from '../../types/meridian';
-import { toISO } from '../../lib/dates';
+import { toISO, parseISO } from '../../lib/dates';
 import controls from '../../styles/controls.module.css';
 import styles from '../timesheet/EntryDrawer.module.css';
 
@@ -19,8 +19,20 @@ const TYPE_HINTS: Record<DayTypeRequestType, string> = {
   LeaveFull: 'The whole day counts as leave — no task hours needed.',
 };
 
+// Mirrors DayTypeRequestService.SubmitAsync's earliest-allowed-date check on
+// the backend: a month back from today, clamped like .NET's DateOnly.AddMonths
+// (e.g. one month back from Mar 31 is Feb 28/29, not Mar 3).
+function oneMonthAgo(todayISO: string): string {
+  const d = parseISO(todayISO);
+  const targetMonthIndex = d.getMonth() - 1;
+  const lastDayOfTargetMonth = new Date(d.getFullYear(), targetMonthIndex + 1, 0).getDate();
+  const day = Math.min(d.getDate(), lastDayOfTargetMonth);
+  return toISO(new Date(d.getFullYear(), targetMonthIndex, day));
+}
+
 export function NewRequestDrawer({ onSave, onCancel }: NewRequestDrawerProps) {
   const today = toISO(new Date());
+  const earliestDate = oneMonthAgo(today);
   const [date, setDate] = useState(today);
   const [requestType, setRequestType] = useState<DayTypeRequestType>('WFH');
   const [note, setNote] = useState('');
@@ -28,7 +40,7 @@ export function NewRequestDrawer({ onSave, onCancel }: NewRequestDrawerProps) {
   const [showNoteError, setShowNoteError] = useState(false);
 
   function handleSave() {
-    if (!date || date < today) {
+    if (!date || date < earliestDate) {
       setShowDateError(true);
       return;
     }
@@ -47,10 +59,10 @@ export function NewRequestDrawer({ onSave, onCancel }: NewRequestDrawerProps) {
           type="date"
           className={controls.textInput}
           value={date}
-          min={today}
+          min={earliestDate}
           onChange={(e) => { setDate(e.target.value); setShowDateError(false); }}
         />
-        {showDateError && <div className={styles.errMsg}>Pick today or a future day — a past day can't be requested.</div>}
+        {showDateError && <div className={styles.errMsg}>Pick a date within the last month, or a future day.</div>}
       </div>
 
       <div className={controls.field}>
