@@ -38,6 +38,8 @@ export function EntryDrawer({ dayTypes, existing, duplicateFrom, onSave, onDelet
   const [hours, setHours] = useState<number[]>(existing ? [...existing.hoursByDay] : [0, 0, 0, 0, 0, 0, 0]);
   const [showTaskError, setShowTaskError] = useState(false);
   const [showNoteError, setShowNoteError] = useState(false);
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const [showDayError, setShowDayError] = useState(false);
 
   const accountObj = acc !== '' ? accById(acc) : undefined;
   const projectObj = proj !== '' ? projById(proj) : undefined;
@@ -49,6 +51,15 @@ export function EntryDrawer({ dayTypes, existing, duplicateFrom, onSave, onDelet
   const modulesForProj = proj !== '' ? modules.filter((m) => m.projectId === proj) : [];
   const tasksForMod = mod !== '' ? tasks.filter((t) => t.moduleId === mod) : [];
 
+  // Days this line currently has hours on. An existing line with at least
+  // one such day is locked to it/them — adjust the value, but logging this
+  // task on a different day goes through the duplicate (⧉) button instead.
+  // A brand-new/duplicated line (or an existing line that's still all-zero,
+  // e.g. one just carried forward from last week) has none yet, so it gets
+  // the interactive picker so exactly one day can be chosen.
+  const claimedDays = hours.map((h, i) => (h > 0 ? i : -1)).filter((i) => i >= 0);
+  const pickMode = !existing || claimedDays.length === 0;
+
   function updateClassification(next: 'Billable' | 'NonBillable' | 'PartialBillable') {
     setClassification(next);
     setBillingCategory(null);
@@ -56,12 +67,18 @@ export function EntryDrawer({ dayTypes, existing, duplicateFrom, onSave, onDelet
 
   function capacityClosed(i: number) {
     const t = dayTypes[i]?.dayType;
-    return !(t === 'W' || t === 'WFH');
+    // LH (half-day leave) still has 4h available to work - only full leave,
+    // holiday and weekly off are actually closed to entry.
+    return !(t === 'W' || t === 'WFH' || t === 'LH');
   }
 
   function handleSave() {
     if (task === '') {
       setShowTaskError(true);
+      return;
+    }
+    if (pickMode && selectedDay === null) {
+      setShowDayError(true);
       return;
     }
     if (note.trim() === '') {
@@ -224,31 +241,70 @@ export function EntryDrawer({ dayTypes, existing, duplicateFrom, onSave, onDelet
       </div>
 
       <div className={controls.field}>
-        <label>Hours by day</label>
+        <label>{pickMode ? 'Which day is this for?' : 'Hours'} {pickMode && <span className={controls.req}>*</span>}</label>
         <div className={styles.dayPick}>
           {dayTypes.map((dt, i) => {
             const closed = capacityClosed(i);
+            if (!pickMode) {
+              if (!claimedDays.includes(i)) return null;
+              return (
+                <label key={dt.date} title={dayMonth(dt.date)}>
+                  <span>{DAY_NAMES[i].slice(0, 2)}</span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={hours[i] || ''}
+                    placeholder="·"
+                    onChange={(e) => {
+                      let v = parseFloat(e.target.value);
+                      if (Number.isNaN(v) || v < 0) v = 0;
+                      v = Math.min(4, v);
+                      setHours((h) => h.map((x, idx) => (idx === i ? v : x)));
+                    }}
+                  />
+                </label>
+              );
+            }
+            const selected = selectedDay === i;
             return (
-              <label key={dt.date} className={closed ? styles.off : ''} title={dayMonth(dt.date)}>
+              <label
+                key={dt.date}
+                className={`${closed ? styles.off : ''} ${selected ? styles.on : ''}`}
+                title={dayMonth(dt.date)}
+                onClick={() => {
+                  if (closed || i === selectedDay) return;
+                  setHours([0, 0, 0, 0, 0, 0, 0]);
+                  setSelectedDay(i);
+                  setShowDayError(false);
+                }}
+              >
                 <span>{DAY_NAMES[i].slice(0, 2)}</span>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  readOnly={closed}
-                  value={hours[i] || ''}
-                  placeholder="·"
-                  onChange={(e) => {
-                    let v = parseFloat(e.target.value);
-                    if (Number.isNaN(v) || v < 0) v = 0;
-                    v = Math.min(4, v);
-                    setHours((h) => h.map((x, idx) => (idx === i ? v : x)));
-                  }}
-                />
+                {selected ? (
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={hours[i] || ''}
+                    placeholder="·"
+                    onChange={(e) => {
+                      let v = parseFloat(e.target.value);
+                      if (Number.isNaN(v) || v < 0) v = 0;
+                      v = Math.min(4, v);
+                      setHours((h) => h.map((x, idx) => (idx === i ? v : x)));
+                    }}
+                  />
+                ) : (
+                  <span className={styles.dayTileDash}>{closed ? '—' : '·'}</span>
+                )}
               </label>
             );
           })}
         </div>
-        <div className={controls.hint}>Maximum 4 hours per day for a single task line. Days marked leave, holiday or weekly off are closed for entry.</div>
+        {showDayError && <div className={styles.errMsg}>Select which day this task line is for.</div>}
+        <div className={controls.hint}>
+          {pickMode
+            ? 'Pick one day for this task line — up to 4 hours. Days marked leave, holiday or weekly off are closed for entry. To log this task on another day, save this line first and then use the duplicate (⧉) button.'
+            : 'Maximum 4 hours per day. To log this task on a different day, use the duplicate (⧉) button on the week grid instead.'}
+        </div>
       </div>
 
       <div className={controls.field}>

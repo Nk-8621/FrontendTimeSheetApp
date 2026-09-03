@@ -7,8 +7,10 @@ export type RoleId = 'EMP' | 'LEAD' | 'L2' | 'ADMIN';
 export const NAV_GROUPS: Record<string, { group: string; icon: string; title: string }> = {
   ts: { group: 'My Work', icon: '▤', title: 'My Timesheet' },
   hist: { group: 'My Work', icon: '❐', title: 'My Timesheets' },
+  req: { group: 'My Work', icon: '✋', title: 'Requests' },
   ap1: { group: 'Approvals', icon: '✓', title: 'Level 1 Approvals' },
   ap2: { group: 'Approvals', icon: '✓✓', title: 'Level 2 Approvals' },
+  reqap: { group: 'Approvals', icon: '✋✓', title: 'Request Approval' },
   team: { group: 'Oversight', icon: '▦', title: 'Team Compliance' },
   rep: { group: 'Oversight', icon: '◫', title: 'Reports' },
   mast: { group: 'Setup', icon: '⚙', title: 'Master Data' },
@@ -22,8 +24,22 @@ export const DAY_TYPE_LABELS: Record<string, { css: string; label: string }> = {
   W: { css: '', label: 'Working' },
   WFH: { css: 'wfh', label: 'WFH' },
   L: { css: 'lv', label: 'Leave' },
+  LH: { css: 'lv', label: 'Half-day Leave' },
   H: { css: 'hd', label: 'Holiday' },
   O: { css: '', label: 'Weekly Off' },
+};
+
+export const DAY_TYPE_REQUEST_LABELS: Record<string, string> = {
+  WFH: 'WFH',
+  LeaveFirstHalf: 'Leave - First Half',
+  LeaveSecondHalf: 'Leave - Second Half',
+  LeaveFull: 'Full-day Leave',
+};
+
+export const DAY_TYPE_REQUEST_STATUS_LABELS: Record<string, { css: string; label: string }> = {
+  Pending: { css: 'p-l1', label: 'Pending' },
+  Approved: { css: 'p-ok', label: 'Approved' },
+  Rejected: { css: 'p-rej', label: 'Rejected' },
 };
 
 // Keys match the backend's WeekStatusDto strings exactly (PendingL1/L2, not l1/l2).

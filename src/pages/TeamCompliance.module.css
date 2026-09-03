@@ -20,6 +20,37 @@
   background: repeating-linear-gradient(45deg, #FCF2E1 0 4px, #F6E7CB 4px 8px);
   color: var(--amber);
 }
+.hc.wfh {
+  background: var(--violetTint);
+  border: 1px solid var(--violetLine);
+  color: var(--violet);
+}
+.hc.lh {
+  background: repeating-linear-gradient(45deg, #FBE9E7 0 4px, #FCF7F6 4px 8px);
+  color: var(--clay);
+}
+.hc.split {
+  display: flex;
+  align-items: stretch;
+  padding: 0;
+  overflow: hidden;
+}
+.hc.split .leaf,
+.hc.split .rest {
+  flex: 1 1 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 0;
+}
+.hc.split .leaf {
+  background: repeating-linear-gradient(45deg, #FBE9E7 0 4px, #F5D9D6 4px 8px);
+  color: var(--clay);
+}
+.hc.split .rest {
+  background: #FCF7F6;
+  color: var(--ink2);
+}
 
 .legend {
   display: flex;

@@ -10,6 +10,8 @@ import { MyTimesheetPage } from './pages/MyTimesheetPage';
 import { MyTimesheetsPage } from './pages/MyTimesheetsPage';
 import { NotificationsPage } from './pages/NotificationsPage';
 import { ApprovalsPage } from './pages/ApprovalsPage';
+import { RequestsPage } from './pages/RequestsPage';
+import { RequestApprovalPage } from './pages/RequestApprovalPage';
 import { MasterDataPage } from './pages/MasterDataPage';
 import { TeamCompliancePage } from './pages/TeamCompliancePage';
 import { ReportsPage } from './pages/ReportsPage';
@@ -44,10 +46,26 @@ function App() {
                       }
                     />
                     <Route
+                      path="req"
+                      element={
+                        <ProtectedRoute navKey="req">
+                          <RequestsPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
                       path="ap1"
                       element={
                         <ProtectedRoute navKey="ap1">
                           <ApprovalsPage level2={false} title="Level 1 Approvals" />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="reqap"
+                      element={
+                        <ProtectedRoute navKey="reqap">
+                          <RequestApprovalPage />
                         </ProtectedRoute>
                       }
                     />

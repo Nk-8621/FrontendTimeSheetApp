@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { PageHeader } from '../components/layout/PageHeader';
 import { WeekNav } from '../components/timesheet/WeekNav';
 import { StatusPill } from '../components/ui/StatusPill';
+import { DAY_TYPE_REQUEST_STATUS_LABELS } from '../types/meridian';
 import { KpiStrip } from '../components/timesheet/KpiStrip';
 import { Banner } from '../components/timesheet/Banner';
 import { WeekGrid } from '../components/timesheet/WeekGrid';
@@ -64,24 +65,6 @@ export function MyTimesheetPage() {
     mutations.updateEntry.mutate(
       { id: entry.id, body: { classification: next } },
       { onError: (err) => showError(err, 'Could not update billing') },
-    );
-  }
-
-  function handleCycleDayType(date: string) {
-    const dt = week?.dayTypes.find((d) => d.date === date);
-    if (!dt) return;
-    const dow = new Date(date).getUTCDay();
-    if (dow === 0 || dow === 6) {
-      toast("Weekly off days are set automatically and can't be changed here", 'bad');
-      return;
-    }
-    const next = dt.dayType === 'WFH' ? 'W' : 'WFH';
-    mutations.setDayType.mutate(
-      { date, dayType: next },
-      {
-        onSuccess: () => toast(`Day type set to ${next === 'WFH' ? 'WFH' : 'Working'}`),
-        onError: (err) => showError(err, 'Could not change day type'),
-      },
     );
   }
 
@@ -205,6 +188,13 @@ export function MyTimesheetPage() {
           <button className={`${controls.btn} ${controls.sm}`} onClick={() => setWeekStart(thisWeek)}>This week</button>
         )}
         {week && <StatusPill status={week.week.status} />}
+        {week && week.dayTypeRequests
+          .filter((r) => r.status === 'Pending')
+          .map((r) => (
+            <span key={r.id} title={`${r.requestType} requested for ${r.requestDate}`}>
+              <StatusPill status={r.status} labels={DAY_TYPE_REQUEST_STATUS_LABELS} />
+            </span>
+          ))}
     </PageHeader>
 
       <div className="page-content">
@@ -234,7 +224,7 @@ export function MyTimesheetPage() {
               capacityHours={week.capacityHours}
               billableHours={week.billableHours}
               partialBillableHours={week.partialBillableHours}
-              leaveDays={week.dayTypes.filter((d) => d.dayType === 'L').length}
+              leaveDays={week.dayTypes.filter((d) => d.dayType === 'L' || d.dayType === 'LH').length}
               holidayDays={week.dayTypes.filter((d) => d.dayType === 'H').length}
               wfhDays={week.dayTypes.filter((d) => d.dayType === 'WFH').length}
             />
@@ -248,7 +238,6 @@ export function MyTimesheetPage() {
               status={week.week.status}
               onHourChange={handleHourChange}
               onCycleClassification={handleCycleClassification}
-              onCycleDayType={handleCycleDayType}
               onEditLine={handleEditLine}
               onDuplicateLine={handleDuplicateLine}
               onAddLine={handleAddLine}

@@ -174,7 +174,7 @@ export interface UpdateTimeEntryRequest {
   hoursByDay?: WeekHours;
 }
 
-export type ApiDayType = 'W' | 'WFH' | 'L' | 'H' | 'O';
+export type ApiDayType = 'W' | 'WFH' | 'L' | 'LH' | 'H' | 'O';
 
 export interface DayTypeDto {
   date: string;
@@ -201,6 +201,33 @@ export interface WeekRecordDto {
   trail: ApprovalEventDto[];
 }
 
+export type DayTypeRequestType = 'WFH' | 'LeaveFirstHalf' | 'LeaveSecondHalf' | 'LeaveFull';
+export type DayTypeRequestStatus = 'Pending' | 'Approved' | 'Rejected';
+
+export interface DayTypeRequestDto {
+  id: number;
+  employeeCode: string;
+  employeeName: string;
+  requestDate: string;
+  requestType: DayTypeRequestType;
+  status: DayTypeRequestStatus;
+  note: string | null;
+  submittedAt: string;
+  approverName: string | null;
+  decidedAt: string | null;
+  decisionComment: string | null;
+}
+
+export interface CreateDayTypeRequestRequest {
+  date: string;
+  requestType: DayTypeRequestType;
+  note: string | null;
+}
+
+export interface DecideDayTypeRequestRequest {
+  comment: string | null;
+}
+
 export interface WeekSummaryDto {
   week: WeekRecordDto;
   entries: TimeEntryDto[];
@@ -209,6 +236,7 @@ export interface WeekSummaryDto {
   billableHours: number;
   partialBillableHours: number;
   capacityHours: number;
+  dayTypeRequests: DayTypeRequestDto[];
 }
 
 export interface WeekHistoryItemDto {
@@ -240,6 +268,7 @@ export interface TeamComplianceRowDto {
   hasLogged: boolean;
   dailyHours: WeekHours;
   dailyDayTypes: ApiDayType[];
+  dailyLeaveHalf: (DayTypeRequestType | null)[]; // "LeaveFirstHalf"/"LeaveSecondHalf" where dailyDayTypes is 'LH', else null
   capacityHours: number;
   billableHours: number;
   partialBillableHours: number;

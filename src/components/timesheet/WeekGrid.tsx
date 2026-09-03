@@ -16,7 +16,6 @@ interface WeekGridProps {
   status: string; // WeekStatusDto
   onHourChange: (entryId: number, dayIndex: number, value: number) => void;
   onCycleClassification: (entry: TimeEntryDto) => void;
-  onCycleDayType: (date: string) => void;
   onEditLine: (entryId: number) => void;
   onDuplicateLine: (entryId: number) => void;
   onAddLine: () => void;
@@ -38,7 +37,6 @@ export function WeekGrid({
   status,
   onHourChange,
   onCycleClassification,
-  onCycleDayType,
   onEditLine,
   onDuplicateLine,
   onAddLine,
@@ -94,14 +92,9 @@ export function WeekGrid({
                       <div className={styles.dn}>{DAY_NAMES[i]}</div>
                       <div className={styles.dd}>{new Date(d).getUTCDate()}</div>
                     </div>
-                    <button
-                      className={`${styles.dtBtn} ${styles[DAY_TYPE_LABELS[t].css] ?? ''}`}
-                      disabled={!editable}
-                      title={editable ? 'Click to change day type' : 'Locked'}
-                      onClick={() => onCycleDayType(d)}
-                    >
+                    <span className={`${styles.dtBtn} ${styles[DAY_TYPE_LABELS[t].css] ?? ''}`}>
                       {DAY_TYPE_LABELS[t].label}
-                    </button>
+                    </span>
                     <div className={`${styles.capBar} ${capClass}`}>
                       <i style={{ width: `${pct}%` }} />
                     </div>
@@ -248,7 +241,8 @@ export function WeekGrid({
           <span><i className={`${styles.sw} ${styles.pb}`} /> Partial Billable</span>
           <span><i className={`${styles.sw} ${styles.n}`} /> Non-billable</span>
           <span><i className={styles.sw} style={{ background: 'var(--violetTint)', border: '1px solid var(--violetLine)' }} /> WFH</span>
-          <span><i className={styles.sw} style={{ background: 'repeating-linear-gradient(45deg,#FBE9E7 0 4px,#F5D9D6 4px 8px)' }} /> Leave (from Keka)</span>
+          <span><i className={styles.sw} style={{ background: 'repeating-linear-gradient(45deg,#FBE9E7 0 4px,#F5D9D6 4px 8px)' }} /> Leave (Keka or an approved/pending full-day request)</span>
+          <span><i className={styles.sw} style={{ background: 'repeating-linear-gradient(45deg,#FBE9E7 0 4px,#FCF7F6 4px 8px)' }} /> Half-day leave (still open for 4h)</span>
           <span><i className={styles.sw} style={{ background: 'repeating-linear-gradient(45deg,#FCF2E1 0 4px,#F6E7CB 4px 8px)' }} /> Holiday</span>
         </div>
         <div style={{ flex: 1 }} />
