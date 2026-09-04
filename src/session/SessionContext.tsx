@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
+import { useMsal } from '@azure/msal-react';
 import { getStoredAuth, clearStoredAuth, setAccessTokenGetter } from '../api/authBridge';
 import { useAccessProfile, useEmployee } from '../hooks/api/useEmployees';
 
@@ -20,6 +21,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   // By the time this mounts, LoginGate has already confirmed a real login
   // happened and stored the resulting session — see auth/LoginGate.tsx.
   const [employeeCode] = useState(() => getStoredAuth()?.employeeCode ?? '');
+  const { instance } = useMsal();
 
   const { data: access, isLoading } = useAccessProfile(employeeCode);
   const { data: employee } = useEmployee(employeeCode);
@@ -28,7 +30,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   function logout() {
     clearStoredAuth();
     setAccessTokenGetter(null);
-    window.location.reload(); // simplest reliable way back to LoginGate's login screen
+    // Ends the Microsoft/Entra session too (not just this app's local
+    // state) - otherwise MSAL would silently sign back in from its own
+    // cache the moment LoginGate re-checks isAuthenticated.
+    instance.logoutRedirect();
   }
 
   const value: SessionValue = {

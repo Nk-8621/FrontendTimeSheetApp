@@ -1,94 +1,92 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useMsal, useIsAuthenticated } from '@azure/msal-react';
 import { isAzureConfigured, loginRequest } from './authConfig';
-import { getStoredAuth, storeAuth, setAccessTokenGetter, type StoredAuth } from '../api/authBridge';
-import { LoginPage } from './LoginPage';
-import { VerifyOtpPage } from './VerifyOtpPage';
-import { RequestPasswordResetPage } from './RequestPasswordResetPage';
-import { ResetPasswordPage } from './ResetPasswordPage';
+import { storeAuth, setAccessTokenGetter } from '../api/authBridge';
+import { employeesApi } from '../api/employees';
+import { ApiError } from '../api/httpClient';
 import styles from './LoginGate.module.css';
 
 export function LoginGate({ children }: { children: ReactNode }) {
   if (!isAzureConfigured()) {
-    return <DevLoginGate>{children}</DevLoginGate>;
+    return <NotConfiguredScreen />;
   }
 
   return <AzureGate>{children}</AzureGate>;
 }
 
-type Screen =
-  | { step: 'login' }
-  | { step: 'verify-otp'; employeeCode: string }
-  | { step: 'forgot-password-request' }
-  | { step: 'forgot-password-reset'; identifier: string };
-
-function DevLoginGate({ children }: { children: ReactNode }) {
-  const [auth, setAuth] = useState<StoredAuth | null>(() => getStoredAuth());
-  const [screen, setScreen] = useState<Screen>({ step: 'login' });
-
-  useEffect(() => {
-    if (auth) setAccessTokenGetter(async () => getStoredAuth()?.token ?? null);
-  }, [auth]);
-
-  function handleSuccess(employeeCode: string, token: string, expiresAtUtc: string, fullName: string) {
-    const newAuth: StoredAuth = { token, expiresAtUtc, employeeCode, fullName };
-    storeAuth(newAuth);
-    setAccessTokenGetter(async () => getStoredAuth()?.token ?? null);
-    setAuth(newAuth);
-  }
-
-  if (!auth) {
-    if (screen.step === 'verify-otp') {
-      return (
-        <VerifyOtpPage
-          employeeCode={screen.employeeCode}
-          onSuccess={handleSuccess}
-          onBackToLogin={() => setScreen({ step: 'login' })}
-        />
-      );
-    }
-
-    if (screen.step === 'forgot-password-request') {
-      return (
-        <RequestPasswordResetPage
-          onSubmitted={(identifier) => setScreen({ step: 'forgot-password-reset', identifier })}
-          onBackToLogin={() => setScreen({ step: 'login' })}
-        />
-      );
-    }
-
-    if (screen.step === 'forgot-password-reset') {
-      return (
-        <ResetPasswordPage
-          identifier={screen.identifier}
-          onSuccess={handleSuccess}
-          onBackToLogin={() => setScreen({ step: 'login' })}
-        />
-      );
-    }
-
-    return (
-      <LoginPage
-        onSuccess={handleSuccess}
-        onRequiresOtpVerification={(employeeCode) => setScreen({ step: 'verify-otp', employeeCode })}
-        onForgotPassword={() => setScreen({ step: 'forgot-password-request' })}
-      />
-    );
-  }
-
+function NotConfiguredScreen() {
   return (
-    <>
-      {/* <div className={styles.devBanner}>Signed in - OTP-based authentication active.</div> */}
-      {children}
-    </>
+    <div className={styles.screen}>
+      <div className={styles.card}>
+        <div className={styles.brand}>CARBYNETECH TIMESHEET</div>
+        <h1>Microsoft sign-in isn't configured yet</h1>
+        <p>
+          VITE_AZURE_CLIENT_ID and VITE_AZURE_TENANT_ID still need to be set in .env.
+          Contact your admin, or see .env.example for what's needed.
+        </p>
+      </div>
+    </div>
   );
 }
 
-// --- Real Microsoft Entra login - dormant until VITE_AZURE_CLIENT_ID /
-// VITE_AZURE_TENANT_ID are configured. Kept as-is; not part of this change. ---
+/** Real Microsoft Entra login - the only login path. Once the sign-in
+ * redirect completes, this acquires an API access token, resolves this
+ * account's employee identity via GET /api/employees/me (which is what
+ * actually links this Entra account to an Employee record on first sign-in
+ * - see CurrentUserService on the backend), and only then renders children
+ * - so everything under here (SessionContext included) can assume a
+ * confirmed, resolved identity already exists. */
 function AzureGate({ children }: { children: ReactNode }) {
   const isAuthenticated = useIsAuthenticated();
-  const { instance } = useMsal();
+  const { instance, accounts } = useMsal();
+  const [status, setStatus] = useState<'pending' | 'ready' | 'error'>('pending');
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isAuthenticated || accounts.length === 0) return;
+    let cancelled = false;
+    const account = accounts[0];
+
+    setAccessTokenGetter(async () => {
+      try {
+        const result = await instance.acquireTokenSilent({ ...loginRequest, account });
+        return result.accessToken;
+      } catch {
+        // Silent refresh failed (e.g. needs re-consent) - fall back to an
+        // interactive popup rather than losing the whole app to a redirect.
+        try {
+          const result = await instance.acquireTokenPopup(loginRequest);
+          return result.accessToken;
+        } catch {
+          return null;
+        }
+      }
+    });
+
+    (async () => {
+      try {
+        const me = await employeesApi.getMe();
+        if (cancelled) return;
+        storeAuth({
+          token: '', // unused for real requests - the accessTokenGetter above is what httpClient actually calls
+          expiresAtUtc: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+          employeeCode: me.employeeCode,
+          fullName: me.fullName,
+        });
+        setStatus('ready');
+      } catch (err) {
+        if (cancelled) return;
+        setError(
+          err instanceof ApiError && err.status === 401
+            ? "No employee record found for this Microsoft account. Contact your admin to get set up in Meridian first."
+            : "Couldn't sign you in - please try again, or contact your admin if this keeps happening."
+        );
+        setStatus('error');
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [isAuthenticated, accounts, instance]);
 
   if (!isAuthenticated) {
     return (
@@ -99,6 +97,32 @@ function AzureGate({ children }: { children: ReactNode }) {
           <button className={styles.signInBtn} onClick={() => instance.loginRedirect(loginRequest)}>
             Sign in with Microsoft
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === 'error') {
+    return (
+      <div className={styles.screen}>
+        <div className={styles.card}>
+          <div className={styles.brand}>CARBYNETECH TIMESHEET</div>
+          <h1>Couldn't sign you in</h1>
+          <div className={styles.errMsg}>{error}</div>
+          <button className={styles.signInBtn} onClick={() => instance.logoutRedirect()}>
+            Sign out and try again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === 'pending') {
+    return (
+      <div className={styles.screen}>
+        <div className={styles.card}>
+          <div className={styles.brand}>CARBYNETECH TIMESHEET</div>
+          <p>Signing you in&hellip;</p>
         </div>
       </div>
     );
