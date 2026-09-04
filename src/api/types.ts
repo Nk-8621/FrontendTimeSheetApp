@@ -133,6 +133,7 @@ export interface EmployeeDto {
   managerEmployeeId: number | null;
   managerName: string | null;
   isActive: boolean;
+  primaryAccountId: number | null;
 }
 
 /** Monday..Sunday, matching the backend's HoursByDay array order. */
