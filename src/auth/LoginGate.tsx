@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useMsal, useIsAuthenticated } from '@azure/msal-react';
+import { InteractionStatus } from '@azure/msal-browser';
 import { isAzureConfigured, loginRequest } from './authConfig';
 import { storeAuth, setAccessTokenGetter } from '../api/authBridge';
 import { employeesApi } from '../api/employees';
@@ -38,9 +39,19 @@ function NotConfiguredScreen() {
  * confirmed, resolved identity already exists. */
 function AzureGate({ children }: { children: ReactNode }) {
   const isAuthenticated = useIsAuthenticated();
-  const { instance, accounts } = useMsal();
+  const { instance, accounts, inProgress } = useMsal();
   const [status, setStatus] = useState<'pending' | 'ready' | 'error'>('pending');
   const [error, setError] = useState<string | null>(null);
+
+  // No account signed in yet, and MSAL isn't already mid-redirect (e.g. handling
+  // the callback from Microsoft) - kick off the sign-in redirect automatically
+  // instead of waiting for a button click.
+  useEffect(() => {
+    if (isAuthenticated || inProgress !== InteractionStatus.None) return;
+    instance.loginRedirect(loginRequest).catch(() => {
+      // Swallow - the fallback button on the screen below still lets the user retry.
+    });
+  }, [isAuthenticated, inProgress, instance]);
 
   useEffect(() => {
     if (!isAuthenticated || accounts.length === 0) return;
@@ -93,9 +104,9 @@ function AzureGate({ children }: { children: ReactNode }) {
       <div className={styles.screen}>
         <div className={styles.card}>
           <div className={styles.brand}>CARBYNETECH TIMESHEET</div>
-          <h1>Sign in with Microsoft</h1>
+          <p>Redirecting you to Microsoft sign-in&hellip;</p>
           <button className={styles.signInBtn} onClick={() => instance.loginRedirect(loginRequest)}>
-            Sign in with Microsoft
+            Click here if you're not redirected automatically
           </button>
         </div>
       </div>
