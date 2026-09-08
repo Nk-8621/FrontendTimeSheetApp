@@ -1,21 +1,29 @@
 import { useState } from 'react';
-import type { AccountDto, DepartmentDto, ProjectDto, TaskCategoryDto } from '../../api/types';
+import type { AccountDto, DepartmentDto, EmployeeDto, ProjectDto, ProjectTypeDto } from '../../api/types';
 import controls from '../../styles/controls.module.css';
 import styles from '../timesheet/EntryDrawer.module.css';
+
+/** Fixed, T&M, Consumption, NB-ValueAdd, NB-L&D, NB-Training, NB-Travel, Others
+ * — mirrors MasterDataService.AllowedBillingTypes on the backend (enforced
+ * there, not by a DB constraint — keep the two lists in sync by hand). */
+const BILLING_TYPES = ['Fixed', 'T&M', 'Consumption', 'NB-ValueAdd', 'NB-L&D', 'NB-Training', 'NB-Travel', 'Others'];
 
 interface ProjectDrawerProps {
   existing?: ProjectDto;
   departments: DepartmentDto[];
   accounts: AccountDto[];
-  taskCategories: TaskCategoryDto[];
+  projectTypes: ProjectTypeDto[];
+  employees: EmployeeDto[];
   onSave: (data: {
-    accountId: number; code: string; name: string; defaultBillable: boolean;
-    initialModuleTaskCategoryCode?: string | null; isActive?: boolean;
+    accountId: number; code: string; name: string; defaultBillable: boolean; isActive?: boolean;
+    projectTypeId: number | null;
+    projectTech?: string | null; billingType?: string | null; customerPO?: string | null; notes?: string | null;
+    projectLeadEmployeeId?: number | null; projectManagerEmployeeId?: number | null; deliveryHeadEmployeeId?: number | null;
   }) => void;
   onCancel: () => void;
 }
 
-export function ProjectDrawer({ existing, departments, accounts, taskCategories, onSave, onCancel }: ProjectDrawerProps) {
+export function ProjectDrawer({ existing, departments, accounts, projectTypes, employees, onSave, onCancel }: ProjectDrawerProps) {
   const existingAccount = existing ? accounts.find((a) => a.id === existing.accountId) : undefined;
   const [departmentId, setDepartmentId] = useState<number | ''>(existingAccount?.departmentId ?? '');
   const [accountId, setAccountId] = useState<number | ''>(existing?.accountId ?? '');
@@ -23,8 +31,14 @@ export function ProjectDrawer({ existing, departments, accounts, taskCategories,
   const [code, setCode] = useState(existing?.code ?? '');
   const [billable, setBillable] = useState(existing?.defaultBillable ?? true);
   const [isActive, setIsActive] = useState(existing?.isActive ?? true);
-  const [starterCategory, setStarterCategory] = useState<string>('consult');
-  const [addStarterModule, setAddStarterModule] = useState(true);
+  const [projectTypeId, setProjectTypeId] = useState<number | ''>('');
+  const [projectTech, setProjectTech] = useState(existing?.projectTech ?? '');
+  const [billingType, setBillingType] = useState(existing?.billingType ?? '');
+  const [customerPO, setCustomerPO] = useState(existing?.customerPO ?? '');
+  const [notes, setNotes] = useState(existing?.notes ?? '');
+  const [projectLeadEmployeeId, setProjectLeadEmployeeId] = useState<number | ''>(existing?.projectLeadEmployeeId ?? '');
+  const [projectManagerEmployeeId, setProjectManagerEmployeeId] = useState<number | ''>(existing?.projectManagerEmployeeId ?? '');
+  const [deliveryHeadEmployeeId, setDeliveryHeadEmployeeId] = useState<number | ''>(existing?.deliveryHeadEmployeeId ?? '');
   const [error, setError] = useState('');
 
   const accountsForDept = departmentId !== '' ? accounts.filter((a) => a.departmentId === departmentId) : [];
@@ -40,7 +54,16 @@ export function ProjectDrawer({ existing, departments, accounts, taskCategories,
       name: name.trim(),
       defaultBillable: billable,
       isActive: existing ? isActive : undefined,
-      initialModuleTaskCategoryCode: !existing && addStarterModule ? starterCategory : null,
+      // Ignored by the caller on an update (UpdateProjectRequest has no
+      // projectTypeId field at all) - only meaningful when creating.
+      projectTypeId: projectTypeId === '' ? null : projectTypeId,
+      projectTech: projectTech.trim() || null,
+      billingType: billingType || null,
+      customerPO: customerPO.trim() || null,
+      notes: notes.trim() || null,
+      projectLeadEmployeeId: projectLeadEmployeeId === '' ? null : projectLeadEmployeeId,
+      projectManagerEmployeeId: projectManagerEmployeeId === '' ? null : projectManagerEmployeeId,
+      deliveryHeadEmployeeId: deliveryHeadEmployeeId === '' ? null : deliveryHeadEmployeeId,
     });
   }
 
@@ -72,6 +95,50 @@ export function ProjectDrawer({ existing, departments, accounts, taskCategories,
         <label>Project code <span className={controls.req}>*</span></label>
         <input className={controls.textInput} type="text" value={code} onChange={(e) => setCode(e.target.value)} placeholder="e.g. NML-P2" />
       </div>
+
+      <div className={controls.field}>
+        <label>Project Tech</label>
+        <input className={controls.textInput} type="text" value={projectTech} onChange={(e) => setProjectTech(e.target.value)} placeholder="e.g. Digital IOT, Analytics, SAP Staffing" />
+      </div>
+      <div className={controls.field}>
+        <label>Billing Type</label>
+        <select className={controls.select} value={billingType} onChange={(e) => setBillingType(e.target.value)}>
+          <option value="">Not set</option>
+          {BILLING_TYPES.map((bt) => <option key={bt} value={bt}>{bt}</option>)}
+        </select>
+      </div>
+      <div className={controls.field}>
+        <label>Customer PO</label>
+        <input className={controls.textInput} type="text" value={customerPO} onChange={(e) => setCustomerPO(e.target.value)} placeholder="e.g. PO, Change Request" />
+      </div>
+
+      <div className={controls.field}>
+        <label>Project Lead</label>
+        <select className={controls.select} value={projectLeadEmployeeId} onChange={(e) => setProjectLeadEmployeeId(e.target.value ? Number(e.target.value) : '')}>
+          <option value="">Not set</option>
+          {employees.map((emp) => <option key={emp.id} value={emp.id}>{emp.fullName} ({emp.employeeCode})</option>)}
+        </select>
+      </div>
+      <div className={controls.field}>
+        <label>Project Manager</label>
+        <select className={controls.select} value={projectManagerEmployeeId} onChange={(e) => setProjectManagerEmployeeId(e.target.value ? Number(e.target.value) : '')}>
+          <option value="">Not set</option>
+          {employees.map((emp) => <option key={emp.id} value={emp.id}>{emp.fullName} ({emp.employeeCode})</option>)}
+        </select>
+      </div>
+      <div className={controls.field}>
+        <label>Delivery Head</label>
+        <select className={controls.select} value={deliveryHeadEmployeeId} onChange={(e) => setDeliveryHeadEmployeeId(e.target.value ? Number(e.target.value) : '')}>
+          <option value="">Not set</option>
+          {employees.map((emp) => <option key={emp.id} value={emp.id}>{emp.fullName} ({emp.employeeCode})</option>)}
+        </select>
+      </div>
+
+      <div className={controls.field}>
+        <label>Notes</label>
+        <textarea className={controls.textarea} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="e.g. Started Jan 2024" />
+      </div>
+
       <div className={controls.field}>
         <label>Default classification</label>
         <div className={styles.segBill}>
@@ -92,16 +159,15 @@ export function ProjectDrawer({ existing, departments, accounts, taskCategories,
         </div>
       ) : (
         <div className={controls.field}>
-          <label>
-            <input type="checkbox" checked={addStarterModule} onChange={(e) => setAddStarterModule(e.target.checked)} style={{ marginRight: 6 }} />
-            Create a starter "General" module
-          </label>
-          {addStarterModule && (
-            <select className={controls.select} value={starterCategory} onChange={(e) => setStarterCategory(e.target.value)} style={{ marginTop: 6 }}>
-              {taskCategories.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
-            </select>
-          )}
-          <div className={controls.hint}>Pre-populates a standard task list so the project is usable immediately.</div>
+          <label>Project Type</label>
+          <select className={controls.select} value={projectTypeId} onChange={(e) => setProjectTypeId(e.target.value ? Number(e.target.value) : '')}>
+            <option value="">No type — empty project, add modules manually</option>
+            {projectTypes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+          </select>
+          <div className={controls.hint}>
+            Auto-generates the full Module/Task tree from that type's template, so the project is usable immediately.
+            Manage the templates themselves on the Project Types tab.
+          </div>
         </div>
       )}
 

@@ -1,4 +1,4 @@
-import { useDepartments, useAccounts, useProjects, useModules, useTasks } from './useMasterData';
+import { useDepartments, useAccounts, useProjects, useModules, useTasks, useProjectTypes } from './useMasterData';
 
 /** One hook that pulls in the full reference-data set and returns both the
  * raw lists (for cascading selects) and byId lookup helpers (for display),
@@ -9,14 +9,17 @@ export function useMasterDataLookup() {
   const projects = useProjects();
   const modules = useModules();
   const tasks = useTasks();
+  const projectTypes = useProjectTypes();
 
-  const isLoading = departments.isLoading || accounts.isLoading || projects.isLoading || modules.isLoading || tasks.isLoading;
+  const isLoading =
+    departments.isLoading || accounts.isLoading || projects.isLoading || modules.isLoading || tasks.isLoading || projectTypes.isLoading;
 
   const deptById = (id: number) => departments.data?.find((d) => d.id === id);
   const accById = (id: number) => accounts.data?.find((a) => a.id === id);
   const projById = (id: number) => projects.data?.find((p) => p.id === id);
   const modById = (id: number) => modules.data?.find((m) => m.id === id);
   const taskById = (id: number) => tasks.data?.find((t) => t.id === id);
+  const projectTypeById = (id: number) => projectTypes.data?.find((t) => t.id === id);
 
   const projAccountId = (projectId: number) => projById(projectId)?.accountId;
   const projDeptId = (projectId: number) => {
@@ -31,11 +34,13 @@ export function useMasterDataLookup() {
     projects: projects.data ?? [],
     modules: modules.data ?? [],
     tasks: tasks.data ?? [],
+    projectTypes: projectTypes.data ?? [],
     deptById,
     accById,
     projById,
     modById,
     taskById,
+    projectTypeById,
     projAccountId,
     projDeptId,
     deptName: (id: number) => deptById(id)?.name ?? '—',
@@ -43,5 +48,6 @@ export function useMasterDataLookup() {
     projName: (id: number) => projById(id)?.name ?? '—',
     modName: (id: number) => modById(id)?.name ?? '—',
     taskName: (id: number) => taskById(id)?.name ?? '—',
+    projectTypeName: (id: number) => projectTypeById(id)?.name ?? '—',
   };
 }

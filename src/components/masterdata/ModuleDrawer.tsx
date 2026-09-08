@@ -1,20 +1,20 @@
 import { useState } from 'react';
-import type { ModuleDto, ProjectDto, TaskCategoryDto } from '../../api/types';
+import type { ModuleDto, ProjectDto, ProjectTypeDto } from '../../api/types';
 import controls from '../../styles/controls.module.css';
 import styles from '../timesheet/EntryDrawer.module.css';
 
 interface ModuleDrawerProps {
   existing?: ModuleDto;
   projects: ProjectDto[];
-  taskCategories: TaskCategoryDto[];
-  onSave: (data: { projectId: number; name: string; taskCategoryCode: string }) => void;
+  projectTypes: ProjectTypeDto[];
+  onSave: (data: { projectId: number; name: string; projectTypeId: number | null }) => void;
   onCancel: () => void;
 }
 
-export function ModuleDrawer({ existing, projects, taskCategories, onSave, onCancel }: ModuleDrawerProps) {
+export function ModuleDrawer({ existing, projects, projectTypes, onSave, onCancel }: ModuleDrawerProps) {
   const [projectId, setProjectId] = useState<number | ''>(existing?.projectId ?? '');
   const [name, setName] = useState(existing?.name ?? '');
-  const [taskCategoryCode, setTaskCategoryCode] = useState(existing?.taskCategoryCode ?? taskCategories[0]?.code ?? '');
+  const [projectTypeId, setProjectTypeId] = useState<number | ''>(existing?.projectTypeId ?? '');
   const [error, setError] = useState('');
 
   function handleSave() {
@@ -22,7 +22,7 @@ export function ModuleDrawer({ existing, projects, taskCategories, onSave, onCan
       setError('Project and module name are both required.');
       return;
     }
-    onSave({ projectId, name: name.trim(), taskCategoryCode });
+    onSave({ projectId, name: name.trim(), projectTypeId: projectTypeId === '' ? null : projectTypeId });
   }
 
   return (
@@ -39,11 +39,12 @@ export function ModuleDrawer({ existing, projects, taskCategories, onSave, onCan
         <input className={controls.textInput} type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. FICO Assessment" />
       </div>
       <div className={controls.field}>
-        <label>Task category</label>
-        <select className={controls.select} value={taskCategoryCode} onChange={(e) => setTaskCategoryCode(e.target.value)}>
-          {taskCategories.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
+        <label>Project Type</label>
+        <select className={controls.select} value={projectTypeId} onChange={(e) => setProjectTypeId(e.target.value ? Number(e.target.value) : '')}>
+          <option value="">None</option>
+          {projectTypes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
         </select>
-        <div className={controls.hint}>Determines the style of task names typically added under this module.</div>
+        <div className={controls.hint}>Lineage only — which template (if any) this module traces back to. Not required.</div>
       </div>
       {error && <div className={styles.errMsg}>{error}</div>}
       <div className={styles.footer}>

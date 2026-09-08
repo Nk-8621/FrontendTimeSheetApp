@@ -4,6 +4,10 @@ import type {
   CreateAccountRequest, UpdateAccountRequest, CreateProjectRequest, UpdateProjectRequest,
   CreateModuleRequest, UpdateModuleRequest, CreateTaskRequest, UpdateTaskRequest,
   CreateHolidayRequest, UpdateHolidayRequest,
+  CreateProjectTypeRequest, UpdateProjectTypeRequest, DeleteProjectTypeRequest,
+  CreateProjectTypeModuleTemplateRequest, UpdateProjectTypeModuleTemplateRequest,
+  CreateProjectTypeTaskTemplateRequest, UpdateProjectTypeTaskTemplateRequest,
+  QuickAddProjectRequest, QuickAddModuleRequest, QuickAddTaskRequest,
 } from '../../api/types';
 
 // Reference data changes rarely — cached for 5 minutes so switching screens
@@ -46,8 +50,20 @@ export function useHolidays() {
   return useQuery({ queryKey: ['holidays'], queryFn: masterDataApi.getHolidays, staleTime: STALE_TIME_MS });
 }
 
-export function useTaskCategories() {
-  return useQuery({ queryKey: ['task-categories'], queryFn: masterDataApi.getTaskCategories, staleTime: STALE_TIME_MS });
+export function useProjectTypes() {
+  return useQuery({ queryKey: ['project-types'], queryFn: masterDataApi.getProjectTypes, staleTime: STALE_TIME_MS });
+}
+
+/** Admin-only — the full Level-1/Level-2 template tree, for the Project Type
+ * management screen. Kept as a separate query from useProjectTypes() (the
+ * plain Code/Name list every dropdown uses) since only one screen needs the
+ * full tree and it's a heavier fetch. */
+export function useProjectTypesWithTemplates() {
+  return useQuery({
+    queryKey: ['project-types', 'with-templates'],
+    queryFn: masterDataApi.getProjectTypesWithTemplates,
+    staleTime: STALE_TIME_MS,
+  });
 }
 
 /** All Master Data admin mutations, bundled together — each invalidates
@@ -105,11 +121,80 @@ export function useMasterDataMutations() {
     onSuccess: () => invalidate('holidays'),
   });
 
+  // ---- Project Type template management ----
+  const createProjectType = useMutation({
+    mutationFn: (body: CreateProjectTypeRequest) => masterDataApi.createProjectType(body),
+    onSuccess: () => invalidate('project-types'),
+  });
+  const updateProjectType = useMutation({
+    mutationFn: ({ id, body }: { id: number; body: UpdateProjectTypeRequest }) => masterDataApi.updateProjectType(id, body),
+    onSuccess: () => invalidate('project-types'),
+  });
+  const deleteProjectType = useMutation({
+    mutationFn: ({ id, body }: { id: number; body: DeleteProjectTypeRequest }) => masterDataApi.deleteProjectType(id, body),
+    // Reassigning affected Projects to a replacement type changes their
+    // ProjectTypeId too, so the Projects list needs a refetch as well.
+    onSuccess: () => invalidate('project-types', 'projects'),
+  });
+
+  const createModuleTemplate = useMutation({
+    mutationFn: (body: CreateProjectTypeModuleTemplateRequest) => masterDataApi.createModuleTemplate(body),
+    onSuccess: () => invalidate('project-types'),
+  });
+  const updateModuleTemplate = useMutation({
+    mutationFn: ({ id, body }: { id: number; body: UpdateProjectTypeModuleTemplateRequest }) => masterDataApi.updateModuleTemplate(id, body),
+    onSuccess: () => invalidate('project-types'),
+  });
+  const deleteModuleTemplate = useMutation({
+    mutationFn: (id: number) => masterDataApi.deleteModuleTemplate(id),
+    onSuccess: () => invalidate('project-types'),
+  });
+
+  const createTaskTemplate = useMutation({
+    mutationFn: (body: CreateProjectTypeTaskTemplateRequest) => masterDataApi.createTaskTemplate(body),
+    onSuccess: () => invalidate('project-types'),
+  });
+  const updateTaskTemplate = useMutation({
+    mutationFn: ({ id, body }: { id: number; body: UpdateProjectTypeTaskTemplateRequest }) => masterDataApi.updateTaskTemplate(id, body),
+    onSuccess: () => invalidate('project-types'),
+  });
+  const deleteTaskTemplate = useMutation({
+    mutationFn: (id: number) => masterDataApi.deleteTaskTemplate(id),
+    onSuccess: () => invalidate('project-types'),
+  });
+
   return {
     createAccount, updateAccount,
     createProject, updateProject,
     createModule, updateModule,
     createTask, updateTask,
     createHoliday, updateHoliday, deleteHoliday,
+    createProjectType, updateProjectType, deleteProjectType,
+    createModuleTemplate, updateModuleTemplate, deleteModuleTemplate,
+    createTaskTemplate, updateTaskTemplate, deleteTaskTemplate,
   };
+}
+
+/** "Others" quick-add — reachable from Add Task Line by any authenticated
+ * employee, not just admins. Invalidates the same query keys the admin
+ * mutations do, so the newly created record shows up everywhere immediately
+ * (including back on the Master Data screen, flagged needsReview). */
+export function useQuickAddMutations() {
+  const queryClient = useQueryClient();
+  const invalidate = (...keys: string[]) => keys.forEach((k) => queryClient.invalidateQueries({ queryKey: [k] }));
+
+  const quickAddProject = useMutation({
+    mutationFn: (body: QuickAddProjectRequest) => masterDataApi.quickAddProject(body),
+    onSuccess: () => invalidate('projects'),
+  });
+  const quickAddModule = useMutation({
+    mutationFn: (body: QuickAddModuleRequest) => masterDataApi.quickAddModule(body),
+    onSuccess: () => invalidate('modules'),
+  });
+  const quickAddTask = useMutation({
+    mutationFn: (body: QuickAddTaskRequest) => masterDataApi.quickAddTask(body),
+    onSuccess: () => invalidate('tasks'),
+  });
+
+  return { quickAddProject, quickAddModule, quickAddTask };
 }

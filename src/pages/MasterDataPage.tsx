@@ -3,27 +3,31 @@ import { PageHeader } from '../components/layout/PageHeader';
 import { Banner } from '../components/timesheet/Banner';
 import { useUI } from '../components/ui/UIProvider';
 import {
-  useDepartments, useAccounts, useProjects, useModules, useTasks, useHolidays, useTaskCategories, useMasterDataMutations,
+  useDepartments, useAccounts, useProjects, useModules, useTasks, useHolidays, useProjectTypes, useProjectTypesWithTemplates,
+  useMasterDataMutations,
 } from '../hooks/api/useMasterData';
 import {
   useAllEmployees, useManager, useSkipManager, useSetPrimaryAccount,
   useCreateEmployee, useDeactivateEmployee, useReactivateEmployee,
 } from '../hooks/api/useEmployees';
 import { ApiError } from '../api/httpClient';
-import type { AccountDto, ModuleDto, ProjectDto, WorkTaskDto, HolidayDto } from '../api/types';
+import type { AccountDto, ModuleDto, ProjectDto, WorkTaskDto, HolidayDto, ProjectTypeDto } from '../api/types';
 import { AccountDrawer } from '../components/masterdata/AccountDrawer';
 import { ProjectDrawer } from '../components/masterdata/ProjectDrawer';
 import { ModuleDrawer } from '../components/masterdata/ModuleDrawer';
 import { TaskDrawer } from '../components/masterdata/TaskDrawer';
 import { HolidayDrawer } from '../components/masterdata/HolidayDrawer';
 import { EmployeeDrawer } from '../components/masterdata/EmployeeDrawer';
+import { ProjectTypeDrawer } from '../components/masterdata/ProjectTypeDrawer';
+import { ProjectTypeTemplateDrawer } from '../components/masterdata/ProjectTypeTemplateDrawer';
 import controls from '../styles/controls.module.css';
+import drawerStyles from '../components/timesheet/EntryDrawer.module.css';
 import styles from './MasterData.module.css';
 
-type Tab = 'dept' | 'acc' | 'proj' | 'mod' | 'task' | 'res' | 'hol';
+type Tab = 'dept' | 'acc' | 'proj' | 'mod' | 'task' | 'ptype' | 'res' | 'hol';
 const TABS: [Tab, string][] = [
   ['dept', 'Departments'], ['acc', 'Customers & Internal'], ['proj', 'Projects'],
-  ['mod', 'Modules'], ['task', 'Tasks'], ['res', 'Resources'], ['hol', 'Holiday calendar'],
+  ['mod', 'Modules'], ['task', 'Tasks'], ['ptype', 'Project Types'], ['res', 'Resources'], ['hol', 'Holiday calendar'],
 ];
 
 /** A tab's table content, wrapped in the wireframe's card + record-count
@@ -49,13 +53,19 @@ export function MasterDataPage() {
   const modules = useModules();
   const tasks = useTasks();
   const holidays = useHolidays();
-  const taskCategories = useTaskCategories();
+  const projectTypes = useProjectTypes();
+  // Not in the isLoading/isError arrays below on purpose: it's admin-gated
+  // (403 for non-admins), and a non-admin merely viewing this page should
+  // still see every other tab fine — only project-type-template mutations
+  // are meant to fail for them. Its own loading/error state is handled
+  // locally inside the 'ptype' tab render instead.
+  const projectTypesWithTemplates = useProjectTypesWithTemplates();
   const employees = useAllEmployees();
   const mutations = useMasterDataMutations();
   const createEmployee = useCreateEmployee();
 
-  const isLoading = [departments, accounts, projects, modules, tasks, holidays, taskCategories, employees].some((q) => q.isLoading);
-  const isError = [departments, accounts, projects, modules, tasks, holidays, taskCategories, employees].some((q) => q.isError);
+  const isLoading = [departments, accounts, projects, modules, tasks, holidays, projectTypes, employees].some((q) => q.isLoading);
+  const isError = [departments, accounts, projects, modules, tasks, holidays, projectTypes, employees].some((q) => q.isError);
 
   const deptName = (id: number) => departments.data?.find((d) => d.id === id)?.name ?? '—';
   const accName = (id: number) => accounts.data?.find((a) => a.id === id)?.name ?? '—';
@@ -96,14 +106,15 @@ export function MasterDataPage() {
           existing={existing}
           departments={departments.data ?? []}
           accounts={accounts.data ?? []}
-          taskCategories={taskCategories.data ?? []}
+          projectTypes={projectTypes.data ?? []}
+          employees={employees.data ?? []}
           onCancel={closeDrawer}
           onSave={(data) => {
             const action = existing
               ? mutations.updateProject.mutateAsync({ id: existing.id, body: data })
-              : mutations.createProject.mutateAsync(data);
+              : mutations.createProject.mutateAsync({ ...data, projectTypeId: data.projectTypeId });
             action
-              .then(() => { closeDrawer(); toast(existing ? 'Project updated' : 'Project created with a starter module — it is now selectable on the grid', 'ok'); })
+              .then(() => { closeDrawer(); toast(existing ? 'Project updated' : 'Project created — its module/task tree is now selectable on the grid', 'ok'); })
               .catch((err) => showError(err, 'Could not save this project'));
           }}
         />
@@ -118,16 +129,87 @@ export function MasterDataPage() {
         <ModuleDrawer
           existing={existing}
           projects={projects.data ?? []}
-          taskCategories={taskCategories.data ?? []}
+          projectTypes={projectTypes.data ?? []}
           onCancel={closeDrawer}
           onSave={(data) => {
             const action = existing
-              ? mutations.updateModule.mutateAsync({ id: existing.id, body: { name: data.name, taskCategoryCode: data.taskCategoryCode } })
+              ? mutations.updateModule.mutateAsync({ id: existing.id, body: { name: data.name, projectTypeId: data.projectTypeId } })
               : mutations.createModule.mutateAsync(data);
             action
               .then(() => { closeDrawer(); toast(existing ? 'Module updated' : 'Module created', 'ok'); })
               .catch((err) => showError(err, 'Could not save this module'));
           }}
+        />
+      ),
+    });
+  }
+
+  function handleAddOrEditProjectType(existing?: ProjectTypeDto) {
+    openDrawer({
+      title: existing ? 'Edit Project Type' : 'New Project Type',
+      body: (
+        <ProjectTypeDrawer
+          existing={existing}
+          onCancel={closeDrawer}
+          onSave={(data) => {
+            const action = existing
+              ? mutations.updateProjectType.mutateAsync({ id: existing.id, body: data })
+              : mutations.createProjectType.mutateAsync(data);
+            action
+              .then(() => { closeDrawer(); toast(existing ? 'Project Type updated' : 'Project Type created', 'ok'); })
+              .catch((err) => showError(err, 'Could not save this Project Type'));
+          }}
+        />
+      ),
+    });
+  }
+
+  function handleManageTemplates(type: ProjectTypeDto) {
+    openDrawer({
+      title: `${type.name} — modules & tasks`,
+      body: <ProjectTypeTemplateDrawer projectTypeId={type.id} typeName={type.name} />,
+    });
+  }
+
+  /** Reassign-then-delete: try the plain delete first: if the backend
+   * reports Projects still reference this type, ask which Project Type to
+   * reassign them to and retry with that. */
+  function handleDeleteProjectType(type: ProjectTypeDto) {
+    if (!window.confirm(`Delete the "${type.name}" Project Type? Its module/task templates go with it.`)) return;
+
+    mutations.deleteProjectType.mutate(
+      { id: type.id, body: {} },
+      {
+        onSuccess: () => toast('Project Type deleted', 'ok'),
+        onError: (err) => {
+          if (err instanceof ApiError && /still use this Project Type/i.test(err.message)) {
+            promptReplacementAndDelete(type);
+          } else {
+            showError(err, 'Could not delete this Project Type');
+          }
+        },
+      },
+    );
+  }
+
+  function promptReplacementAndDelete(type: ProjectTypeDto) {
+    const others = (projectTypes.data ?? []).filter((t) => t.id !== type.id);
+    openDrawer({
+      title: `Reassign projects off "${type.name}"`,
+      body: (
+        <ReplacementPicker
+          typeName={type.name}
+          options={others}
+          onConfirm={(replacementId) => {
+            mutations.deleteProjectType.mutate(
+              { id: type.id, body: { replacementProjectTypeId: replacementId } },
+              {
+                onSuccess: () => { closeDrawer(); toast('Projects reassigned and Project Type deleted', 'ok'); },
+                onError: (err) => showError(err, 'Could not delete this Project Type'),
+              },
+            );
+          }}
+          onCancel={closeDrawer}
         />
       ),
     });
@@ -206,6 +288,7 @@ export function MasterDataPage() {
     proj: () => handleAddOrEditProject(),
     mod: () => handleAddOrEditModule(),
     task: () => handleAddOrEditTask(),
+    ptype: () => handleAddOrEditProjectType(),
     res: () => handleAddEmployee(),
     hol: () => handleAddOrEditHoliday(),
   };
@@ -315,6 +398,37 @@ export function MasterDataPage() {
                         <td style={{ color: 'var(--slate)' }}>{modName(t.moduleId)}</td>
                         <td style={{ color: 'var(--slate)' }}>{mod ? projName(mod.projectId) : '—'}</td>
                         <td className={styles.editCol}><button className={styles.editBtn} onClick={() => handleAddOrEditTask(t)}>✎</button></td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </RecordsCard>
+            )}
+
+            {tab === 'ptype' && (
+              <RecordsCard count={projectTypes.data?.length ?? 0}>
+                <thead><tr><th>Name</th><th>Code</th><th style={{ textAlign: 'right' }}>Modules</th><th style={{ textAlign: 'right' }}>Tasks</th><th style={{ textAlign: 'right' }}>Projects using it</th><th style={{ width: 170 }} /></tr></thead>
+                <tbody>
+                  {projectTypesWithTemplates.isError && (
+                    <tr><td colSpan={6} style={{ color: 'var(--clay)', textAlign: 'center', padding: 20 }}>Couldn't load Project Type templates — admin access is required for this tab.</td></tr>
+                  )}
+                  {projectTypes.data?.map((t) => {
+                    const full = projectTypesWithTemplates.data?.find((x) => x.id === t.id);
+                    const moduleCount = full?.modules.length ?? 0;
+                    const taskCount = full?.modules.reduce((sum, m) => sum + m.tasks.length, 0) ?? 0;
+                    const projectCount = projects.data?.filter((p) => p.projectTypeId === t.id).length ?? 0;
+                    return (
+                      <tr key={t.id}>
+                        <td>{t.name}</td>
+                        <td className="num" style={{ color: 'var(--slate)' }}>{t.code}</td>
+                        <td className="num" style={{ textAlign: 'right' }}>{moduleCount}</td>
+                        <td className="num" style={{ textAlign: 'right' }}>{taskCount}</td>
+                        <td className="num" style={{ textAlign: 'right' }}>{projectCount}</td>
+                        <td className={styles.editCol} style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                          <button className={`${controls.btn} ${controls.sm}`} onClick={() => handleManageTemplates(t)}>Templates</button>
+                          <button className={styles.editBtn} onClick={() => handleAddOrEditProjectType(t)}>✎</button>
+                          <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--clay)' }} onClick={() => handleDeleteProjectType(t)}>✕</button>
+                        </td>
                       </tr>
                     );
                   })}
@@ -436,5 +550,45 @@ function ResourceRow({
         )}
       </td>
     </tr>
+  );
+}
+
+/** Small drawer body shown when deleting a Project Type that Projects still
+ * reference — picks the replacement they all get reassigned to before the
+ * delete proceeds (see MasterDataService.DeleteProjectTypeAsync). */
+function ReplacementPicker({
+  typeName, options, onConfirm, onCancel,
+}: {
+  typeName: string;
+  options: ProjectTypeDto[];
+  onConfirm: (replacementId: number) => void;
+  onCancel: () => void;
+}) {
+  const [replacementId, setReplacementId] = useState<number | ''>('');
+
+  return (
+    <div>
+      <div className={controls.hint} style={{ marginBottom: 10 }}>
+        One or more Projects still use "{typeName}". Pick a Project Type to reassign them to — this only changes
+        which type those Projects point to; their existing Modules and Tasks are untouched.
+      </div>
+      <div className={controls.field}>
+        <label>Reassign affected projects to <span className={controls.req}>*</span></label>
+        <select className={controls.select} value={replacementId} onChange={(e) => setReplacementId(e.target.value ? Number(e.target.value) : '')}>
+          <option value="">Select a Project Type</option>
+          {options.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+        </select>
+      </div>
+      <div className={drawerStyles.footer}>
+        <button
+          className={`${controls.btn} ${controls.pri}`}
+          disabled={replacementId === ''}
+          onClick={() => { if (replacementId !== '') onConfirm(replacementId); }}
+        >
+          Reassign & delete
+        </button>
+        <button className={controls.btn} onClick={onCancel}>Cancel</button>
+      </div>
+    </div>
   );
 }

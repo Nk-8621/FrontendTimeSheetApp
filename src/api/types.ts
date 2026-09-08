@@ -32,20 +32,86 @@ export interface ProjectDto {
   name: string;
   defaultBillable: boolean;
   isActive: boolean;
+  projectTypeId: number | null;
+  projectTypeName: string | null;
+  /** Free-text technology tag (e.g. "Digital IOT", "Analytics") - no fixed list. */
+  projectTech: string | null;
+  billingType: string | null;
+  customerPO: string | null;
+  notes: string | null;
+  /** True for a project auto-created via the "Others" quick-add flow -
+   * missing a real Account/Code/BillingType until admin fills them in. */
+  needsReview: boolean;
+  projectLeadEmployeeId: number | null;
+  projectLeadEmployeeName: string | null;
+  projectManagerEmployeeId: number | null;
+  projectManagerEmployeeName: string | null;
+  deliveryHeadEmployeeId: number | null;
+  deliveryHeadEmployeeName: string | null;
 }
 
-export interface TaskCategoryDto {
+// ---- Project Type + its Level-1/Level-2 template ----
+
+export interface ProjectTypeDto {
   id: number;
   code: string;
   name: string;
 }
 
-// export interface HolidayDto {
-//   id: number;
-//   date: string;
-//   name: string;
-//   location: string;
-// }
+export interface ProjectTypeTaskTemplateDto {
+  id: number;
+  name: string;
+  sortOrder: number;
+}
+
+export interface ProjectTypeModuleTemplateDto {
+  id: number;
+  name: string;
+  sortOrder: number;
+  tasks: ProjectTypeTaskTemplateDto[];
+}
+
+/** Full tree for the admin Project Type template-management screen. */
+export interface ProjectTypeWithTemplateDto {
+  id: number;
+  code: string;
+  name: string;
+  modules: ProjectTypeModuleTemplateDto[];
+}
+
+export interface CreateProjectTypeRequest {
+  code: string;
+  name: string;
+}
+export interface UpdateProjectTypeRequest {
+  code?: string;
+  name?: string;
+}
+/** Deleting a Project Type that any Project still uses requires picking a
+ * replacement up front - every affected Project gets reassigned to
+ * replacementProjectTypeId before the delete proceeds. */
+export interface DeleteProjectTypeRequest {
+  replacementProjectTypeId?: number | null;
+}
+
+export interface CreateProjectTypeModuleTemplateRequest {
+  projectTypeId: number;
+  name: string;
+  sortOrder: number;
+}
+export interface UpdateProjectTypeModuleTemplateRequest {
+  name?: string;
+  sortOrder?: number;
+}
+export interface CreateProjectTypeTaskTemplateRequest {
+  projectTypeModuleTemplateId: number;
+  name: string;
+  sortOrder: number;
+}
+export interface UpdateProjectTypeTaskTemplateRequest {
+  name?: string;
+  sortOrder?: number;
+}
 
 // ---- Admin-only create/update requests (Master Data screen) ----
 
@@ -65,27 +131,44 @@ export interface CreateProjectRequest {
   code: string;
   name: string;
   defaultBillable: boolean;
-  /** If supplied, auto-creates a starter "General" module pre-populated with
-   * that category's task list (matching the original wireframe). Pass
-   * undefined/null to create an empty project with no modules yet. */
-  initialModuleTaskCategoryCode?: string | null;
+  /** If supplied, auto-generates the full real Module(L1)/Task(L2) tree from
+   * that type's template under the new project. Pass null to create an
+   * empty project with no modules yet. */
+  projectTypeId: number | null;
+  projectTech?: string | null;
+  billingType?: string | null;
+  customerPO?: string | null;
+  notes?: string | null;
+  projectLeadEmployeeId?: number | null;
+  projectManagerEmployeeId?: number | null;
+  deliveryHeadEmployeeId?: number | null;
 }
+/** No projectTypeId here on purpose - changing a project's type after
+ * creation isn't supported from this form (Modules/Tasks it already
+ * generated would need reconciling; not something admin does casually). */
 export interface UpdateProjectRequest {
   accountId?: number;
   code?: string;
   name?: string;
   defaultBillable?: boolean;
   isActive?: boolean;
+  projectTech?: string | null;
+  billingType?: string | null;
+  customerPO?: string | null;
+  notes?: string | null;
+  projectLeadEmployeeId?: number | null;
+  projectManagerEmployeeId?: number | null;
+  deliveryHeadEmployeeId?: number | null;
 }
 
 export interface CreateModuleRequest {
   projectId: number;
   name: string;
-  taskCategoryCode: string;
+  projectTypeId: number | null;
 }
 export interface UpdateModuleRequest {
   name?: string;
-  taskCategoryCode?: string;
+  projectTypeId?: number | null;
 }
 
 export interface CreateTaskRequest {
@@ -112,11 +195,31 @@ export interface ModuleDto {
   id: number;
   projectId: number;
   name: string;
-  taskCategoryCode: string;
+  projectTypeId: number | null;
+  projectTypeCode: string | null;
 }
 
 export interface WorkTaskDto {
   id: number;
+  moduleId: number;
+  name: string;
+}
+
+// ---- "Others" quick-add (Add Task Line, employee-reachable) ----
+
+/** Employee picked "Others" for Project and typed a name. Creates a real,
+ * immediately-usable Project: placeholder code, flagged needsReview so
+ * admin can fill in the real Account/Code/BillingType/ProjectType later. */
+export interface QuickAddProjectRequest {
+  name: string;
+}
+/** Employee picked "Others" for Module. Not part of any Project Type's
+ * template - projectTypeId stays null on the created Module. */
+export interface QuickAddModuleRequest {
+  projectId: number;
+  name: string;
+}
+export interface QuickAddTaskRequest {
   moduleId: number;
   name: string;
 }
