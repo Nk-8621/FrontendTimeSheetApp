@@ -3,27 +3,33 @@ import { PageHeader } from '../components/layout/PageHeader';
 import { Banner } from '../components/timesheet/Banner';
 import { useUI } from '../components/ui/UIProvider';
 import {
-  useDepartments, useAccounts, useProjects, useModules, useTasks, useHolidays, useTaskCategories, useMasterDataMutations,
+  useDepartments, useAccounts, useProjects, useModules, useTasks, useHolidays, useProjectTypes, useMasterDataMutations,
+  useProjectResourceAllocations, useAllocatedEmployees,
 } from '../hooks/api/useMasterData';
 import {
   useAllEmployees, useManager, useSkipManager, useSetPrimaryAccount,
   useCreateEmployee, useDeactivateEmployee, useReactivateEmployee,
+  useEmployeeProjectAllocations, useSetEmployeeProjectAllocations,
 } from '../hooks/api/useEmployees';
 import { ApiError } from '../api/httpClient';
-import type { AccountDto, ModuleDto, ProjectDto, WorkTaskDto, HolidayDto } from '../api/types';
+import type { AccountDto, ModuleDto, ProjectDto, ProjectTypeDto, WorkTaskDto, HolidayDto } from '../api/types';
 import { AccountDrawer } from '../components/masterdata/AccountDrawer';
 import { ProjectDrawer } from '../components/masterdata/ProjectDrawer';
 import { ModuleDrawer } from '../components/masterdata/ModuleDrawer';
 import { TaskDrawer } from '../components/masterdata/TaskDrawer';
 import { HolidayDrawer } from '../components/masterdata/HolidayDrawer';
 import { EmployeeDrawer } from '../components/masterdata/EmployeeDrawer';
+import { ProjectTypeDrawer } from '../components/masterdata/ProjectTypeDrawer';
+import { ProjectTypeTemplateDrawer } from '../components/masterdata/ProjectTypeTemplateDrawer';
+import { EmployeeAllocationsDrawer } from '../components/masterdata/EmployeeAllocationsDrawer';
 import controls from '../styles/controls.module.css';
 import styles from './MasterData.module.css';
 
-type Tab = 'dept' | 'acc' | 'proj' | 'mod' | 'task' | 'res' | 'hol';
+type Tab = 'dept' | 'acc' | 'proj' | 'mod' | 'task' | 'ptype' | 'res' | 'palloc' | 'hol';
 const TABS: [Tab, string][] = [
   ['dept', 'Departments'], ['acc', 'Customers & Internal'], ['proj', 'Projects'],
-  ['mod', 'Modules'], ['task', 'Tasks'], ['res', 'Resources'], ['hol', 'Holiday calendar'],
+  ['mod', 'Modules'], ['task', 'Tasks'], ['ptype', 'Project Types'],
+  ['res', 'Resources'], ['palloc', 'Resource Allocation'], ['hol', 'Holiday calendar'],
 ];
 
 /** A tab's table content, wrapped in the wireframe's card + record-count
@@ -31,7 +37,9 @@ const TABS: [Tab, string][] = [
 function RecordsCard({ count, children }: { count: number; children: ReactNode }) {
   return (
     <div className={styles.card}>
-      <table className={styles.plainTable}>{children}</table>
+      <div className={styles.tableScroll}>
+        <table className={styles.plainTable}>{children}</table>
+      </div>
       <div className={styles.gridFoot}>
         <span>{count} record{count !== 1 ? 's' : ''}</span>
       </div>
@@ -49,13 +57,13 @@ export function MasterDataPage() {
   const modules = useModules();
   const tasks = useTasks();
   const holidays = useHolidays();
-  const taskCategories = useTaskCategories();
+  const projectTypes = useProjectTypes();
   const employees = useAllEmployees();
   const mutations = useMasterDataMutations();
   const createEmployee = useCreateEmployee();
 
-  const isLoading = [departments, accounts, projects, modules, tasks, holidays, taskCategories, employees].some((q) => q.isLoading);
-  const isError = [departments, accounts, projects, modules, tasks, holidays, taskCategories, employees].some((q) => q.isError);
+  const isLoading = [departments, accounts, projects, modules, tasks, holidays, projectTypes, employees].some((q) => q.isLoading);
+  const isError = [departments, accounts, projects, modules, tasks, holidays, projectTypes, employees].some((q) => q.isError);
 
   const deptName = (id: number) => departments.data?.find((d) => d.id === id)?.name ?? '—';
   const accName = (id: number) => accounts.data?.find((a) => a.id === id)?.name ?? '—';
@@ -96,18 +104,56 @@ export function MasterDataPage() {
           existing={existing}
           departments={departments.data ?? []}
           accounts={accounts.data ?? []}
-          taskCategories={taskCategories.data ?? []}
+          projectTypes={projectTypes.data ?? []}
+          employees={employees.data ?? []}
           onCancel={closeDrawer}
-          onSave={(data) => {
-            const action = existing
-              ? mutations.updateProject.mutateAsync({ id: existing.id, body: data })
-              : mutations.createProject.mutateAsync(data);
-            action
-              .then(() => { closeDrawer(); toast(existing ? 'Project updated' : 'Project created with a starter module — it is now selectable on the grid', 'ok'); })
-              .catch((err) => showError(err, 'Could not save this project'));
+          onSave={async (data) => {
+            const { newProjectType, ...rest } = data;
+            let typeCreated = false;
+            try {
+              let projectTypeId = rest.projectTypeId;
+              if (newProjectType) {
+                const createdType = await mutations.createProjectType.mutateAsync({
+                  code: newProjectType.code, name: newProjectType.name,
+                });
+                typeCreated = true;
+                for (const [modIdx, mod] of newProjectType.modules.entries()) {
+                  const createdModule = await mutations.createModuleTemplate.mutateAsync({
+                    projectTypeId: createdType.id, name: mod.name, sortOrder: (modIdx + 1) * 10,
+                  });
+                  for (const [taskIdx, taskName] of mod.tasks.entries()) {
+                    await mutations.createTaskTemplate.mutateAsync({
+                      projectTypeModuleTemplateId: createdModule.id, name: taskName, sortOrder: (taskIdx + 1) * 10,
+                    });
+                  }
+                }
+                projectTypeId = createdType.id;
+              }
+              const body = { ...rest, projectTypeId };
+              if (existing) await mutations.updateProject.mutateAsync({ id: existing.id, body });
+              else await mutations.createProject.mutateAsync(body);
+              closeDrawer();
+              toast(existing ? 'Project updated' : 'Project created', 'ok');
+            } catch (err) {
+              showError(err, typeCreated
+                ? 'Created the new project type, but could not finish saving — check the Project Types tab'
+                : 'Could not save this project');
+            }
           }}
         />
       ),
+    });
+  }
+
+  function handleSyncProjectModules(project: ProjectDto) {
+    const confirmed = window.confirm(
+      `Pull in any Modules/Tasks from "${project.projectTypeName ?? 'its Project Type'}" that "${project.name}" doesn't already have?\n\n` +
+      "This only adds what's missing - it never renames or removes any existing Module/Task, so nothing already logged against them is affected.",
+    );
+    if (!confirmed) return;
+    mutations.syncProjectModuleTemplate.mutate(project.id, {
+      onSuccess: () => toast('Modules/Tasks synced from the project type template', 'ok'),
+      onError: (err) => showError(err, 'Could not sync this project\'s Modules/Tasks'),
     });
   }
 
@@ -118,11 +164,11 @@ export function MasterDataPage() {
         <ModuleDrawer
           existing={existing}
           projects={projects.data ?? []}
-          taskCategories={taskCategories.data ?? []}
+          projectTypes={projectTypes.data ?? []}
           onCancel={closeDrawer}
           onSave={(data) => {
             const action = existing
-              ? mutations.updateModule.mutateAsync({ id: existing.id, body: { name: data.name, taskCategoryCode: data.taskCategoryCode } })
+              ? mutations.updateModule.mutateAsync({ id: existing.id, body: { name: data.name, projectTypeId: data.projectTypeId } })
               : mutations.createModule.mutateAsync(data);
             action
               .then(() => { closeDrawer(); toast(existing ? 'Module updated' : 'Module created', 'ok'); })
@@ -181,6 +227,43 @@ export function MasterDataPage() {
     });
   }
 
+  function handleAddOrEditProjectType(existing?: ProjectTypeDto) {
+    openDrawer({
+      title: existing ? 'Edit project type' : 'New project type',
+      body: (
+        <ProjectTypeDrawer
+          existing={existing}
+          otherProjectTypes={(projectTypes.data ?? []).filter((t) => t.id !== existing?.id)}
+          onCancel={closeDrawer}
+          onSave={(data) => {
+            const action = existing
+              ? mutations.updateProjectType.mutateAsync({ id: existing.id, body: data })
+              : mutations.createProjectType.mutateAsync(data);
+            action
+              .then(() => { closeDrawer(); toast(existing ? 'Project type updated' : 'Project type created', 'ok'); })
+              .catch((err) => showError(err, 'Could not save this project type'));
+          }}
+          onDelete={existing ? (replacementProjectTypeId) => {
+            mutations.deleteProjectType.mutate(
+              { id: existing.id, body: { replacementProjectTypeId } },
+              {
+                onSuccess: () => { closeDrawer(); toast('Project type removed'); },
+                onError: (err) => showError(err, 'Could not remove this project type'),
+              },
+            );
+          } : undefined}
+        />
+      ),
+    });
+  }
+
+  function handleManageProjectTypeTemplate(projectType: ProjectTypeDto) {
+    openDrawer({
+      title: `Template — ${projectType.name}`,
+      body: <ProjectTypeTemplateDrawer projectType={projectType} onCancel={closeDrawer} />,
+    });
+  }
+
   function handleAddEmployee() {
     openDrawer({
       title: 'New employee',
@@ -188,6 +271,7 @@ export function MasterDataPage() {
         <EmployeeDrawer
           departments={departments.data ?? []}
           employees={employees.data ?? []}
+          projects={projects.data ?? []}
           onCancel={closeDrawer}
           onSave={(data) => {
             createEmployee.mutate(data, {
@@ -200,13 +284,30 @@ export function MasterDataPage() {
     });
   }
 
+  function handleEditAllocations(employee: { employeeCode: string; fullName: string }) {
+    openDrawer({
+      title: `Projects — ${employee.fullName}`,
+      body: (
+        <EmployeeAllocationsEditor
+          employeeCode={employee.employeeCode}
+          employeeName={employee.fullName}
+          projects={projects.data ?? []}
+          onClose={closeDrawer}
+          onShowError={showError}
+        />
+      ),
+    });
+  }
+
   const addHandlers: Record<Tab, (() => void) | null> = {
     dept: null,
     acc: () => handleAddOrEditAccount(),
     proj: () => handleAddOrEditProject(),
     mod: () => handleAddOrEditModule(),
     task: () => handleAddOrEditTask(),
+    ptype: () => handleAddOrEditProjectType(),
     res: () => handleAddEmployee(),
+    palloc: null,
     hol: () => handleAddOrEditHoliday(),
   };
 
@@ -230,7 +331,7 @@ export function MasterDataPage() {
           <>
             <div className={styles.tabs}>
               {TABS.map(([key, label]) => (
-                <button key={key} className={tab === key ? 'on' : ''} onClick={() => setTab(key)}>{label}</button>
+                <button key={key} className={tab === key ? styles.on : ''} onClick={() => setTab(key)}>{label}</button>
               ))}
             </div>
 
@@ -270,16 +371,33 @@ export function MasterDataPage() {
 
             {tab === 'proj' && (
               <RecordsCard count={projects.data?.length ?? 0}>
-                <thead><tr><th>Code</th><th>Project</th><th>Customer / Internal</th><th>Default type</th><th style={{ textAlign: 'right' }}>Modules</th><th>Status</th><th className={styles.editCol} /></tr></thead>
+                <thead><tr><th>Code</th><th>Project</th><th>Customer / Internal</th><th>Project type</th><th>Default type</th><th>Bill type</th><th>Customer PO</th><th>Project lead</th><th>Project manager</th><th style={{ textAlign: 'right' }}>Modules</th><th>Status</th><th style={{ width: 150 }} /><th className={styles.editCol} /></tr></thead>
                 <tbody>
                   {projects.data?.map((p) => (
                     <tr key={p.id}>
                       <td className="num">{p.code}</td>
                       <td>{p.name}</td>
                       <td style={{ color: 'var(--slate)' }}>{accName(p.accountId)}</td>
+                      <td style={{ color: 'var(--slate)' }}>{p.projectTypeName ?? '—'}</td>
                       <td>{p.defaultBillable ? 'Billable' : 'Non-bill'}</td>
+                      <td style={{ color: 'var(--slate)' }}>{p.billingType ?? '—'}</td>
+                      <td style={{ color: 'var(--slate)' }}>{p.customerPO ?? '—'}</td>
+                      <td style={{ color: 'var(--slate)' }}>{p.projectLeadEmployeeName ?? '—'}</td>
+                      <td style={{ color: 'var(--slate)' }}>{p.projectManagerEmployeeName ?? '—'}</td>
                       <td className="num" style={{ textAlign: 'right' }}>{modules.data?.filter((m) => m.projectId === p.id).length ?? 0}</td>
                       <td style={{ color: p.isActive ? 'var(--verd)' : 'var(--clay)' }}>{p.isActive ? 'Active' : 'Inactive'}</td>
+                      <td>
+                        {p.projectTypeId != null && (
+                          <button
+                            className={`${controls.btn} ${controls.sm}`}
+                            disabled={mutations.syncProjectModuleTemplate.isPending}
+                            onClick={() => handleSyncProjectModules(p)}
+                            title={`Pull in any of ${p.projectTypeName ?? 'this project type'}'s Modules/Tasks this project is missing`}
+                          >
+                            Sync modules
+                          </button>
+                        )}
+                      </td>
                       <td className={styles.editCol}><button className={styles.editBtn} onClick={() => handleAddOrEditProject(p)}>✎</button></td>
                     </tr>
                   ))}
@@ -322,16 +440,35 @@ export function MasterDataPage() {
               </RecordsCard>
             )}
 
-            {tab === 'res' && (
-              <RecordsCard count={employees.data?.length ?? 0}>
-                <thead><tr><th>Resource</th><th>Designation</th><th>Department</th><th>Level 1 approver</th><th>Level 2 approver</th><th>Primary client</th><th>Status</th><th style={{ width: 100 }} /></tr></thead>
+            {tab === 'ptype' && (
+              <RecordsCard count={projectTypes.data?.length ?? 0}>
+                <thead><tr><th>Code</th><th>Project type</th><th style={{ textAlign: 'right' }}>Projects</th><th style={{ width: 140 }} /><th className={styles.editCol} /></tr></thead>
                 <tbody>
-                  {(employees.data ?? []).map((e) => (
-                    <ResourceRow key={e.id} employee={e} deptName={deptName} accounts={accounts.data ?? []} onShowError={showError} />
+                  {projectTypes.data?.map((t) => (
+                    <tr key={t.id}>
+                      <td className="num">{t.code}</td>
+                      <td>{t.name}</td>
+                      <td className="num" style={{ textAlign: 'right' }}>{projects.data?.filter((p) => p.projectTypeId === t.id).length ?? 0}</td>
+                      <td><button className={`${controls.btn} ${controls.sm}`} onClick={() => handleManageProjectTypeTemplate(t)}>Manage template</button></td>
+                      <td className={styles.editCol}><button className={styles.editBtn} onClick={() => handleAddOrEditProjectType(t)}>✎</button></td>
+                    </tr>
                   ))}
                 </tbody>
               </RecordsCard>
             )}
+
+            {tab === 'res' && (
+              <RecordsCard count={employees.data?.length ?? 0}>
+                <thead><tr><th>Resource</th><th>Designation</th><th>Department</th><th>Level 1 approver</th><th>Level 2 approver</th><th>Primary client</th><th>Status</th><th style={{ width: 160 }} /></tr></thead>
+                <tbody>
+                  {(employees.data ?? []).map((e) => (
+                    <ResourceRow key={e.id} employee={e} deptName={deptName} accounts={accounts.data ?? []} onShowError={showError} onEditAllocations={handleEditAllocations} />
+                  ))}
+                </tbody>
+              </RecordsCard>
+            )}
+
+            {tab === 'palloc' && <ResourceAllocationsPanel />}
 
             {tab === 'hol' && (
               <RecordsCard count={holidays.data?.length ?? 0}>
@@ -362,12 +499,13 @@ interface ResourceEmployee {
 }
 
 function ResourceRow({
-  employee, deptName, accounts, onShowError,
+  employee, deptName, accounts, onShowError, onEditAllocations,
 }: {
   employee: ResourceEmployee;
   deptName: (id: number) => string;
   accounts: AccountDto[];
   onShowError: (err: unknown, fallback: string) => void;
+  onEditAllocations: (employee: { employeeCode: string; fullName: string }) => void;
 }) {
   const { data: manager } = useManager(employee.employeeCode);
   const { data: skipManager } = useSkipManager(employee.employeeCode);
@@ -425,16 +563,113 @@ function ResourceRow({
         {employee.isActive ? 'Active' : 'Inactive'}
       </td>
       <td>
-        {employee.isActive ? (
-          <button className={`${controls.btn} ${controls.sm} ${controls.dgr}`} onClick={handleDeactivate} disabled={deactivate.isPending}>
-            Deactivate
+        <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+          <button className={`${controls.btn} ${controls.sm}`} onClick={() => onEditAllocations(employee)}>
+            Projects
           </button>
-        ) : (
-          <button className={`${controls.btn} ${controls.sm}`} onClick={handleReactivate} disabled={reactivate.isPending}>
-            Reactivate
-          </button>
-        )}
+          {employee.isActive ? (
+            <button className={`${controls.btn} ${controls.sm} ${controls.dgr}`} onClick={handleDeactivate} disabled={deactivate.isPending}>
+              Deactivate
+            </button>
+          ) : (
+            <button className={`${controls.btn} ${controls.sm}`} onClick={handleReactivate} disabled={reactivate.isPending}>
+              Reactivate
+            </button>
+          )}
+        </div>
       </td>
     </tr>
+  );
+}
+
+/** Wraps EmployeeAllocationsDrawer with the data fetch + save mutation it
+ * needs — kept out of the drawer component itself so that stays presentational. */
+function EmployeeAllocationsEditor({
+  employeeCode, employeeName, projects, onClose, onShowError,
+}: {
+  employeeCode: string;
+  employeeName: string;
+  projects: ProjectDto[];
+  onClose: () => void;
+  onShowError: (err: unknown, fallback: string) => void;
+}) {
+  const { data: currentProjectIds, isLoading } = useEmployeeProjectAllocations(employeeCode);
+  const setAllocations = useSetEmployeeProjectAllocations();
+  const { toast } = useUI();
+
+  function handleSave(projectIds: number[]) {
+    setAllocations.mutate(
+      { employeeCode, body: { projectIds } },
+      {
+        onSuccess: () => { onClose(); toast('Project allocations updated', 'ok'); },
+        onError: (err) => onShowError(err, 'Could not update project allocations'),
+      },
+    );
+  }
+
+  return (
+    <EmployeeAllocationsDrawer
+      employeeName={employeeName}
+      projects={projects}
+      currentProjectIds={currentProjectIds}
+      isLoading={isLoading}
+      isSaving={setAllocations.isPending}
+      onSave={handleSave}
+      onCancel={onClose}
+    />
+  );
+}
+
+/** Admin reporting: resource count per project, with a drill-down to the
+ * actual allocated employees on demand. Loads independently of the rest of
+ * the page (own loading/error state) since it's a separate report query. */
+function ResourceAllocationsPanel() {
+  const { data, isLoading, isError } = useProjectResourceAllocations();
+
+  if (isLoading) return <Banner>Loading resource allocations…</Banner>;
+  if (isError) return <Banner kind="reject">Couldn't load resource allocations — check that you have admin access.</Banner>;
+
+  return (
+    <RecordsCard count={data?.length ?? 0}>
+      <thead><tr><th>Code</th><th>Project</th><th style={{ textAlign: 'right' }}>Resources</th><th className={styles.editCol} /></tr></thead>
+      <tbody>
+        {data?.map((row) => <ProjectAllocationRow key={row.projectId} row={row} />)}
+      </tbody>
+    </RecordsCard>
+  );
+}
+
+function ProjectAllocationRow({ row }: { row: { projectId: number; projectCode: string; projectName: string; resourceCount: number } }) {
+  const [expanded, setExpanded] = useState(false);
+  const { data: allocated, isLoading } = useAllocatedEmployees(expanded ? row.projectId : undefined);
+
+  return (
+    <>
+      <tr>
+        <td className="num">{row.projectCode}</td>
+        <td>{row.projectName}</td>
+        <td className="num" style={{ textAlign: 'right' }}>{row.resourceCount}</td>
+        <td className={styles.editCol}>
+          <button className={styles.editBtn} onClick={() => setExpanded((e) => !e)}>{expanded ? '▾' : '▸'}</button>
+        </td>
+      </tr>
+      {expanded && (
+        <tr>
+          <td colSpan={4} style={{ background: '#FAFBFD', padding: '10px 14px' }}>
+            {isLoading && <span style={{ fontSize: 11.5, color: 'var(--slate)' }}>Loading…</span>}
+            {allocated && allocated.length === 0 && <span style={{ fontSize: 11.5, color: 'var(--slate)' }}>No employees allocated.</span>}
+            {allocated && allocated.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                {allocated.map((e) => (
+                  <span key={e.employeeId} style={{ fontSize: 12 }}>
+                    {e.fullName} <span style={{ color: 'var(--slate)' }}>({e.departmentName})</span>
+                  </span>
+                ))}
+              </div>
+            )}
+          </td>
+        </tr>
+      )}
+    </>
   );
 }

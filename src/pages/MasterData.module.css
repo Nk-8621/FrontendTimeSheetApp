@@ -42,6 +42,12 @@
   color: var(--slate);
 }
 
+/* Lets a wide table (more columns than fit the card) scroll horizontally
+   instead of being clipped by .card's overflow: hidden. */
+.tableScroll {
+  overflow-x: auto;
+}
+
 /* Table meant to sit INSIDE .card — no border/shadow/radius of its own,
    since .card already provides that (avoids doubling up). */
 .plainTable {

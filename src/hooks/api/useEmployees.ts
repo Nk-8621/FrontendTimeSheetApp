@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { employeesApi } from '../../api/employees';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import type { SetEmployeeProjectAllocationsRequest } from '../../api/types';
 
 /** Every employee — backs the Master Data "Resources" tab (read-only). */
 export function useAllEmployees() {
@@ -78,5 +79,27 @@ export function useCreateEmployee() {
   return useMutation({
     mutationFn: employeesApi.create,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['employees'] }),
+  });
+}
+
+/** Project IDs this employee is currently allocated to — pre-ticks the
+ * checkbox list on the allocation editor. */
+export function useEmployeeProjectAllocations(employeeCode: string | undefined) {
+  return useQuery({
+    queryKey: ['employee', employeeCode, 'projects'],
+    queryFn: () => employeesApi.getProjectAllocations(employeeCode!),
+    enabled: Boolean(employeeCode),
+  });
+}
+
+export function useSetEmployeeProjectAllocations() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ employeeCode, body }: { employeeCode: string; body: SetEmployeeProjectAllocationsRequest }) =>
+      employeesApi.setProjectAllocations(employeeCode, body),
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ['employee', vars.employeeCode, 'projects'] });
+      queryClient.invalidateQueries({ queryKey: ['projects', 'resource-allocations'] });
+    },
   });
 }

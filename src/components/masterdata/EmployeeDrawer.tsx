@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import type { DepartmentDto, EmployeeDto } from '../../api/types';
+import type { DepartmentDto, EmployeeDto, ProjectDto } from '../../api/types';
 import controls from '../../styles/controls.module.css';
 import styles from '../timesheet/EntryDrawer.module.css';
 
 interface EmployeeDrawerProps {
   departments: DepartmentDto[];
   employees: EmployeeDto[]; // populates the manager picker
+  projects: ProjectDto[]; // populates the initial-allocation checkbox list
   onSave: (data: {
     fullName: string;
     email: string;
@@ -14,11 +15,12 @@ interface EmployeeDrawerProps {
     departmentId: number;
     isExternal: boolean;
     employeeCode: string | null;
+    projectIds: number[];
   }) => void;
   onCancel: () => void;
 }
 
-export function EmployeeDrawer({ departments, employees, onSave, onCancel }: EmployeeDrawerProps) {
+export function EmployeeDrawer({ departments, employees, projects, onSave, onCancel }: EmployeeDrawerProps) {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [designation, setDesignation] = useState('');
@@ -26,7 +28,12 @@ export function EmployeeDrawer({ departments, employees, onSave, onCancel }: Emp
   const [departmentId, setDepartmentId] = useState<number | ''>('');
   const [isExternal, setIsExternal] = useState(false);
   const [employeeCode, setEmployeeCode] = useState('');
+  const [projectIds, setProjectIds] = useState<number[]>([]);
   const [error, setError] = useState('');
+
+  function toggleProject(id: number) {
+    setProjectIds((prev) => (prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]));
+  }
 
   function handleSave() {
     if (!fullName.trim() || !email.trim() || !designation.trim() || !managerEmployeeCode || !departmentId) {
@@ -45,6 +52,7 @@ export function EmployeeDrawer({ departments, employees, onSave, onCancel }: Emp
       departmentId: Number(departmentId),
       isExternal,
       employeeCode: isExternal ? null : employeeCode.trim(),
+      projectIds,
     });
   }
 
@@ -124,6 +132,20 @@ export function EmployeeDrawer({ departments, employees, onSave, onCancel }: Emp
           ))}
         </select>
         <div className={controls.hint}>This determines who approves their timesheets at Level 1.</div>
+      </div>
+
+      <div className={controls.field}>
+        <label>Allocate to projects</label>
+        <div style={{ maxHeight: 180, overflowY: 'auto', border: '1px solid var(--ruleStrong)', borderRadius: 6, padding: 8 }}>
+          {projects.length === 0 && <div className={controls.hint}>No projects to allocate yet.</div>}
+          {projects.map((p) => (
+            <label key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 0', fontSize: 12.5, cursor: 'pointer' }}>
+              <input type="checkbox" checked={projectIds.includes(p.id)} onChange={() => toggleProject(p.id)} />
+              {p.name} <span style={{ color: 'var(--slate)' }}>[{p.code}]</span>
+            </label>
+          ))}
+        </div>
+        <div className={controls.hint}>Optional — more projects can always be added later from the Resources tab.</div>
       </div>
 
       <div className={styles.footer}>

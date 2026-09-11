@@ -4,6 +4,9 @@ import type {
   CreateAccountRequest, UpdateAccountRequest, CreateProjectRequest, UpdateProjectRequest,
   CreateModuleRequest, UpdateModuleRequest, CreateTaskRequest, UpdateTaskRequest,
   CreateHolidayRequest, UpdateHolidayRequest,
+  CreateProjectTypeRequest, UpdateProjectTypeRequest, DeleteProjectTypeRequest,
+  CreateProjectTypeModuleTemplateRequest, UpdateProjectTypeModuleTemplateRequest,
+  CreateProjectTypeTaskTemplateRequest, UpdateProjectTypeTaskTemplateRequest,
 } from '../../api/types';
 
 // Reference data changes rarely — cached for 5 minutes so switching screens
@@ -46,8 +49,39 @@ export function useHolidays() {
   return useQuery({ queryKey: ['holidays'], queryFn: masterDataApi.getHolidays, staleTime: STALE_TIME_MS });
 }
 
-export function useTaskCategories() {
-  return useQuery({ queryKey: ['task-categories'], queryFn: masterDataApi.getTaskCategories, staleTime: STALE_TIME_MS });
+/** Project Types (Level-0) — replaces the old flat useTaskCategories. */
+export function useProjectTypes() {
+  return useQuery({ queryKey: ['project-types'], queryFn: masterDataApi.getProjectTypes, staleTime: STALE_TIME_MS });
+}
+
+/** One Project Type's full Level-1/Level-2 template tree — backs the
+ * template-management screen for a single selected Project Type. */
+export function useProjectTypeWithTemplate(projectTypeId: number | undefined) {
+  return useQuery({
+    queryKey: ['project-type', projectTypeId, 'template'],
+    queryFn: () => masterDataApi.getProjectTypeWithTemplate(projectTypeId!),
+    enabled: Boolean(projectTypeId),
+  });
+}
+
+/** Every project's current resource count — backs the admin "Resource
+ * Allocation" tab. */
+export function useProjectResourceAllocations() {
+  return useQuery({
+    queryKey: ['projects', 'resource-allocations'],
+    queryFn: masterDataApi.getProjectResourceAllocations,
+    staleTime: 60 * 1000,
+  });
+}
+
+/** Which employees are allocated to one project — backs that tab's
+ * drill-down row. */
+export function useAllocatedEmployees(projectId: number | undefined) {
+  return useQuery({
+    queryKey: ['project', projectId, 'allocated-employees'],
+    queryFn: () => masterDataApi.getAllocatedEmployees(projectId!),
+    enabled: Boolean(projectId),
+  });
 }
 
 /** All Master Data admin mutations, bundled together — each invalidates
@@ -72,6 +106,10 @@ export function useMasterDataMutations() {
   const updateProject = useMutation({
     mutationFn: ({ id, body }: { id: number; body: UpdateProjectRequest }) => masterDataApi.updateProject(id, body),
     onSuccess: () => invalidate('projects'),
+  });
+  const syncProjectModuleTemplate = useMutation({
+    mutationFn: (id: number) => masterDataApi.syncProjectModuleTemplate(id),
+    onSuccess: () => invalidate('projects', 'modules', 'tasks'),
   });
 
   const createModule = useMutation({
@@ -105,11 +143,56 @@ export function useMasterDataMutations() {
     onSuccess: () => invalidate('holidays'),
   });
 
+  // ---- Project Type CRUD ----
+  const createProjectType = useMutation({
+    mutationFn: (body: CreateProjectTypeRequest) => masterDataApi.createProjectType(body),
+    onSuccess: () => invalidate('project-types'),
+  });
+  const updateProjectType = useMutation({
+    mutationFn: ({ id, body }: { id: number; body: UpdateProjectTypeRequest }) => masterDataApi.updateProjectType(id, body),
+    onSuccess: () => invalidate('project-types'),
+  });
+  const deleteProjectType = useMutation({
+    mutationFn: ({ id, body }: { id: number; body: DeleteProjectTypeRequest }) => masterDataApi.deleteProjectType(id, body),
+    onSuccess: () => invalidate('project-types', 'projects', 'modules'),
+  });
+
+  const createModuleTemplate = useMutation({
+    mutationFn: (body: CreateProjectTypeModuleTemplateRequest) => masterDataApi.createModuleTemplate(body),
+    onSuccess: (_, vars) => queryClient.invalidateQueries({ queryKey: ['project-type', vars.projectTypeId, 'template'] }),
+  });
+  const updateModuleTemplate = useMutation({
+    mutationFn: ({ id, body }: { id: number; body: UpdateProjectTypeModuleTemplateRequest }) =>
+      masterDataApi.updateModuleTemplate(id, body),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['project-type'] }),
+  });
+  const deleteModuleTemplate = useMutation({
+    mutationFn: (id: number) => masterDataApi.deleteModuleTemplate(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['project-type'] }),
+  });
+
+  const createTaskTemplate = useMutation({
+    mutationFn: (body: CreateProjectTypeTaskTemplateRequest) => masterDataApi.createTaskTemplate(body),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['project-type'] }),
+  });
+  const updateTaskTemplate = useMutation({
+    mutationFn: ({ id, body }: { id: number; body: UpdateProjectTypeTaskTemplateRequest }) =>
+      masterDataApi.updateTaskTemplate(id, body),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['project-type'] }),
+  });
+  const deleteTaskTemplate = useMutation({
+    mutationFn: (id: number) => masterDataApi.deleteTaskTemplate(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['project-type'] }),
+  });
+
   return {
     createAccount, updateAccount,
-    createProject, updateProject,
+    createProject, updateProject, syncProjectModuleTemplate,
     createModule, updateModule,
     createTask, updateTask,
     createHoliday, updateHoliday, deleteHoliday,
+    createProjectType, updateProjectType, deleteProjectType,
+    createModuleTemplate, updateModuleTemplate, deleteModuleTemplate,
+    createTaskTemplate, updateTaskTemplate, deleteTaskTemplate,
   };
 }
