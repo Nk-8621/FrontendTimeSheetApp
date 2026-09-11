@@ -4,7 +4,7 @@ import type { ExcelImportResult } from './timesheetImportTypes';
 
 // ASSUMPTION — adjust this to match wherever httpClient.ts gets its own base
 // URL from (an env var, a constant, etc.) so this hits the same backend.
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5160';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '';
 
 export const timesheetImportApi = {
   /** Deliberately bypasses the shared `http` JSON helper — file uploads need
@@ -20,7 +20,7 @@ export const timesheetImportApi = {
       headers: { ...authHeaders }, // no Content-Type here — see comment above
       body: formData, // Include employeeCode in the request body if needed 
     });
-      console.log('Response from timesheet import:', response);
+    console.log('Response from timesheet import:', response);
     if (!response.ok) {
       const errorBody = await response.json().catch(() => null);
       throw new ApiError(response.status, errorBody?.title ?? 'Could not import the Excel file.');
