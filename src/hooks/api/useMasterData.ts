@@ -7,6 +7,7 @@ import type {
   CreateProjectTypeRequest, UpdateProjectTypeRequest, DeleteProjectTypeRequest,
   CreateProjectTypeModuleTemplateRequest, UpdateProjectTypeModuleTemplateRequest,
   CreateProjectTypeTaskTemplateRequest, UpdateProjectTypeTaskTemplateRequest,
+  QuickAddProjectRequest, QuickAddModuleRequest, QuickAddTaskRequest,
 } from '../../api/types';
 
 // Reference data changes rarely — cached for 5 minutes so switching screens
@@ -49,18 +50,32 @@ export function useHolidays() {
   return useQuery({ queryKey: ['holidays'], queryFn: masterDataApi.getHolidays, staleTime: STALE_TIME_MS });
 }
 
-/** Project Types (Level-0) — replaces the old flat useTaskCategories. */
+/** Project Types (Level-0) — the plain Code/Name list every dropdown uses. */
 export function useProjectTypes() {
   return useQuery({ queryKey: ['project-types'], queryFn: masterDataApi.getProjectTypes, staleTime: STALE_TIME_MS });
 }
 
-/** One Project Type's full Level-1/Level-2 template tree — backs the
- * template-management screen for a single selected Project Type. */
+/** One Project Type's full Level-1/Level-2 template tree, fetched by itself.
+ * Kept for parity/future use - the template-management screen currently
+ * reads from useProjectTypesWithTemplates() instead (see below) so it stays
+ * in sync across every Project Type at once. */
 export function useProjectTypeWithTemplate(projectTypeId: number | undefined) {
   return useQuery({
     queryKey: ['project-type', projectTypeId, 'template'],
     queryFn: () => masterDataApi.getProjectTypeWithTemplate(projectTypeId!),
     enabled: Boolean(projectTypeId),
+  });
+}
+
+/** Admin-only — the full Level-1/Level-2 template tree, for the Project Type
+ * management screen. Kept as a separate query from useProjectTypes() (the
+ * plain Code/Name list every dropdown uses) since only one screen needs the
+ * full tree and it's a heavier fetch. */
+export function useProjectTypesWithTemplates() {
+  return useQuery({
+    queryKey: ['project-types', 'with-templates'],
+    queryFn: masterDataApi.getProjectTypesWithTemplates,
+    staleTime: STALE_TIME_MS,
   });
 }
 
@@ -105,7 +120,9 @@ export function useMasterDataMutations() {
   });
   const updateProject = useMutation({
     mutationFn: ({ id, body }: { id: number; body: UpdateProjectRequest }) => masterDataApi.updateProject(id, body),
-    onSuccess: () => invalidate('projects'),
+    // A retroactive Project Type classification can populate Modules/Tasks
+    // too, so refresh those alongside the Project itself.
+    onSuccess: () => invalidate('projects', 'modules', 'tasks'),
   });
   const syncProjectModuleTemplate = useMutation({
     mutationFn: (id: number) => masterDataApi.syncProjectModuleTemplate(id),
@@ -143,7 +160,7 @@ export function useMasterDataMutations() {
     onSuccess: () => invalidate('holidays'),
   });
 
-  // ---- Project Type CRUD ----
+  // ---- Project Type template management ----
   const createProjectType = useMutation({
     mutationFn: (body: CreateProjectTypeRequest) => masterDataApi.createProjectType(body),
     onSuccess: () => invalidate('project-types'),
@@ -154,35 +171,35 @@ export function useMasterDataMutations() {
   });
   const deleteProjectType = useMutation({
     mutationFn: ({ id, body }: { id: number; body: DeleteProjectTypeRequest }) => masterDataApi.deleteProjectType(id, body),
+    // Reassigning affected Projects/Modules to a replacement type changes
+    // their ProjectTypeId too, so refetch those alongside the types list.
     onSuccess: () => invalidate('project-types', 'projects', 'modules'),
   });
 
   const createModuleTemplate = useMutation({
     mutationFn: (body: CreateProjectTypeModuleTemplateRequest) => masterDataApi.createModuleTemplate(body),
-    onSuccess: (_, vars) => queryClient.invalidateQueries({ queryKey: ['project-type', vars.projectTypeId, 'template'] }),
+    onSuccess: () => invalidate('project-types'),
   });
   const updateModuleTemplate = useMutation({
-    mutationFn: ({ id, body }: { id: number; body: UpdateProjectTypeModuleTemplateRequest }) =>
-      masterDataApi.updateModuleTemplate(id, body),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['project-type'] }),
+    mutationFn: ({ id, body }: { id: number; body: UpdateProjectTypeModuleTemplateRequest }) => masterDataApi.updateModuleTemplate(id, body),
+    onSuccess: () => invalidate('project-types'),
   });
   const deleteModuleTemplate = useMutation({
     mutationFn: (id: number) => masterDataApi.deleteModuleTemplate(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['project-type'] }),
+    onSuccess: () => invalidate('project-types'),
   });
 
   const createTaskTemplate = useMutation({
     mutationFn: (body: CreateProjectTypeTaskTemplateRequest) => masterDataApi.createTaskTemplate(body),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['project-type'] }),
+    onSuccess: () => invalidate('project-types'),
   });
   const updateTaskTemplate = useMutation({
-    mutationFn: ({ id, body }: { id: number; body: UpdateProjectTypeTaskTemplateRequest }) =>
-      masterDataApi.updateTaskTemplate(id, body),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['project-type'] }),
+    mutationFn: ({ id, body }: { id: number; body: UpdateProjectTypeTaskTemplateRequest }) => masterDataApi.updateTaskTemplate(id, body),
+    onSuccess: () => invalidate('project-types'),
   });
   const deleteTaskTemplate = useMutation({
     mutationFn: (id: number) => masterDataApi.deleteTaskTemplate(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['project-type'] }),
+    onSuccess: () => invalidate('project-types'),
   });
 
   return {
@@ -195,4 +212,28 @@ export function useMasterDataMutations() {
     createModuleTemplate, updateModuleTemplate, deleteModuleTemplate,
     createTaskTemplate, updateTaskTemplate, deleteTaskTemplate,
   };
+}
+
+/** "Others" quick-add — reachable from Add Task Line by any authenticated
+ * employee, not just admins. Invalidates the same query keys the admin
+ * mutations do, so the newly created record shows up everywhere immediately
+ * (including back on the Master Data screen, flagged needsReview). */
+export function useQuickAddMutations() {
+  const queryClient = useQueryClient();
+  const invalidate = (...keys: string[]) => keys.forEach((k) => queryClient.invalidateQueries({ queryKey: [k] }));
+
+  const quickAddProject = useMutation({
+    mutationFn: (body: QuickAddProjectRequest) => masterDataApi.quickAddProject(body),
+    onSuccess: () => invalidate('projects'),
+  });
+  const quickAddModule = useMutation({
+    mutationFn: (body: QuickAddModuleRequest) => masterDataApi.quickAddModule(body),
+    onSuccess: () => invalidate('modules'),
+  });
+  const quickAddTask = useMutation({
+    mutationFn: (body: QuickAddTaskRequest) => masterDataApi.quickAddTask(body),
+    onSuccess: () => invalidate('tasks'),
+  });
+
+  return { quickAddProject, quickAddModule, quickAddTask };
 }

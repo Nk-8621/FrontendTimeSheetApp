@@ -34,10 +34,13 @@ export interface ProjectDto {
   isActive: boolean;
   projectTypeId: number | null;
   projectTypeName: string | null;
+  /** Free-text technology tag (e.g. "Digital IOT", "Analytics") - no fixed list. */
   projectTech: string | null;
   billingType: string | null;
   customerPO: string | null;
   notes: string | null;
+  /** True for a project auto-created via the "Others" quick-add flow -
+   * missing a real Account/Code/BillingType until admin fills them in. */
   needsReview: boolean;
   projectLeadEmployeeId: number | null;
   projectLeadEmployeeName: string | null;
@@ -47,44 +50,81 @@ export interface ProjectDto {
   deliveryHeadEmployeeName: string | null;
 }
 
-/** A Project Type (Level-0) — replaces the old flat TaskCategory. Its
- * Level-1/Level-2 template tree is fetched separately via
- * ProjectTypeWithTemplateDto, since most screens only need id/code/name. */
+export interface ModuleDto {
+  id: number;
+  projectId: number;
+  name: string;
+  projectTypeId: number | null;
+  projectTypeCode: string | null;
+}
+
+export interface WorkTaskDto {
+  id: number;
+  moduleId: number;
+  name: string;
+}
+
+// ---- Project Type + its Level-1/Level-2 template ----
+
 export interface ProjectTypeDto {
   id: number;
   code: string;
   name: string;
 }
 
-export interface ProjectTypeModuleTemplateDto {
-  id: number;
-  projectTypeId: number;
-  name: string;
-  sortOrder: number;
-}
-
 export interface ProjectTypeTaskTemplateDto {
   id: number;
-  projectTypeModuleTemplateId: number;
   name: string;
   sortOrder: number;
 }
 
-/** One Level-1 template row together with its Level-2 (task) children —
- * backs the Project Type template-management screen's tree view. */
-export interface ModuleWithTaskTemplatesDto {
+export interface ProjectTypeModuleTemplateDto {
   id: number;
   name: string;
   sortOrder: number;
   tasks: ProjectTypeTaskTemplateDto[];
 }
 
-/** A Project Type together with its full Level-1/Level-2 template tree. */
+/** Full tree for the admin Project Type template-management screen. */
 export interface ProjectTypeWithTemplateDto {
   id: number;
   code: string;
   name: string;
-  modules: ModuleWithTaskTemplatesDto[];
+  modules: ProjectTypeModuleTemplateDto[];
+}
+
+export interface CreateProjectTypeRequest {
+  code: string;
+  name: string;
+}
+export interface UpdateProjectTypeRequest {
+  code?: string;
+  name?: string;
+}
+/** Deleting a Project Type that any Project/Module still uses requires
+ * picking a replacement up front - every affected Project/Module gets
+ * reassigned to replacementProjectTypeId before the delete proceeds. */
+export interface DeleteProjectTypeRequest {
+  replacementProjectTypeId?: number | null;
+}
+
+export interface CreateProjectTypeModuleTemplateRequest {
+  projectTypeId: number;
+  name: string;
+  sortOrder: number;
+}
+export interface UpdateProjectTypeModuleTemplateRequest {
+  name?: string;
+  sortOrder?: number;
+}
+export interface CreateProjectTypeTaskTemplateRequest {
+  projectTypeModuleTemplateId: number;
+  name: string;
+  sortOrder: number;
+}
+export interface UpdateProjectTypeTaskTemplateRequest {
+  name?: string;
+  sortOrder?: number;
 }
 
 // ---- Admin-only create/update requests (Master Data screen) ----
@@ -119,10 +159,8 @@ export interface CreateProjectRequest {
 }
 /** projectTypeId is retroactive-classification-only — the backend applies
  * it ONLY when the project currently has no projectTypeId (one created
- * before this feature, or without one). It does not auto-create that
- * type's starter Modules/Tasks, and once a project has a projectTypeId
- * this can no longer change it (its Module/Task template has already been
- * applied and shouldn't silently change). */
+ * before this feature, or without one). It does not affect a project that
+ * already has a projectTypeId - that can no longer be changed. */
 export interface UpdateProjectRequest {
   accountId?: number;
   code?: string;
@@ -158,43 +196,14 @@ export interface UpdateTaskRequest {
   name?: string;
 }
 
-export interface CreateProjectTypeRequest {
-  code: string;
-  name: string;
-}
-export interface UpdateProjectTypeRequest {
-  code?: string;
-  name?: string;
-}
-/** replacementProjectTypeId lets an admin reassign every Project/Module
- * currently on this Project Type to another one before it's deleted — omit
- * to just attempt the delete (fails with a clear error if still referenced). */
-export interface DeleteProjectTypeRequest {
-  replacementProjectTypeId?: number | null;
-}
-
-export interface CreateProjectTypeModuleTemplateRequest {
-  projectTypeId: number;
-  name: string;
-  sortOrder: number;
-}
-export interface UpdateProjectTypeModuleTemplateRequest {
-  name?: string;
-}
-export interface CreateProjectTypeTaskTemplateRequest {
-  projectTypeModuleTemplateId: number;
-  name: string;
-  sortOrder: number;
-}
-export interface UpdateProjectTypeTaskTemplateRequest {
-  name?: string;
-}
-
-/** Self-service "Others" quick-add (backend endpoints only — no frontend
- * consumer on this branch yet; kept for parity/future use). */
+/** Self-service "Others" quick-add (Add Task Line, employee-reachable). The
+ * created Project lands in the "Pending Classification" internal account,
+ * flagged needsReview, for an admin to properly classify later. */
 export interface QuickAddProjectRequest {
   name: string;
 }
+/** Not part of any Project Type's template - projectTypeId stays null on
+ * the created Module. */
 export interface QuickAddModuleRequest {
   projectId: number;
   name: string;
@@ -210,24 +219,18 @@ export interface CreateHolidayRequest {
   location: string;
 }
 export interface UpdateHolidayRequest {
-  id : number;
+  id: number;
   holidayDate: string;
   name?: string;
   location?: string;
 }
 
-export interface ModuleDto {
-  id: number;
-  projectId: number;
+export interface HolidayDto {
+  holidayId: number;
+  date: string;
   name: string;
-  projectTypeId: number | null;
-  projectTypeCode: string | null;
-}
-
-export interface WorkTaskDto {
-  id: number;
-  moduleId: number;
-  name: string;
+  location: string;
+  accountId: number | null;
 }
 
 // ---- Project-wise resource allocation (admin reporting) ----
@@ -495,12 +498,4 @@ export interface AccessProfileDto {
   isLevel1ApproverForSomeone: boolean;
   isLevel2ApproverForSomeone: boolean;
   navKeys: string[];
-}
-
-export interface HolidayDto {
-  holidayId: number;
-  date: string;
-  name: string;
-  location: string;
-  accountId: number | null;
 }

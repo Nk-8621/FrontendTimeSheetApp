@@ -8,8 +8,8 @@ import type {
   DepartmentDto, LocationDto, ModuleDto, ProjectDto, WorkTaskDto,
   ProjectTypeDto, ProjectTypeWithTemplateDto,
   CreateProjectTypeRequest, UpdateProjectTypeRequest, DeleteProjectTypeRequest,
-  CreateProjectTypeModuleTemplateRequest, UpdateProjectTypeModuleTemplateRequest, ProjectTypeModuleTemplateDto,
-  CreateProjectTypeTaskTemplateRequest, UpdateProjectTypeTaskTemplateRequest, ProjectTypeTaskTemplateDto,
+  ProjectTypeModuleTemplateDto, CreateProjectTypeModuleTemplateRequest, UpdateProjectTypeModuleTemplateRequest,
+  ProjectTypeTaskTemplateDto, CreateProjectTypeTaskTemplateRequest, UpdateProjectTypeTaskTemplateRequest,
   QuickAddProjectRequest, QuickAddModuleRequest, QuickAddTaskRequest,
   ProjectResourceAllocationDto, AllocatedEmployeeDto,
 } from './types';
@@ -28,17 +28,15 @@ export const masterDataApi = {
   getProjectTypes: () => http.get<ProjectTypeDto[]>('/api/masterdata/project-types'),
   getProjectTypeWithTemplate: (projectTypeId: number) =>
     http.get<ProjectTypeWithTemplateDto>(`/api/masterdata/project-types/${projectTypeId}/template`),
+  /** Admin-only - full Level-1/Level-2 tree for every Project Type at once,
+   * for the template management screen. */
+  getProjectTypesWithTemplates: () => http.get<ProjectTypeWithTemplateDto[]>('/api/masterdata/project-types/with-templates'),
 
   // ---- Project-wise resource allocation reporting (Admin only) ----
   getProjectResourceAllocations: () =>
     http.get<ProjectResourceAllocationDto[]>('/api/masterdata/projects/resource-allocations'),
   getAllocatedEmployees: (projectId: number) =>
     http.get<AllocatedEmployeeDto[]>(`/api/masterdata/projects/${projectId}/allocated-employees`),
-
-  // ---- Self-service "Others" quick-add (no current UI consumer — kept for parity) ----
-  quickAddProject: (body: QuickAddProjectRequest) => http.post<ProjectDto>('/api/masterdata/projects/quick-add', body),
-  quickAddModule: (body: QuickAddModuleRequest) => http.post<ModuleDto>('/api/masterdata/modules/quick-add', body),
-  quickAddTask: (body: QuickAddTaskRequest) => http.post<WorkTaskDto>('/api/masterdata/tasks/quick-add', body),
 
   // ---- Mutations (Admin only — backend enforces this regardless) ----
   createAccount: (body: CreateAccountRequest) => http.post<AccountDto>('/api/masterdata/accounts', body),
@@ -60,24 +58,30 @@ export const masterDataApi = {
   updateHoliday: (id: number, body: UpdateHolidayRequest) => http.put<HolidayDto>(`/api/masterdata/holidays/${id}`, body),
   deleteHoliday: (id: number) => http.delete<void>(`/api/masterdata/holidays/${id}`),
 
-  // ---- Project Type CRUD (Admin only) ----
+  // ---- Project Type template management (Admin only) ----
   createProjectType: (body: CreateProjectTypeRequest) => http.post<ProjectTypeDto>('/api/masterdata/project-types', body),
-  updateProjectType: (id: number, body: UpdateProjectTypeRequest) =>
-    http.put<ProjectTypeDto>(`/api/masterdata/project-types/${id}`, body),
-  deleteProjectType: (id: number, body: DeleteProjectTypeRequest) =>
-    http.delete<void>(`/api/masterdata/project-types/${id}`, body),
+  updateProjectType: (id: number, body: UpdateProjectTypeRequest) => http.put<ProjectTypeDto>(`/api/masterdata/project-types/${id}`, body),
+  /** Fails with a clear error if any Project/Module still uses this type and
+   * no replacementProjectTypeId was supplied — see DeleteProjectTypeRequest. */
+  deleteProjectType: (id: number, body: DeleteProjectTypeRequest) => http.delete<void>(`/api/masterdata/project-types/${id}`, body),
 
   createModuleTemplate: (body: CreateProjectTypeModuleTemplateRequest) =>
     http.post<ProjectTypeModuleTemplateDto>('/api/masterdata/project-types/module-templates', body),
   updateModuleTemplate: (id: number, body: UpdateProjectTypeModuleTemplateRequest) =>
     http.put<ProjectTypeModuleTemplateDto>(`/api/masterdata/project-types/module-templates/${id}`, body),
-  deleteModuleTemplate: (id: number) =>
-    http.delete<void>(`/api/masterdata/project-types/module-templates/${id}`),
+  deleteModuleTemplate: (id: number) => http.delete<void>(`/api/masterdata/project-types/module-templates/${id}`),
 
   createTaskTemplate: (body: CreateProjectTypeTaskTemplateRequest) =>
     http.post<ProjectTypeTaskTemplateDto>('/api/masterdata/project-types/task-templates', body),
   updateTaskTemplate: (id: number, body: UpdateProjectTypeTaskTemplateRequest) =>
     http.put<ProjectTypeTaskTemplateDto>(`/api/masterdata/project-types/task-templates/${id}`, body),
-  deleteTaskTemplate: (id: number) =>
-    http.delete<void>(`/api/masterdata/project-types/task-templates/${id}`),
+  deleteTaskTemplate: (id: number) => http.delete<void>(`/api/masterdata/project-types/task-templates/${id}`),
+
+  // ---- "Others" quick-add (Add Task Line — any authenticated employee) ----
+  // NOTE: these paths match the actual backend controller
+  // (projects/quick-add, modules/quick-add, tasks/quick-add) - not the
+  // quick-add/project style some branches assumed.
+  quickAddProject: (body: QuickAddProjectRequest) => http.post<ProjectDto>('/api/masterdata/projects/quick-add', body),
+  quickAddModule: (body: QuickAddModuleRequest) => http.post<ModuleDto>('/api/masterdata/modules/quick-add', body),
+  quickAddTask: (body: QuickAddTaskRequest) => http.post<WorkTaskDto>('/api/masterdata/tasks/quick-add', body),
 };

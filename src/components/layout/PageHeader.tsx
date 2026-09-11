@@ -1,8 +1,6 @@
 import type { ReactNode } from 'react';
 import { useSession } from '../../session/SessionContext';
 import { useEmployee } from '../../hooks/api/useEmployees';
-import { isAzureConfigured } from '../../auth/authConfig';
-import { AzureUserBadge } from '../../auth/AzureUserBadge';
 import styles from './PageHeader.module.css';
 
 interface PageHeaderProps {
@@ -30,7 +28,6 @@ export function PageHeader({ crumb, title, children }: PageHeaderProps) {
           <div className={styles.rl}>{roleLabel.split(' — ')[1]}</div>
         </div>
       </div>
-      {isAzureConfigured() && <AzureUserBadge />}
     </header>
   );
 }

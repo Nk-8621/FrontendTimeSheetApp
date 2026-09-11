@@ -39,12 +39,12 @@ export function ModuleDrawer({ existing, projects, projectTypes, onSave, onCance
         <input className={controls.textInput} type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. FICO Assessment" />
       </div>
       <div className={controls.field}>
-        <label>Project type</label>
+        <label>Project Type</label>
         <select className={controls.select} value={projectTypeId} onChange={(e) => setProjectTypeId(e.target.value ? Number(e.target.value) : '')}>
-          <option value="">— None —</option>
+          <option value="">None</option>
           {projectTypes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
         </select>
-        <div className={controls.hint}>Optional — informs the style of task names typically added under this module.</div>
+        <div className={controls.hint}>Lineage only — which template (if any) this module traces back to. Not required.</div>
       </div>
       {error && <div className={styles.errMsg}>{error}</div>}
       <div className={styles.footer}>

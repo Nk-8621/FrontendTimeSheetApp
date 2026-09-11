@@ -2,8 +2,17 @@ import { useState } from 'react';
 import type { TimeEntryDto, DayTypeDto, CreateTimeEntryRequest, WeekHours } from '../../api/types';
 import { DAY_NAMES } from '../../types/meridian';
 import { useMasterDataLookup } from '../../hooks/api/useMasterDataLookup';
+import { useQuickAddMutations } from '../../hooks/api/useMasterData';
+import { ApiError } from '../../api/httpClient';
 import controls from '../../styles/controls.module.css';
 import styles from './EntryDrawer.module.css';
+
+/** Sentinel <option> value for "+ Others (create new)" at the Project,
+ * Module, and Task levels — picking it swaps that field into a plain text
+ * input, and typing a name there creates a real, immediately-reusable
+ * record via the quick-add endpoints (see MasterDataService.QuickAdd*Async).
+ * Not offered at Department/Account level — those stay admin-maintained. */
+const OTHERS = '__others__';
 
 interface EntryDrawerProps {
   dayTypes: DayTypeDto[];
@@ -40,6 +49,66 @@ export function EntryDrawer({ dayTypes, existing, duplicateFrom, onSave, onDelet
   const [showNoteError, setShowNoteError] = useState(false);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [showDayError, setShowDayError] = useState(false);
+
+  // "+ Others" self-service create, one set of state per level.
+  const [projOthers, setProjOthers] = useState(false);
+  const [projOthersName, setProjOthersName] = useState('');
+  const [projOthersError, setProjOthersError] = useState('');
+  const [modOthers, setModOthers] = useState(false);
+  const [modOthersName, setModOthersName] = useState('');
+  const [modOthersError, setModOthersError] = useState('');
+  const [taskOthers, setTaskOthers] = useState(false);
+  const [taskOthersName, setTaskOthersName] = useState('');
+  const [taskOthersError, setTaskOthersError] = useState('');
+  const { quickAddProject, quickAddModule, quickAddTask } = useQuickAddMutations();
+
+  function quickAddErrorMessage(err: unknown, fallback: string) {
+    return err instanceof ApiError ? err.message : fallback;
+  }
+
+  function handleCreateProject() {
+    if (!projOthersName.trim()) return;
+    quickAddProject.mutate(
+      { name: projOthersName.trim() },
+      {
+        onSuccess: (created) => {
+          setProj(created.id); setMod(''); setTask('');
+          updateClassification(created.defaultBillable ? 'Billable' : 'NonBillable');
+          setProjOthers(false); setProjOthersName(''); setProjOthersError('');
+        },
+        onError: (err) => setProjOthersError(quickAddErrorMessage(err, 'Could not create this project')),
+      },
+    );
+  }
+
+  function handleCreateModule() {
+    if (!modOthersName.trim() || proj === '') return;
+    quickAddModule.mutate(
+      { projectId: proj, name: modOthersName.trim() },
+      {
+        onSuccess: (created) => {
+          setMod(created.id); setTask('');
+          setModOthers(false); setModOthersName(''); setModOthersError('');
+        },
+        onError: (err) => setModOthersError(quickAddErrorMessage(err, 'Could not create this module')),
+      },
+    );
+  }
+
+  function handleCreateTask() {
+    if (!taskOthersName.trim() || mod === '') return;
+    quickAddTask.mutate(
+      { moduleId: mod, name: taskOthersName.trim() },
+      {
+        onSuccess: (created) => {
+          setTask(created.id);
+          setTaskOthers(false); setTaskOthersName(''); setTaskOthersError('');
+          setShowTaskError(false);
+        },
+        onError: (err) => setTaskOthersError(quickAddErrorMessage(err, 'Could not create this task')),
+      },
+    );
+  }
 
   const accountObj = acc !== '' ? accById(acc) : undefined;
   const projectObj = proj !== '' ? projById(proj) : undefined;
@@ -156,60 +225,139 @@ export function EntryDrawer({ dayTypes, existing, duplicateFrom, onSave, onDelet
 
       <div className={controls.field}>
         <label>Project <span className={controls.req}>*</span></label>
-        <select
-          className={controls.select}
-          value={proj}
-          disabled={acc === ''}
-          onChange={(e) => {
-            const id = e.target.value ? Number(e.target.value) : '';
-            setProj(id); setMod(''); setTask('');
-            if (id !== '') {
-              const p = projById(id);
-              if (p) updateClassification(p.defaultBillable ? 'Billable' : 'NonBillable');
-            }
-          }}
-        >
-          <option value="">{acc !== '' ? 'Select project' : 'Select a customer first'}</option>
-          {projectsForAcc.map((p) => (
-            <option key={p.id} value={p.id}>{p.name}</option>
-          ))}
-        </select>
+        {projOthers ? (
+          <>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <input
+                className={controls.textInput}
+                style={{ flex: 1 }}
+                autoFocus
+                placeholder="Type the project name"
+                value={projOthersName}
+                onChange={(e) => { setProjOthersName(e.target.value); setProjOthersError(''); }}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleCreateProject(); }}
+              />
+              <button className={`${controls.btn} ${controls.pri} ${controls.sm}`} onClick={handleCreateProject} disabled={quickAddProject.isPending}>
+                Create
+              </button>
+              <button className={`${controls.btn} ${controls.sm}`} onClick={() => { setProjOthers(false); setProjOthersName(''); setProjOthersError(''); }}>
+                Cancel
+              </button>
+            </div>
+            {projOthersError && <div className={styles.errMsg}>{projOthersError}</div>}
+            <div className={controls.hint}>
+              Creates a new project right away, pending admin classification — it won't carry the customer/account
+              selected above until admin assigns one.
+            </div>
+          </>
+        ) : (
+          <select
+            className={controls.select}
+            value={proj}
+            disabled={acc === ''}
+            onChange={(e) => {
+              if (e.target.value === OTHERS) { setProjOthers(true); return; }
+              const id = e.target.value ? Number(e.target.value) : '';
+              setProj(id); setMod(''); setTask('');
+              if (id !== '') {
+                const p = projById(id);
+                if (p) updateClassification(p.defaultBillable ? 'Billable' : 'NonBillable');
+              }
+            }}
+          >
+            <option value="">{acc !== '' ? 'Select project' : 'Select a customer first'}</option>
+            {projectsForAcc.map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+            {acc !== '' && <option value={OTHERS}>+ Others (create new)</option>}
+          </select>
+        )}
       </div>
 
       <div className={controls.field}>
         <label>Module <span className={controls.req}>*</span></label>
-        <select
-          className={controls.select}
-          value={mod}
-          disabled={proj === ''}
-          onChange={(e) => {
-            setMod(e.target.value ? Number(e.target.value) : '');
-            setTask('');
-          }}
-        >
-          <option value="">{proj !== '' ? 'Select module' : 'Select a project first'}</option>
-          {modulesForProj.map((m) => (
-            <option key={m.id} value={m.id}>{m.name}</option>
-          ))}
-        </select>
+        {modOthers ? (
+          <>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <input
+                className={controls.textInput}
+                style={{ flex: 1 }}
+                autoFocus
+                placeholder="Type the module name"
+                value={modOthersName}
+                onChange={(e) => { setModOthersName(e.target.value); setModOthersError(''); }}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleCreateModule(); }}
+              />
+              <button className={`${controls.btn} ${controls.pri} ${controls.sm}`} onClick={handleCreateModule} disabled={quickAddModule.isPending}>
+                Create
+              </button>
+              <button className={`${controls.btn} ${controls.sm}`} onClick={() => { setModOthers(false); setModOthersName(''); setModOthersError(''); }}>
+                Cancel
+              </button>
+            </div>
+            {modOthersError && <div className={styles.errMsg}>{modOthersError}</div>}
+          </>
+        ) : (
+          <select
+            className={controls.select}
+            value={mod}
+            disabled={proj === ''}
+            onChange={(e) => {
+              if (e.target.value === OTHERS) { setModOthers(true); return; }
+              setMod(e.target.value ? Number(e.target.value) : '');
+              setTask('');
+            }}
+          >
+            <option value="">{proj !== '' ? 'Select module' : 'Select a project first'}</option>
+            {modulesForProj.map((m) => (
+              <option key={m.id} value={m.id}>{m.name}</option>
+            ))}
+            {proj !== '' && <option value={OTHERS}>+ Others (create new)</option>}
+          </select>
+        )}
       </div>
 
       <div className={controls.field}>
         <label>Task <span className={controls.req}>*</span></label>
-        <select
-          className={controls.select}
-          value={task}
-          disabled={mod === ''}
-          onChange={(e) => {
-            setTask(e.target.value ? Number(e.target.value) : '');
-            setShowTaskError(false);
-          }}
-        >
-          <option value="">{mod !== '' ? 'Select task' : 'Select a module first'}</option>
-          {tasksForMod.map((t) => (
-            <option key={t.id} value={t.id}>{t.name}</option>
-          ))}
-        </select>
+        {taskOthers ? (
+          <>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <input
+                className={controls.textInput}
+                style={{ flex: 1 }}
+                autoFocus
+                placeholder="Type the task name"
+                value={taskOthersName}
+                onChange={(e) => { setTaskOthersName(e.target.value); setTaskOthersError(''); }}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleCreateTask(); }}
+              />
+              <button className={`${controls.btn} ${controls.pri} ${controls.sm}`} onClick={handleCreateTask} disabled={quickAddTask.isPending}>
+                Create
+              </button>
+              <button className={`${controls.btn} ${controls.sm}`} onClick={() => { setTaskOthers(false); setTaskOthersName(''); setTaskOthersError(''); }}>
+                Cancel
+              </button>
+            </div>
+            {taskOthersError && <div className={styles.errMsg}>{taskOthersError}</div>}
+          </>
+        ) : (
+          <select
+            className={controls.select}
+            value={task}
+            disabled={mod === ''}
+            onChange={(e) => {
+              if (e.target.value === OTHERS) { setTaskOthers(true); return; }
+              setTask(e.target.value ? Number(e.target.value) : '');
+              setShowTaskError(false);
+            }}
+          >
+            <option value="">{mod !== '' ? 'Select task' : 'Select a module first'}</option>
+            {tasksForMod.map((t) => (
+              <option key={t.id} value={t.id}>{t.name}</option>
+            ))}
+            {mod !== '' && <option value={OTHERS}>+ Others (create new)</option>}
+          </select>
+        )}
         {showTaskError && <div className={styles.errMsg}>Select the task this effort belongs to.</div>}
       </div>
 
