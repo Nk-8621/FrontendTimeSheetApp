@@ -104,15 +104,24 @@ export function ProjectDrawer({ existing, departments, accounts, projectTypes, e
 
   // Department is picked first, from the full list - same as the plain
   // dropdown that's always been on the "existing" side above. Customer/
-  // Internal is picked second, but only offers names that already have an
-  // account under EVERY checked department, since one project across
-  // several departments needs that same customer set up in each of them.
-  // If that combination doesn't exist yet, it's created on the Customers &
-  // Internal tab first, same as today.
+  // Internal is picked second, and offers every name that has an account
+  // under AT LEAST ONE of the checked departments (not necessarily all of
+  // them) - two departments rarely share the exact same customer set up
+  // under both today, so requiring every department to match left the list
+  // empty far too often. Once a customer is chosen, matchingDepartmentIds
+  // below narrows back down to just the departments that actually have it.
   const availableCustomers = selectedDepartmentIds.length === 0
     ? []
-    : distinctCustomers.filter((c) => selectedDepartmentIds.every((deptId) => accounts.some((a) => a.departmentId === deptId && a.name === c.name)));
-  const multiSelect = selectedDepartmentIds.length > 1;
+    : distinctCustomers.filter((c) => selectedDepartmentIds.some((deptId) => accounts.some((a) => a.departmentId === deptId && a.name === c.name)));
+
+  // Of the departments checked above, only the ones that actually have an
+  // account under the chosen customer end up creating a project - the rest
+  // are called out in the hint below rather than silently dropped.
+  const matchingDepartmentIds = customerName === ''
+    ? []
+    : selectedDepartmentIds.filter((deptId) => accounts.some((a) => a.departmentId === deptId && a.name === customerName));
+  const skippedDepartmentIds = selectedDepartmentIds.filter((id) => !matchingDepartmentIds.includes(id));
+  const multiSelect = matchingDepartmentIds.length > 1;
 
   function toggleDepartment(id: number) {
     setSelectedDepartmentIds((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
@@ -149,6 +158,10 @@ export function ProjectDrawer({ existing, departments, accounts, projectTypes, e
         setError('Pick a customer/internal name.');
         return;
       }
+      if (matchingDepartmentIds.length === 0) {
+        setError('This customer has no account under any of the selected departments.');
+        return;
+      }
     }
 
     const shared = {
@@ -172,11 +185,11 @@ export function ProjectDrawer({ existing, departments, accounts, projectTypes, e
       return;
     }
 
-    const rows = selectedDepartmentIds
+    const rows = matchingDepartmentIds
       .map((deptId) => ({ deptId, acc: accounts.find((a) => a.departmentId === deptId && a.name === customerName) }))
       .filter((r): r is { deptId: number; acc: AccountDto } => Boolean(r.acc));
 
-    if (rows.length !== selectedDepartmentIds.length) {
+    if (rows.length !== matchingDepartmentIds.length) {
       setError('One of the selected departments no longer has this customer set up — refresh and try again.');
       return;
     }
@@ -220,9 +233,9 @@ export function ProjectDrawer({ existing, departments, accounts, projectTypes, e
               ))}
             </div>
             <div className={controls.hint}>
-              {multiSelect
-                ? `Selecting more than one creates ${selectedDepartmentIds.length} separate projects — one per department — all sharing everything below. Each gets its own code so it stays unique (see the Project code hint).`
-                : 'Pick every department this project applies to. Checking more than one creates a separate project per department, sharing everything you fill in below, so this form only needs to be filled out once.'}
+              Pick every department this project might apply to. Once you choose a customer below, a project is
+              created for each checked department that already has that customer — any that don't are called out
+              below the customer field.
             </div>
           </div>
           <div className={controls.field}>
@@ -239,7 +252,13 @@ export function ProjectDrawer({ existing, departments, accounts, projectTypes, e
               {availableCustomers.map((a) => <option key={a.name} value={a.name}>{a.name} ({a.accountType})</option>)}
             </select>
             {selectedDepartmentIds.length > 0 && availableCustomers.length === 0 && (
-              <div className={controls.hint}>No customer/internal account exists under all of the selected departments yet — set one up on the Customers &amp; Internal tab first.</div>
+              <div className={controls.hint}>No customer/internal account exists under any of the selected departments yet — set one up on the Customers &amp; Internal tab first.</div>
+            )}
+            {customerName !== '' && skippedDepartmentIds.length > 0 && (
+              <div className={controls.hint}>
+                "{customerName}" has no account under: {skippedDepartmentIds.map((id) => departments.find((d) => d.id === id)?.name ?? '?').join(', ')} — {skippedDepartmentIds.length === 1 ? 'that one will be' : 'those will be'} skipped.
+                {matchingDepartmentIds.length > 0 && ` A project will still be created for: ${matchingDepartmentIds.map((id) => departments.find((d) => d.id === id)?.name ?? '?').join(', ')}.`}
+              </div>
             )}
           </div>
         </>
@@ -253,7 +272,7 @@ export function ProjectDrawer({ existing, departments, accounts, projectTypes, e
         <input className={controls.textInput} type="text" value={code} onChange={(e) => setCode(e.target.value)} placeholder="e.g. NML-P2" />
         {!existing && multiSelect && code.trim() && (
           <div className={controls.hint}>
-            Will create: {selectedDepartmentIds.map((id) => codeForDept(code.trim().toUpperCase(), id)).join(', ')}
+            Will create: {matchingDepartmentIds.map((id) => codeForDept(code.trim().toUpperCase(), id)).join(', ')}
           </div>
         )}
       </div>
