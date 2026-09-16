@@ -475,7 +475,7 @@ export function MasterDataPage() {
                         <td className="num" style={{ textAlign: 'right' }}>{moduleCount}</td>
                         <td className="num" style={{ textAlign: 'right' }}>{taskCount}</td>
                         <td className="num" style={{ textAlign: 'right' }}>{projectCount}</td>
-                        <td className={styles.editCol} style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                        <td style={{ width: 170, textAlign: 'right', display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
                           <button className={`${controls.btn} ${controls.sm}`} onClick={() => handleManageTemplates(t)}>Templates</button>
                           <button className={styles.editBtn} onClick={() => handleAddOrEditProjectType(t)}>✎</button>
                           <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--clay)' }} onClick={() => handleDeleteProjectType(t)}>✕</button>
