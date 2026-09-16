@@ -59,6 +59,7 @@ export function ModulesTasksPanel({ projects, modules, tasks, mutations }: Modul
     toast(err instanceof ApiError ? err.message : fallback, 'bad');
   }
 
+  const selectedProject = projectId === '' ? undefined : projects.find((p) => p.id === projectId);
   const projectModules = projectId === '' ? [] : modules.filter((m) => m.projectId === projectId);
 
   function tasksFor(moduleId: number) {
@@ -204,6 +205,25 @@ export function ModulesTasksPanel({ projects, modules, tasks, mutations }: Modul
           {projects.map((p) => <option key={p.id} value={p.id}>{p.name} [{p.code}]</option>)}
         </select>
       </div>
+
+      {selectedProject && (
+        selectedProject.projectTypeName ? (
+          <div
+            style={{
+              marginTop: 10,
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: 0.6,
+              fontSize: 13,
+              color: 'var(--oxide)',
+            }}
+          >
+            Project type: {selectedProject.projectTypeName}
+          </div>
+        ) : (
+          <div className={controls.hint} style={{ marginTop: 10 }}>No project type set for this project.</div>
+        )
+      )}
 
       {projectId === '' && (
         <div className={controls.hint} style={{ marginTop: 12 }}>Pick a project to see its modules and tasks.</div>
