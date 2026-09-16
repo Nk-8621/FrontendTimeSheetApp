@@ -395,7 +395,7 @@ export function MasterDataPage() {
                       <td>{p.name}</td>
                       <td style={{ color: 'var(--slate)' }}>{accName(p.accountId)}</td>
                       <td style={{ color: 'var(--slate)' }}>{p.projectTypeName ?? '—'}</td>
-                      <td>{p.defaultBillable ? 'Billable' : 'Non-bill'}</td>
+                      <td>{{ Billable: 'Billable', NonBillable: 'Non-bill', PartialBillable: 'Partial-bill' }[p.defaultBillable]}</td>
                       <td style={{ color: 'var(--slate)' }}>{p.billingType ?? '—'}</td>
                       <td style={{ color: 'var(--slate)' }}>{p.customerPO ?? '—'}</td>
                       <td style={{ color: 'var(--slate)' }}>{p.projectLeadEmployeeName ?? '—'}</td>

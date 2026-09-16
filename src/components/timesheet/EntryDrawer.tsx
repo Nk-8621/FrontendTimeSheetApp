@@ -14,6 +14,13 @@ import styles from './EntryDrawer.module.css';
  * Not offered at Department/Account level — those stay admin-maintained. */
 const OTHERS = '__others__';
 
+/** Same vocabulary as TimeEntry.Classification / Project.DefaultBillable. */
+const CLASSIFICATION_LABEL: Record<'Billable' | 'NonBillable' | 'PartialBillable', string> = {
+  Billable: 'billable',
+  NonBillable: 'non-billable',
+  PartialBillable: 'partial-billable',
+};
+
 interface EntryDrawerProps {
   dayTypes: DayTypeDto[];
   existing?: TimeEntryDto;
@@ -73,7 +80,7 @@ export function EntryDrawer({ dayTypes, existing, duplicateFrom, onSave, onDelet
       {
         onSuccess: (created) => {
           setProj(created.id); setMod(''); setTask('');
-          updateClassification(created.defaultBillable ? 'Billable' : 'NonBillable');
+          updateClassification(created.defaultBillable);
           setProjOthers(false); setProjOthersName(''); setProjOthersError('');
         },
         onError: (err) => setProjOthersError(quickAddErrorMessage(err, 'Could not create this project')),
@@ -261,7 +268,7 @@ export function EntryDrawer({ dayTypes, existing, duplicateFrom, onSave, onDelet
               setProj(id); setMod(''); setTask('');
               if (id !== '') {
                 const p = projById(id);
-                if (p) updateClassification(p.defaultBillable ? 'Billable' : 'NonBillable');
+                if (p) updateClassification(p.defaultBillable);
               }
             }}
           >
@@ -383,7 +390,7 @@ export function EntryDrawer({ dayTypes, existing, duplicateFrom, onSave, onDelet
         )}
         {proj !== '' && projectObj && (
           <div className={controls.hint}>
-            Project default is {projectObj.defaultBillable ? 'billable' : 'non-billable'} — you can override it for this line.
+            Project default is {CLASSIFICATION_LABEL[projectObj.defaultBillable]} — you can override it for this line.
           </div>
         )}
       </div>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { AccountDto, DepartmentDto, EmployeeDto, ProjectDto, ProjectTypeDto } from '../../api/types';
+import type { AccountDto, DepartmentDto, EmployeeDto, ProjectDto, ProjectTypeDto, TimeEntryClassification } from '../../api/types';
 import controls from '../../styles/controls.module.css';
 import styles from '../timesheet/EntryDrawer.module.css';
 
@@ -8,6 +8,14 @@ import styles from '../timesheet/EntryDrawer.module.css';
  * there, not by a DB constraint — keep the two lists in sync by hand). */
 const BILLING_TYPES = ['Fixed', 'T&M', 'Consumption', 'NB-ValueAdd', 'NB-L&D', 'NB-Training', 'NB-Travel', 'Others'];
 
+/** Same vocabulary as TimeEntry.Classification (see BillingClassificationRules
+ * on the backend) — the default a new task line on this project starts at. */
+const DEFAULT_BILLABLE_OPTIONS: { value: TimeEntryClassification; label: string }[] = [
+  { value: 'Billable', label: 'Billable' },
+  { value: 'NonBillable', label: 'Non-billable' },
+  { value: 'PartialBillable', label: 'Partial-billable' },
+];
+
 interface ProjectDrawerProps {
   existing?: ProjectDto;
   departments: DepartmentDto[];
@@ -15,7 +23,7 @@ interface ProjectDrawerProps {
   projectTypes: ProjectTypeDto[];
   employees: EmployeeDto[];
   onSave: (data: {
-    accountId: number; code: string; name: string; defaultBillable: boolean;
+    accountId: number; code: string; name: string; defaultBillable: TimeEntryClassification;
     isActive?: boolean;
     /** Applied on create, or on edit only when the project currently has no
      * project type yet (retroactive classification) — the backend ignores
@@ -45,7 +53,7 @@ export function ProjectDrawer({ existing, departments, accounts, projectTypes, e
   const [accountId, setAccountId] = useState<number | ''>(existing?.accountId ?? '');
   const [name, setName] = useState(existing?.name ?? '');
   const [code, setCode] = useState(existing?.code ?? '');
-  const [billable, setBillable] = useState(existing?.defaultBillable ?? true);
+  const [defaultBillable, setDefaultBillable] = useState<TimeEntryClassification>(existing?.defaultBillable ?? 'Billable');
   const [isActive, setIsActive] = useState(existing?.isActive ?? true);
   const [needsReview, setNeedsReview] = useState(existing?.needsReview ?? false);
   const [projectTypeId, setProjectTypeId] = useState<number | ''>('');
@@ -70,7 +78,7 @@ export function ProjectDrawer({ existing, departments, accounts, projectTypes, e
       accountId,
       code: code.trim().toUpperCase(),
       name: name.trim(),
-      defaultBillable: billable,
+      defaultBillable,
       isActive: existing ? isActive : undefined,
       projectTypeId: canSetProjectType ? (projectTypeId === '' ? null : projectTypeId) : undefined,
       projectTech: projectTech.trim() || null,
@@ -159,8 +167,11 @@ export function ProjectDrawer({ existing, departments, accounts, projectTypes, e
       <div className={controls.field}>
         <label>Default classification</label>
         <div className={styles.segBill}>
-          <button className={billable ? styles.on : ''} onClick={() => setBillable(true)}>Billable</button>
-          <button className={!billable ? styles.on : ''} onClick={() => setBillable(false)}>Non-billable</button>
+          {DEFAULT_BILLABLE_OPTIONS.map((opt) => (
+            <button key={opt.value} className={defaultBillable === opt.value ? styles.on : ''} onClick={() => setDefaultBillable(opt.value)}>
+              {opt.label}
+            </button>
+          ))}
         </div>
         <div className={controls.hint}>Applies to new task lines by default. Employees can override per line.</div>
       </div>

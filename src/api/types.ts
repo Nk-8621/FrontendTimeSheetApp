@@ -30,7 +30,7 @@ export interface ProjectDto {
   accountId: number;
   code: string;
   name: string;
-  defaultBillable: boolean;
+  defaultBillable: TimeEntryClassification;
   isActive: boolean;
   projectTypeId: number | null;
   projectTypeName: string | null;
@@ -144,7 +144,7 @@ export interface CreateProjectRequest {
   accountId: number;
   code: string;
   name: string;
-  defaultBillable: boolean;
+  defaultBillable: TimeEntryClassification;
   /** If supplied, auto-creates the project's starter Modules/Tasks from that
    * Project Type's Level-1/Level-2 template. Pass null to create an empty
    * project with no modules yet. */
@@ -165,7 +165,7 @@ export interface UpdateProjectRequest {
   accountId?: number;
   code?: string;
   name?: string;
-  defaultBillable?: boolean;
+  defaultBillable?: TimeEntryClassification;
   isActive?: boolean;
   projectTypeId?: number | null;
   projectTech?: string | null;
