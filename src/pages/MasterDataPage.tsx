@@ -12,11 +12,10 @@ import {
   useEmployeeProjectAllocations, useSetEmployeeProjectAllocations,
 } from '../hooks/api/useEmployees';
 import { ApiError } from '../api/httpClient';
-import type { AccountDto, ModuleDto, ProjectDto, ProjectTypeDto, WorkTaskDto, HolidayDto } from '../api/types';
+import type { AccountDto, ProjectDto, ProjectTypeDto, HolidayDto } from '../api/types';
 import { AccountDrawer } from '../components/masterdata/AccountDrawer';
 import { ProjectDrawer } from '../components/masterdata/ProjectDrawer';
-import { ModuleDrawer } from '../components/masterdata/ModuleDrawer';
-import { TaskDrawer } from '../components/masterdata/TaskDrawer';
+import { ModulesTasksPanel } from '../components/masterdata/ModulesTasksPanel';
 import { HolidayDrawer } from '../components/masterdata/HolidayDrawer';
 import { EmployeeDrawer } from '../components/masterdata/EmployeeDrawer';
 import { ProjectTypeDrawer } from '../components/masterdata/ProjectTypeDrawer';
@@ -26,10 +25,10 @@ import controls from '../styles/controls.module.css';
 import drawerStyles from '../components/timesheet/EntryDrawer.module.css';
 import styles from './MasterData.module.css';
 
-type Tab = 'dept' | 'acc' | 'proj' | 'mod' | 'task' | 'ptype' | 'res' | 'palloc' | 'hol';
+type Tab = 'dept' | 'acc' | 'proj' | 'modtask' | 'ptype' | 'res' | 'palloc' | 'hol';
 const TABS: [Tab, string][] = [
   ['dept', 'Departments'], ['acc', 'Customers & Internal'], ['proj', 'Projects'],
-  ['mod', 'Modules'], ['task', 'Tasks'], ['ptype', 'Project Types'],
+  ['modtask', 'Modules & Tasks'], ['ptype', 'Project Types'],
   ['res', 'Resources'], ['palloc', 'Resource Allocation'], ['hol', 'Holiday calendar'],
 ];
 
@@ -74,8 +73,6 @@ export function MasterDataPage() {
 
   const deptName = (id: number) => departments.data?.find((d) => d.id === id)?.name ?? '—';
   const accName = (id: number) => accounts.data?.find((a) => a.id === id)?.name ?? '—';
-  const projName = (id: number) => projects.data?.find((p) => p.id === id)?.name ?? '—';
-  const modName = (id: number) => modules.data?.find((m) => m.id === id)?.name ?? '—';
   const projAccount = (accId: number) => accounts.data?.find((a) => a.id === accId);
 
   function showError(err: unknown, fallback: string) {
@@ -114,13 +111,41 @@ export function MasterDataPage() {
           projectTypes={projectTypes.data ?? []}
           employees={employees.data ?? []}
           onCancel={closeDrawer}
-          onSave={(data) => {
-            const action = existing
-              ? mutations.updateProject.mutateAsync({ id: existing.id, body: data })
-              : mutations.createProject.mutateAsync(data);
-            action
-              .then(() => { closeDrawer(); toast(existing ? 'Project updated' : 'Project created — its module/task tree is now selectable on the grid', 'ok'); })
-              .catch((err) => showError(err, 'Could not save this project'));
+          onSave={(rows) => {
+            if (existing) {
+              // Edit is always exactly one row.
+              mutations.updateProject.mutateAsync({ id: existing.id, body: rows[0] })
+                .then(() => { closeDrawer(); toast('Project updated', 'ok'); })
+                .catch((err) => showError(err, 'Could not save this project'));
+              return;
+            }
+            // Create: one row per department/account selected in the drawer -
+            // each is its own independent createProject call (no bulk-create
+            // API), so report how many actually landed rather than assuming
+            // all-or-nothing.
+            Promise.allSettled(rows.map((body) => mutations.createProject.mutateAsync(body)))
+              .then((results) => {
+                const succeeded = results.filter((r) => r.status === 'fulfilled').length;
+                const failed = results.length - succeeded;
+                if (failed === 0) {
+                  closeDrawer();
+                  toast(
+                    rows.length > 1
+                      ? `${succeeded} projects created (one per department) — their module/task trees are now selectable on the grid`
+                      : 'Project created — its module/task tree is now selectable on the grid',
+                    'ok',
+                  );
+                } else if (succeeded === 0) {
+                  const firstFailure = results.find((r): r is PromiseRejectedResult => r.status === 'rejected');
+                  showError(firstFailure?.reason, 'Could not save this project');
+                } else {
+                  closeDrawer();
+                  toast(
+                    `${succeeded} of ${rows.length} projects created — ${failed} failed (often a duplicate code). Check Master Data > Projects and retry the missing one(s).`,
+                    'bad',
+                  );
+                }
+              });
           }}
         />
       ),
@@ -136,28 +161,6 @@ export function MasterDataPage() {
     mutations.syncProjectModuleTemplate.mutate(project.id, {
       onSuccess: () => toast('Modules/Tasks synced from the project type template', 'ok'),
       onError: (err) => showError(err, 'Could not sync this project\'s Modules/Tasks'),
-    });
-  }
-
-  function handleAddOrEditModule(existing?: ModuleDto) {
-    openDrawer({
-      title: existing ? 'Edit module' : 'New module',
-      body: (
-        <ModuleDrawer
-          existing={existing}
-          projects={projects.data ?? []}
-          projectTypes={projectTypes.data ?? []}
-          onCancel={closeDrawer}
-          onSave={(data) => {
-            const action = existing
-              ? mutations.updateModule.mutateAsync({ id: existing.id, body: { name: data.name, projectTypeId: data.projectTypeId } })
-              : mutations.createModule.mutateAsync(data);
-            action
-              .then(() => { closeDrawer(); toast(existing ? 'Module updated' : 'Module created', 'ok'); })
-              .catch((err) => showError(err, 'Could not save this module'));
-          }}
-        />
-      ),
     });
   }
 
@@ -232,27 +235,6 @@ export function MasterDataPage() {
     });
   }
 
-  function handleAddOrEditTask(existing?: WorkTaskDto) {
-    openDrawer({
-      title: existing ? 'Edit task' : 'New task',
-      body: (
-        <TaskDrawer
-          existing={existing}
-          modules={modules.data ?? []}
-          onCancel={closeDrawer}
-          onSave={(data) => {
-            const action = existing
-              ? mutations.updateTask.mutateAsync({ id: existing.id, body: { name: data.name } })
-              : mutations.createTask.mutateAsync(data);
-            action
-              .then(() => { closeDrawer(); toast(existing ? 'Task updated' : 'Task created', 'ok'); })
-              .catch((err) => showError(err, 'Could not save this task'));
-          }}
-        />
-      ),
-    });
-  }
-
   function handleAddOrEditHoliday(existing?: HolidayDto) {
     openDrawer({
       title: existing ? 'Edit holiday' : 'New holiday',
@@ -319,8 +301,7 @@ export function MasterDataPage() {
     dept: null,
     acc: () => handleAddOrEditAccount(),
     proj: () => handleAddOrEditProject(),
-    mod: () => handleAddOrEditModule(),
-    task: () => handleAddOrEditTask(),
+    modtask: null,
     ptype: () => handleAddOrEditProjectType(),
     res: () => handleAddEmployee(),
     palloc: null,
@@ -421,39 +402,13 @@ export function MasterDataPage() {
               </RecordsCard>
             )}
 
-            {tab === 'mod' && (
-              <RecordsCard count={modules.data?.length ?? 0}>
-                <thead><tr><th>Module</th><th>Project</th><th style={{ textAlign: 'right' }}>Tasks</th><th className={styles.editCol} /></tr></thead>
-                <tbody>
-                  {modules.data?.map((m) => (
-                    <tr key={m.id}>
-                      <td>{m.name}</td>
-                      <td style={{ color: 'var(--slate)' }}>{projName(m.projectId)}</td>
-                      <td className="num" style={{ textAlign: 'right' }}>{tasks.data?.filter((t) => t.moduleId === m.id).length ?? 0}</td>
-                      <td className={styles.editCol}><button className={styles.editBtn} onClick={() => handleAddOrEditModule(m)}>✎</button></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </RecordsCard>
-            )}
-
-            {tab === 'task' && (
-              <RecordsCard count={tasks.data?.length ?? 0}>
-                <thead><tr><th>Task</th><th>Module</th><th>Project</th><th className={styles.editCol} /></tr></thead>
-                <tbody>
-                  {tasks.data?.map((t) => {
-                    const mod = modules.data?.find((m) => m.id === t.moduleId);
-                    return (
-                      <tr key={t.id}>
-                        <td>{t.name}</td>
-                        <td style={{ color: 'var(--slate)' }}>{modName(t.moduleId)}</td>
-                        <td style={{ color: 'var(--slate)' }}>{mod ? projName(mod.projectId) : '—'}</td>
-                        <td className={styles.editCol}><button className={styles.editBtn} onClick={() => handleAddOrEditTask(t)}>✎</button></td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </RecordsCard>
+            {tab === 'modtask' && (
+              <ModulesTasksPanel
+                projects={projects.data ?? []}
+                modules={modules.data ?? []}
+                tasks={tasks.data ?? []}
+                mutations={mutations}
+              />
             )}
 
             {tab === 'ptype' && (

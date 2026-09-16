@@ -16,28 +16,36 @@ const DEFAULT_BILLABLE_OPTIONS: { value: TimeEntryClassification; label: string 
   { value: 'PartialBillable', label: 'Partial-billable' },
 ];
 
+interface ProjectRow {
+  accountId: number; code: string; name: string; defaultBillable: TimeEntryClassification;
+  isActive?: boolean;
+  /** Applied on create, or on edit only when the project currently has no
+   * project type yet (retroactive classification) — the backend ignores
+   * it otherwise, and once set it can never be changed again. */
+  projectTypeId?: number | null;
+  projectTech?: string | null;
+  billingType?: string | null;
+  customerPO?: string | null;
+  notes?: string | null;
+  needsReview?: boolean;
+  projectLeadEmployeeId?: number | null;
+  projectManagerEmployeeId?: number | null;
+  deliveryHeadEmployeeId?: number | null;
+}
+
 interface ProjectDrawerProps {
   existing?: ProjectDto;
   departments: DepartmentDto[];
   accounts: AccountDto[];
   projectTypes: ProjectTypeDto[];
   employees: EmployeeDto[];
-  onSave: (data: {
-    accountId: number; code: string; name: string; defaultBillable: TimeEntryClassification;
-    isActive?: boolean;
-    /** Applied on create, or on edit only when the project currently has no
-     * project type yet (retroactive classification) — the backend ignores
-     * it otherwise, and once set it can never be changed again. */
-    projectTypeId?: number | null;
-    projectTech?: string | null;
-    billingType?: string | null;
-    customerPO?: string | null;
-    notes?: string | null;
-    needsReview?: boolean;
-    projectLeadEmployeeId?: number | null;
-    projectManagerEmployeeId?: number | null;
-    deliveryHeadEmployeeId?: number | null;
-  }) => void;
+  /** Always an array: exactly one row when editing, one row per selected
+   * account when creating (see the Customer/Internal picker below) - lets
+   * the same engagement across several departments/accounts be entered
+   * once instead of duplicating the whole form per department. The caller
+   * is responsible for issuing one create call per row; nothing here
+   * assumes a bulk-create API. */
+  onSave: (rows: ProjectRow[]) => void;
   onCancel: () => void;
 }
 
@@ -49,8 +57,17 @@ interface ProjectDrawerProps {
  * from a plain dropdown here. */
 export function ProjectDrawer({ existing, departments, accounts, projectTypes, employees, onSave, onCancel }: ProjectDrawerProps) {
   const existingAccount = existing ? accounts.find((a) => a.id === existing.accountId) : undefined;
+  // Edit mode keeps the original single Department -> Account drill-down,
+  // since an existing project already has exactly one account and changing
+  // that is a separate concern from the create-time multi-department flow.
   const [departmentId, setDepartmentId] = useState<number | ''>(existingAccount?.departmentId ?? '');
   const [accountId, setAccountId] = useState<number | ''>(existing?.accountId ?? '');
+  // Create mode only: pick any number of accounts, across any number of
+  // departments, at once. Each becomes its own Project row on save (see
+  // codeForAccount/handleSave below) - that's how "one project, two
+  // departments" already works today (two separate rows), just without
+  // making the admin fill out this whole form twice.
+  const [selectedAccountIds, setSelectedAccountIds] = useState<number[]>([]);
   const [name, setName] = useState(existing?.name ?? '');
   const [code, setCode] = useState(existing?.code ?? '');
   const [defaultBillable, setDefaultBillable] = useState<TimeEntryClassification>(existing?.defaultBillable ?? 'Billable');
@@ -68,15 +85,51 @@ export function ProjectDrawer({ existing, departments, accounts, projectTypes, e
 
   const accountsForDept = departmentId !== '' ? accounts.filter((a) => a.departmentId === departmentId) : [];
   const canSetProjectType = !existing || existing.projectTypeId == null;
+  const multiSelect = selectedAccountIds.length > 1;
+
+  function toggleAccount(id: number) {
+    setSelectedAccountIds((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
+  }
+
+  /** Project.Code has to stay globally unique, so when the same project is
+   * being created for more than one account at once, each row's code gets
+   * its department's code appended (e.g. NML-P2 -> NML-P2-MCB, NML-P2-SAP).
+   * With just one account selected, the code is used exactly as typed -
+   * identical to today's single-project creation. */
+  function codeForAccount(baseCode: string, id: number): string {
+    if (!multiSelect) return baseCode;
+    const acc = accounts.find((a) => a.id === id);
+    const dept = acc ? departments.find((d) => d.id === acc.departmentId) : undefined;
+    return dept ? `${baseCode}-${dept.code.toUpperCase()}` : baseCode;
+  }
 
   function handleSave() {
-    if (accountId === '' || !name.trim() || !code.trim()) {
-      setError('Customer/Internal account, project name, and project code are all required.');
+    if (!name.trim() || !code.trim()) {
+      setError('Project name and project code are both required.');
       return;
     }
-    onSave({
-      accountId,
-      code: code.trim().toUpperCase(),
+    if (existing) {
+      if (accountId === '') {
+        setError('Customer/Internal account is required.');
+        return;
+      }
+    } else {
+      if (selectedAccountIds.length === 0) {
+        setError('Pick at least one customer/internal account.');
+        return;
+      }
+      const deptCounts = new Map<number, number>();
+      for (const id of selectedAccountIds) {
+        const acc = accounts.find((a) => a.id === id);
+        if (acc) deptCounts.set(acc.departmentId, (deptCounts.get(acc.departmentId) ?? 0) + 1);
+      }
+      if ([...deptCounts.values()].some((n) => n > 1)) {
+        setError('Pick at most one account per department — two accounts from the same department would end up with the same generated code.');
+        return;
+      }
+    }
+
+    const shared = {
       name: name.trim(),
       defaultBillable,
       isActive: existing ? isActive : undefined,
@@ -89,29 +142,66 @@ export function ProjectDrawer({ existing, departments, accounts, projectTypes, e
       projectLeadEmployeeId: projectLeadEmployeeId === '' ? null : projectLeadEmployeeId,
       projectManagerEmployeeId: projectManagerEmployeeId === '' ? null : projectManagerEmployeeId,
       deliveryHeadEmployeeId: deliveryHeadEmployeeId === '' ? null : deliveryHeadEmployeeId,
-    });
+    };
+    const baseCode = code.trim().toUpperCase();
+
+    if (existing) {
+      onSave([{ ...shared, accountId: accountId as number, code: baseCode }]);
+      return;
+    }
+    onSave(selectedAccountIds.map((id) => ({ ...shared, accountId: id, code: codeForAccount(baseCode, id) })));
   }
 
   return (
     <div>
-      <div className={controls.field}>
-        <label>Department <span className={controls.req}>*</span></label>
-        <select
-          className={controls.select}
-          value={departmentId}
-          onChange={(e) => { setDepartmentId(e.target.value ? Number(e.target.value) : ''); setAccountId(''); }}
-        >
-          <option value="">Select department</option>
-          {departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-        </select>
-      </div>
-      <div className={controls.field}>
-        <label>Customer / Internal <span className={controls.req}>*</span></label>
-        <select className={controls.select} value={accountId} disabled={departmentId === ''} onChange={(e) => setAccountId(e.target.value ? Number(e.target.value) : '')}>
-          <option value="">{departmentId !== '' ? 'Select customer or internal' : 'Select a department first'}</option>
-          {accountsForDept.map((a) => <option key={a.id} value={a.id}>{a.name} ({a.accountType})</option>)}
-        </select>
-      </div>
+      {existing ? (
+        <>
+          <div className={controls.field}>
+            <label>Department <span className={controls.req}>*</span></label>
+            <select
+              className={controls.select}
+              value={departmentId}
+              onChange={(e) => { setDepartmentId(e.target.value ? Number(e.target.value) : ''); setAccountId(''); }}
+            >
+              <option value="">Select department</option>
+              {departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+            </select>
+          </div>
+          <div className={controls.field}>
+            <label>Customer / Internal <span className={controls.req}>*</span></label>
+            <select className={controls.select} value={accountId} disabled={departmentId === ''} onChange={(e) => setAccountId(e.target.value ? Number(e.target.value) : '')}>
+              <option value="">{departmentId !== '' ? 'Select customer or internal' : 'Select a department first'}</option>
+              {accountsForDept.map((a) => <option key={a.id} value={a.id}>{a.name} ({a.accountType})</option>)}
+            </select>
+          </div>
+        </>
+      ) : (
+        <div className={controls.field}>
+          <label>Customer / Internal <span className={controls.req}>*</span></label>
+          <div style={{ border: '1px solid var(--rule)', borderRadius: 6, maxHeight: 220, overflowY: 'auto', padding: '4px 10px' }}>
+            {departments.map((d) => {
+              const deptAccounts = accounts.filter((a) => a.departmentId === d.id);
+              if (deptAccounts.length === 0) return null;
+              return (
+                <div key={d.id} style={{ margin: '6px 0' }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--slate)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>{d.name}</div>
+                  {deptAccounts.map((a) => (
+                    <label key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 0', cursor: 'pointer' }}>
+                      <input type="checkbox" checked={selectedAccountIds.includes(a.id)} onChange={() => toggleAccount(a.id)} />
+                      <span>{a.name} <span style={{ color: 'var(--slate)' }}>({a.accountType})</span></span>
+                    </label>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+          <div className={controls.hint}>
+            {multiSelect
+              ? `Selecting more than one creates ${selectedAccountIds.length} separate projects — one per account — all sharing everything below. Each gets its own code so it stays unique (see the Project code hint).`
+              : 'Pick every department/customer this project applies to. Selecting more than one creates a separate project per selection, sharing everything you fill in below, so this form only needs to be filled out once.'}
+          </div>
+        </div>
+      )}
       <div className={controls.field}>
         <label>Project name <span className={controls.req}>*</span></label>
         <input className={controls.textInput} type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. NML S/4HANA Phase 2" />
@@ -119,6 +209,11 @@ export function ProjectDrawer({ existing, departments, accounts, projectTypes, e
       <div className={controls.field}>
         <label>Project code <span className={controls.req}>*</span></label>
         <input className={controls.textInput} type="text" value={code} onChange={(e) => setCode(e.target.value)} placeholder="e.g. NML-P2" />
+        {!existing && multiSelect && code.trim() && (
+          <div className={controls.hint}>
+            Will create: {selectedAccountIds.map((id) => codeForAccount(code.trim().toUpperCase(), id)).join(', ')}
+          </div>
+        )}
       </div>
 
       <div className={controls.field}>
