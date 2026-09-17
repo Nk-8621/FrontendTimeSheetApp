@@ -28,7 +28,7 @@ import styles from './MasterData.module.css';
 type Tab = 'dept' | 'acc' | 'proj' | 'modtask' | 'ptype' | 'res' | 'palloc' | 'hol';
 const TABS: [Tab, string][] = [
   ['dept', 'Departments'], ['acc', 'Customers & Internal'], ['proj', 'Projects'],
-  ['modtask', 'Modules & Tasks'], ['ptype', 'Project Types'],
+  ['ptype', 'Project Types'], ['modtask', 'Modules & Task Types'],
   ['res', 'Resources'], ['palloc', 'Resource Allocation'], ['hol', 'Holiday calendar'],
 ];
 
