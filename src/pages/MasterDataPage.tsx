@@ -13,8 +13,11 @@ import {
 } from '../hooks/api/useEmployees';
 import { ApiError } from '../api/httpClient';
 import type { AccountDto, ProjectDto, ProjectTypeDto, HolidayDto, EmployeeProjectAllocationInput } from '../api/types';
+import { StatusPill } from '../components/ui/StatusPill';
+import { ACTIVE_STATUS_LABELS } from '../types/meridian';
 import { AccountDrawer } from '../components/masterdata/AccountDrawer';
 import { ProjectDrawer } from '../components/masterdata/ProjectDrawer';
+import { ProjectSetupFlow } from '../components/masterdata/ProjectSetupFlow';
 import { ModulesTasksPanel } from '../components/masterdata/ModulesTasksPanel';
 import { HolidayDrawer } from '../components/masterdata/HolidayDrawer';
 import { EmployeeDrawer } from '../components/masterdata/EmployeeDrawer';
@@ -147,6 +150,28 @@ export function MasterDataPage() {
                 }
               });
           }}
+        />
+      ),
+    });
+  }
+
+  /** "+ New record" on the Projects tab — the guided flow (Customer →
+   * Project → Modules → Task Types → Review, all in one panel) is now the
+   * default for creating a single project. The old multi-department form
+   * (ProjectDrawer's create mode) still creates one Project per checked
+   * department in a single pass — a real, distinct capability that isn't
+   * being dropped — and stays one click away from inside the guided flow
+   * for the admin who specifically needs it. Editing an existing project
+   * keeps using ProjectDrawer directly via handleAddOrEditProject below. */
+  function handleOpenGuidedProjectSetup() {
+    openDrawer({
+      title: 'Set up project',
+      subtitle: 'Customer, project details, modules and task types — all in one place',
+      size: 'wide',
+      body: (
+        <ProjectSetupFlow
+          onDone={closeDrawer}
+          onSwitchToClassicForm={() => handleAddOrEditProject()}
         />
       ),
     });
@@ -300,7 +325,7 @@ export function MasterDataPage() {
   const addHandlers: Record<Tab, (() => void) | null> = {
     dept: null,
     acc: () => handleAddOrEditAccount(),
-    proj: () => handleAddOrEditProject(),
+    proj: () => handleOpenGuidedProjectSetup(),
     modtask: null,
     ptype: () => handleAddOrEditProjectType(),
     res: () => handleAddEmployee(),
@@ -382,7 +407,7 @@ export function MasterDataPage() {
                       <td style={{ color: 'var(--slate)' }}>{p.projectLeadEmployeeName ?? '—'}</td>
                       <td style={{ color: 'var(--slate)' }}>{p.projectManagerEmployeeName ?? '—'}</td>
                       <td className="num" style={{ textAlign: 'right' }}>{modules.data?.filter((m) => m.projectId === p.id).length ?? 0}</td>
-                      <td style={{ color: p.isActive ? 'var(--verd)' : 'var(--clay)' }}>{p.isActive ? 'Active' : 'Inactive'}</td>
+                      <td><StatusPill status={p.isActive ? 'Active' : 'Inactive'} labels={ACTIVE_STATUS_LABELS} /></td>
                       <td>
                         {p.projectTypeId != null && (
                           <button
@@ -544,9 +569,7 @@ function ResourceRow({
           ))}
         </select>
       </td>
-      <td style={{ color: employee.isActive ? 'var(--verd)' : 'var(--clay)', fontWeight: 600, fontSize: 12 }}>
-        {employee.isActive ? 'Active' : 'Inactive'}
-      </td>
+      <td><StatusPill status={employee.isActive ? 'Active' : 'Inactive'} labels={ACTIVE_STATUS_LABELS} /></td>
       <td>
         <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
           <button className={`${controls.btn} ${controls.sm}`} onClick={() => onEditAllocations(employee)}>

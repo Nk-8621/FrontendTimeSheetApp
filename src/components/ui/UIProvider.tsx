@@ -5,6 +5,10 @@ interface DrawerOptions {
   title: string;
   subtitle?: string;
   body: ReactNode;
+  /** 'wide' is for a guided, multi-section flow that needs room for a live
+   * summary alongside its fields (e.g. the guided project setup flow) —
+   * every other drawer keeps the normal fixed width. */
+  size?: 'normal' | 'wide';
 }
 
 interface UIValue {
@@ -34,7 +38,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
       {children}
 
       <div className={`${styles.scrim} ${drawer ? styles.on : ''}`} onClick={closeDrawer} />
-      <aside className={`${styles.drawer} ${drawer ? styles.on : ''}`}>
+      <aside className={`${styles.drawer} ${drawer?.size === 'wide' ? styles.wide : ''} ${drawer ? styles.on : ''}`}>
         {drawer && (
           <>
             <div className={styles.head}>

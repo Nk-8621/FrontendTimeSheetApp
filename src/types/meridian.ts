@@ -42,6 +42,14 @@ export const DAY_TYPE_REQUEST_STATUS_LABELS: Record<string, { css: string; label
   Rejected: { css: 'p-rej', label: 'Rejected' },
 };
 
+// Active/Inactive appeared as separate hand-rolled `style={{color}}` spots
+// across the Master Data screen (Projects, Resources) before this — same
+// StatusPill component and vocabulary as every other status in the app.
+export const ACTIVE_STATUS_LABELS: Record<string, { css: string; label: string }> = {
+  Active: { css: 'p-ok', label: 'Active' },
+  Inactive: { css: 'p-draft', label: 'Inactive' },
+};
+
 // Keys match the backend's WeekStatusDto strings exactly (PendingL1/L2, not l1/l2).
 export const WEEK_STATUS_LABELS: Record<string, { css: string; label: string }> = {
   NotStarted: { css: 'p-rej', label: 'Not Started' },

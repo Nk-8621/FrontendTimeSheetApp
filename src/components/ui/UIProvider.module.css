@@ -31,6 +31,13 @@
   transform: translateX(0);
 }
 
+/* Reserved for a guided, multi-section flow (e.g. project setup) that needs
+   room for its fields plus a live summary — every other drawer stays at the
+   default 420px so the rest of the app's forms are unaffected. */
+.drawer.wide {
+  width: 760px;
+}
+
 .head {
   display: flex;
   align-items: flex-start;
@@ -40,7 +47,7 @@
 }
 .head h3 {
   margin: 0;
-  font-size: 14.5px;
+  font-size: var(--fsSectionTitle);
   font-weight: 700;
 }
 .sub {
