@@ -12,7 +12,7 @@ import {
   useEmployeeProjectAllocations, useSetEmployeeProjectAllocations,
 } from '../hooks/api/useEmployees';
 import { ApiError } from '../api/httpClient';
-import type { AccountDto, ProjectDto, ProjectTypeDto, HolidayDto } from '../api/types';
+import type { AccountDto, ProjectDto, ProjectTypeDto, HolidayDto, EmployeeProjectAllocationInput } from '../api/types';
 import { AccountDrawer } from '../components/masterdata/AccountDrawer';
 import { ProjectDrawer } from '../components/masterdata/ProjectDrawer';
 import { ModulesTasksPanel } from '../components/masterdata/ModulesTasksPanel';
@@ -578,13 +578,13 @@ function EmployeeAllocationsEditor({
   onClose: () => void;
   onShowError: (err: unknown, fallback: string) => void;
 }) {
-  const { data: currentProjectIds, isLoading } = useEmployeeProjectAllocations(employeeCode);
+  const { data: currentAllocations, isLoading } = useEmployeeProjectAllocations(employeeCode);
   const setAllocations = useSetEmployeeProjectAllocations();
   const { toast } = useUI();
 
-  function handleSave(projectIds: number[]) {
+  function handleSave(allocations: EmployeeProjectAllocationInput[]) {
     setAllocations.mutate(
-      { employeeCode, body: { projectIds } },
+      { employeeCode, body: { allocations } },
       {
         onSuccess: () => { onClose(); toast('Project allocations updated', 'ok'); },
         onError: (err) => onShowError(err, 'Could not update project allocations'),
@@ -596,7 +596,7 @@ function EmployeeAllocationsEditor({
     <EmployeeAllocationsDrawer
       employeeName={employeeName}
       projects={projects}
-      currentProjectIds={currentProjectIds}
+      currentAllocations={currentAllocations}
       isLoading={isLoading}
       isSaving={setAllocations.isPending}
       onSave={handleSave}

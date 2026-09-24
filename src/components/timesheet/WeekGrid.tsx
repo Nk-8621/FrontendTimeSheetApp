@@ -2,6 +2,7 @@ import { Fragment } from 'react';
 import type { TimeEntryDto, DayTypeDto } from '../../api/types';
 import { DAY_NAMES, DAY_TYPE_LABELS } from '../../types/meridian';
 import { useMasterDataLookup } from '../../hooks/api/useMasterDataLookup';
+import { useEmployeeProjectAllocations } from '../../hooks/api/useEmployees';
 import { ImportExcelButton } from './ImportExcelButton';
 import { DownloadTemplateButton } from './DownloadTemplateButton';
 import controls from '../../styles/controls.module.css';
@@ -45,6 +46,12 @@ export function WeekGrid({
   onRecall,
 }: WeekGridProps) {
   const { deptName, accById, projById, projAccountId, projDeptId, modName, taskName } = useMasterDataLookup();
+  const { data: myAllocations } = useEmployeeProjectAllocations(employeeCode);
+  // Billing classification is set by the admin at project-allocation time,
+  // not chosen per line - the cycle-to-change button on this grid only
+  // still works for a line whose project has no allocation (a not-yet-
+  // reviewed "+ Others" project), same exception EntryDrawer makes.
+  const allocatedProjectIds = new Set((myAllocations ?? []).map((a) => a.projectId));
 
   const days = dayTypes.map((d) => d.date);
   const cap = dayTypes.map((d) => d.capacityHours);
@@ -140,7 +147,7 @@ export function WeekGrid({
                         </div>
                       </td>
                       <td className={styles.tc}>
-                        {editable ? (
+                        {editable && !allocatedProjectIds.has(r.projectId) ? (
                           <button
                             className={`${styles.bt} ${r.classification === 'Billable' ? styles.b : r.classification === 'PartialBillable' ? styles.pb : styles.n}`}
                             onClick={() => onCycleClassification(r)}
@@ -149,7 +156,10 @@ export function WeekGrid({
                             {r.classification === 'Billable' ? 'Billable' : r.classification === 'PartialBillable' ? 'Partial' : 'Non-bill'}
                           </button>
                         ) : (
-                          <span className={`${styles.bt} ${r.classification === 'Billable' ? styles.b : r.classification === 'PartialBillable' ? styles.pb : styles.n}`}>
+                          <span
+                            className={`${styles.bt} ${r.classification === 'Billable' ? styles.b : r.classification === 'PartialBillable' ? styles.pb : styles.n}`}
+                            title={editable ? 'Set by your admin for this project' : undefined}
+                          >
                             {r.classification === 'Billable' ? 'Billable' : r.classification === 'PartialBillable' ? 'Partial' : 'Non-bill'}
                           </span>
                         )}

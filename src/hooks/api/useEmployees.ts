@@ -82,8 +82,8 @@ export function useCreateEmployee() {
   });
 }
 
-/** Project IDs this employee is currently allocated to — pre-ticks the
- * checkbox list on the allocation editor. */
+/** This employee's current project allocations, each with its admin-set
+ * Classification/BillingCategory — pre-fills the allocation editor. */
 export function useEmployeeProjectAllocations(employeeCode: string | undefined) {
   return useQuery({
     queryKey: ['employee', employeeCode, 'projects'],

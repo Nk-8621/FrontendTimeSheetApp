@@ -247,8 +247,31 @@ export interface AllocatedEmployeeDto {
   fullName: string;
   departmentName: string;
 }
+
+/** One row in a bulk project-allocation request — the admin picks the
+ * project AND, mandatorily, its Classification + BillingCategory together
+ * (see BillingClassificationRules on the backend). The employee no longer
+ * picks these per timesheet line — TimesheetService derives them from
+ * whichever allocation matches the line's project. */
+export interface EmployeeProjectAllocationInput {
+  projectId: number;
+  classification: TimeEntryClassification;
+  billingCategory: TimeEntryBillingCategory | null;
+}
+
+/** One of an employee's current project allocations, with the admin-set
+ * Classification/BillingCategory and enough project detail to display it
+ * without a second round trip. */
+export interface EmployeeProjectAllocationDto {
+  projectId: number;
+  projectCode: string;
+  projectName: string;
+  classification: TimeEntryClassification;
+  billingCategory: TimeEntryBillingCategory | null;
+}
+
 export interface SetEmployeeProjectAllocationsRequest {
-  projectIds: number[];
+  allocations: EmployeeProjectAllocationInput[];
 }
 
 export interface EmployeeDto {

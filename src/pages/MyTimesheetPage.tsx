@@ -74,6 +74,7 @@ export function MyTimesheetPage() {
       title: 'Add task line',
       body: (
         <EntryDrawer
+          employeeCode={employeeCode}
           dayTypes={week.dayTypes}
           onCancel={closeDrawer}
           onSave={(data) => {
@@ -94,6 +95,7 @@ export function MyTimesheetPage() {
       title: 'Edit task line',
       body: (
         <EntryDrawer
+          employeeCode={employeeCode}
           dayTypes={week.dayTypes}
           existing={entry}
           onCancel={closeDrawer}
@@ -124,6 +126,7 @@ export function MyTimesheetPage() {
       title: 'Add task line',
       body: (
         <EntryDrawer
+          employeeCode={employeeCode}
           dayTypes={week.dayTypes}
           duplicateFrom={entry}
           onCancel={closeDrawer}

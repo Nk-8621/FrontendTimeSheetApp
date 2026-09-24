@@ -3,6 +3,7 @@ import type { TimeEntryDto, DayTypeDto, CreateTimeEntryRequest, WeekHours } from
 import { DAY_NAMES } from '../../types/meridian';
 import { useMasterDataLookup } from '../../hooks/api/useMasterDataLookup';
 import { useQuickAddMutations } from '../../hooks/api/useMasterData';
+import { useEmployeeProjectAllocations } from '../../hooks/api/useEmployees';
 import { ApiError } from '../../api/httpClient';
 import controls from '../../styles/controls.module.css';
 import styles from './EntryDrawer.module.css';
@@ -11,7 +12,8 @@ import styles from './EntryDrawer.module.css';
  * Module, and Task levels — picking it swaps that field into a plain text
  * input, and typing a name there creates a real, immediately-reusable
  * record via the quick-add endpoints (see MasterDataService.QuickAdd*Async).
- * Not offered at Department/Account level — those stay admin-maintained. */
+ * Open to anyone regardless of project allocation, unchanged by the
+ * admin-assignment feature below. */
 const OTHERS = '__others__';
 
 /** Same vocabulary as TimeEntry.Classification / Project.DefaultBillable. */
@@ -22,6 +24,7 @@ const CLASSIFICATION_LABEL: Record<'Billable' | 'NonBillable' | 'PartialBillable
 };
 
 interface EntryDrawerProps {
+  employeeCode: string;
   dayTypes: DayTypeDto[];
   existing?: TimeEntryDto;
   duplicateFrom?: TimeEntryDto;
@@ -35,14 +38,13 @@ const dayMonth = (iso: string) => {
   return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', timeZone: 'UTC' });
 };
 
-export function EntryDrawer({ dayTypes, existing, duplicateFrom, onSave, onDelete, onCancel }: EntryDrawerProps) {
-  const { departments, accounts, projects, modules, tasks, accById, projById, modById, taskById, projAccountId, projDeptId } =
-    useMasterDataLookup();
+export function EntryDrawer({ employeeCode, dayTypes, existing, duplicateFrom, onSave, onDelete, onCancel }: EntryDrawerProps) {
+  const { modules, tasks, projById, modById, taskById } = useMasterDataLookup();
+  const { data: myAllocations } = useEmployeeProjectAllocations(employeeCode);
+  const allocations = myAllocations ?? [];
 
   const source = existing ?? duplicateFrom;
 
-  const [dept, setDept] = useState<number | ''>(source ? projDeptId(source.projectId) ?? '' : '');
-  const [acc, setAcc] = useState<number | ''>(source ? projAccountId(source.projectId) ?? '' : '');
   const [proj, setProj] = useState<number | ''>(source?.projectId ?? '');
   const [mod, setMod] = useState<number | ''>(source?.moduleId ?? '');
   const [task, setTask] = useState<number | ''>(source?.taskId ?? '');
@@ -117,15 +119,31 @@ export function EntryDrawer({ dayTypes, existing, duplicateFrom, onSave, onDelet
     );
   }
 
-  const accountObj = acc !== '' ? accById(acc) : undefined;
   const projectObj = proj !== '' ? projById(proj) : undefined;
   const moduleObj = mod !== '' ? modById(mod) : undefined;
   const taskObj = task !== '' ? taskById(task) : undefined;
 
-  const accountsForDept = dept !== '' ? accounts.filter((a) => a.departmentId === dept) : [];
-  const projectsForAcc = acc !== '' ? projects.filter((p) => p.accountId === acc) : [];
+  // Only the projects this employee is actually allocated to show up here —
+  // "+ Others" below is the escape hatch for one that isn't yet, open to
+  // anyone regardless of assignment (unchanged from before this feature).
+  // An existing/duplicated line's own project is always included too, even
+  // if it's since fallen out of the current allocation list, so editing
+  // that line doesn't show an empty/mismatched project selection.
+  const allocatedProjectIds = new Set(allocations.map((a) => a.projectId));
+  if (source) allocatedProjectIds.add(source.projectId);
+  const allocatedProjects = Array.from(allocatedProjectIds)
+    .map((id) => projById(id))
+    .filter((p): p is NonNullable<ReturnType<typeof projById>> => Boolean(p));
   const modulesForProj = proj !== '' ? modules.filter((m) => m.projectId === proj) : [];
   const tasksForMod = mod !== '' ? tasks.filter((t) => t.moduleId === mod) : [];
+
+  // Once a project is picked, its billing classification/category are
+  // either the ones the admin set on this employee's allocation for it
+  // (read-only from here), or — if there's no allocation yet, which only
+  // happens for a project just quick-added via "+ Others" and still pending
+  // admin review — still chosen manually, same as before this feature.
+  const allocationForProj = proj !== '' ? allocations.find((a) => a.projectId === proj) : undefined;
+  const needsManualClassification = proj !== '' && !allocationForProj;
 
   // Days this line currently has hours on. An existing line with at least
   // one such day is locked to it/them — adjust the value, but logging this
@@ -175,59 +193,11 @@ export function EntryDrawer({ dayTypes, existing, duplicateFrom, onSave, onDelet
   return (
     <div>
       <div className={styles.chain}>
-        {dept !== '' ? <b>{departments.find((d) => d.id === dept)?.name}</b> : <span className={styles.ph}>Department</span>}
-        <i>›</i>
-        {acc !== '' ? <b>{accountObj?.name}</b> : <span className={styles.ph}>Customer/Internal</span>}
-        <i>›</i>
         {proj !== '' ? <b>{projectObj?.code}</b> : <span className={styles.ph}>Project</span>}
         <i>›</i>
         {mod !== '' ? <b>{moduleObj?.name}</b> : <span className={styles.ph}>Module</span>}
         <i>›</i>
         {task !== '' ? <b>{taskObj?.name}</b> : <span className={styles.ph}>Task</span>}
-      </div>
-
-      <div className={controls.field}>
-        <label>Department <span className={controls.req}>*</span></label>
-        <select
-          className={controls.select}
-          value={dept}
-          onChange={(e) => {
-            setDept(e.target.value ? Number(e.target.value) : '');
-            setAcc(''); setProj(''); setMod(''); setTask('');
-          }}
-        >
-          <option value="">Select department</option>
-          {departments.map((d) => (
-            <option key={d.id} value={d.id}>{d.name}</option>
-          ))}
-        </select>
-      </div>
-
-      <div className={controls.field}>
-        <label>Customer / Internal <span className={controls.req}>*</span></label>
-        <select
-          className={controls.select}
-          value={acc}
-          disabled={dept === ''}
-          onChange={(e) => {
-            const id = e.target.value ? Number(e.target.value) : '';
-            setAcc(id); setProj(''); setMod(''); setTask('');
-            if (id !== '') {
-              const a = accById(id);
-              if (a) updateClassification(a.accountType !== 'Internal' ? 'Billable' : 'NonBillable');
-            }
-          }}
-        >
-          <option value="">{dept !== '' ? 'Select customer or internal' : 'Select a department first'}</option>
-          {accountsForDept.map((a) => (
-            <option key={a.id} value={a.id}>{a.name}</option>
-          ))}
-        </select>
-        {acc !== '' && accountObj && (
-          <div className={controls.hint}>
-            {accountObj.accountType} account — default classification is {accountObj.accountType === 'Internal' ? 'non-billable' : 'billable'}
-          </div>
-        )}
       </div>
 
       <div className={controls.field}>
@@ -253,31 +223,41 @@ export function EntryDrawer({ dayTypes, existing, duplicateFrom, onSave, onDelet
             </div>
             {projOthersError && <div className={styles.errMsg}>{projOthersError}</div>}
             <div className={controls.hint}>
-              Creates a new project right away, pending admin classification — it won't carry the customer/account
-              selected above until admin assigns one.
+              Creates a new project right away, pending admin classification — until an admin allocates it to you
+              with a billing classification, you'll pick one yourself for lines logged against it.
             </div>
           </>
         ) : (
           <select
             className={controls.select}
             value={proj}
-            disabled={acc === ''}
             onChange={(e) => {
               if (e.target.value === OTHERS) { setProjOthers(true); return; }
               const id = e.target.value ? Number(e.target.value) : '';
               setProj(id); setMod(''); setTask('');
               if (id !== '') {
-                const p = projById(id);
-                if (p) updateClassification(p.defaultBillable);
+                const allocation = allocations.find((a) => a.projectId === id);
+                if (allocation) {
+                  setClassification(allocation.classification);
+                  setBillingCategory(allocation.billingCategory);
+                } else {
+                  const p = projById(id);
+                  if (p) updateClassification(p.defaultBillable);
+                }
               }
             }}
           >
-            <option value="">{acc !== '' ? 'Select project' : 'Select a customer first'}</option>
-            {projectsForAcc.map((p) => (
+            <option value="">Select project</option>
+            {allocatedProjects.map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
-            {acc !== '' && <option value={OTHERS}>+ Others (create new)</option>}
+            <option value={OTHERS}>+ Others (create new)</option>
           </select>
+        )}
+        {proj === '' && allocatedProjects.length === 0 && (
+          <div className={controls.hint}>
+            You aren't allocated to any projects yet — ask your admin, or use "+ Others" to add one pending review.
+          </div>
         )}
       </div>
 
@@ -368,32 +348,42 @@ export function EntryDrawer({ dayTypes, existing, duplicateFrom, onSave, onDelet
         {showTaskError && <div className={styles.errMsg}>Select the task this effort belongs to.</div>}
       </div>
 
-      <div className={controls.field}>
-        <label>Classification</label>
-        <div className={styles.segBill}>
-          <button className={classification === 'Billable' ? styles.on : ''} onClick={() => updateClassification('Billable')}>Billable</button>
-          <button className={classification === 'NonBillable' ? styles.on : ''} onClick={() => updateClassification('NonBillable')}>Non-billable</button>
-          <button className={classification === 'PartialBillable' ? styles.on : ''} onClick={() => updateClassification('PartialBillable')}>Partial Billable</button>
+      {proj !== '' && (
+        <div className={controls.field}>
+          <label>Billing classification</label>
+          {needsManualClassification ? (
+            <>
+              <div className={styles.segBill}>
+                <button className={classification === 'Billable' ? styles.on : ''} onClick={() => updateClassification('Billable')}>Billable</button>
+                <button className={classification === 'NonBillable' ? styles.on : ''} onClick={() => updateClassification('NonBillable')}>Non-billable</button>
+                <button className={classification === 'PartialBillable' ? styles.on : ''} onClick={() => updateClassification('PartialBillable')}>Partial Billable</button>
+              </div>
+              {classification !== 'PartialBillable' && (
+                <div className={styles.segCat}>
+                  {(classification === 'Billable' ? ['AMS', 'T&M', 'FB'] : ['OH']).map((opt) => (
+                    <button
+                      key={opt}
+                      className={billingCategory === opt ? styles.on : ''}
+                      onClick={() => setBillingCategory((cur) => (cur === opt ? null : opt))}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <div className={controls.hint}>
+                This project is pending admin review, so pick its billing classification here for now — once an
+                admin formally allocates it to you, this will be set automatically instead.
+              </div>
+            </>
+          ) : (
+            <div className={controls.hint}>
+              {CLASSIFICATION_LABEL[classification]}{billingCategory ? ` — ${billingCategory}` : ''}, as assigned by
+              your admin for this project.
+            </div>
+          )}
         </div>
-        {classification !== 'PartialBillable' && (
-          <div className={styles.segCat}>
-            {(classification === 'Billable' ? ['AMS', 'T&M', 'FB'] : ['OH']).map((opt) => (
-              <button
-                key={opt}
-                className={billingCategory === opt ? styles.on : ''}
-                onClick={() => setBillingCategory((cur) => (cur === opt ? null : opt))}
-              >
-                {opt}
-              </button>
-            ))}
-          </div>
-        )}
-        {proj !== '' && projectObj && (
-          <div className={controls.hint}>
-            Project default is {CLASSIFICATION_LABEL[projectObj.defaultBillable]} — you can override it for this line.
-          </div>
-        )}
-      </div>
+      )}
 
       <div className={controls.field}>
         <label>{pickMode ? 'Which day is this for?' : 'Hours'} {pickMode && <span className={controls.req}>*</span>}</label>

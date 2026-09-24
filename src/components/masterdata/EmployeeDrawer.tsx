@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import type { DepartmentDto, EmployeeDto, ProjectDto } from '../../api/types';
+import type { DepartmentDto, EmployeeDto, EmployeeProjectAllocationInput, ProjectDto } from '../../api/types';
+import { ProjectAllocationList, allocationIsComplete } from './ProjectAllocationList';
 import controls from '../../styles/controls.module.css';
 import styles from '../timesheet/EntryDrawer.module.css';
 
 interface EmployeeDrawerProps {
   departments: DepartmentDto[];
   employees: EmployeeDto[]; // populates the manager picker
-  projects: ProjectDto[]; // populates the initial-allocation checkbox list
+  projects: ProjectDto[]; // populates the initial-allocation checklist
   onSave: (data: {
     fullName: string;
     email: string;
@@ -15,7 +16,7 @@ interface EmployeeDrawerProps {
     departmentId: number;
     isExternal: boolean;
     employeeCode: string | null;
-    projectIds: number[];
+    allocations: EmployeeProjectAllocationInput[];
   }) => void;
   onCancel: () => void;
 }
@@ -28,12 +29,8 @@ export function EmployeeDrawer({ departments, employees, projects, onSave, onCan
   const [departmentId, setDepartmentId] = useState<number | ''>('');
   const [isExternal, setIsExternal] = useState(false);
   const [employeeCode, setEmployeeCode] = useState('');
-  const [projectIds, setProjectIds] = useState<number[]>([]);
+  const [allocations, setAllocations] = useState<EmployeeProjectAllocationInput[]>([]);
   const [error, setError] = useState('');
-
-  function toggleProject(id: number) {
-    setProjectIds((prev) => (prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]));
-  }
 
   function handleSave() {
     if (!fullName.trim() || !email.trim() || !designation.trim() || !managerEmployeeCode || !departmentId) {
@@ -44,6 +41,10 @@ export function EmployeeDrawer({ departments, employees, projects, onSave, onCan
       setError('Employee code is required for internal employees.');
       return;
     }
+    if (allocations.some((a) => !allocationIsComplete(a))) {
+      setError('Pick a billing category for every allocated project.');
+      return;
+    }
     onSave({
       fullName: fullName.trim(),
       email: email.trim(),
@@ -52,7 +53,7 @@ export function EmployeeDrawer({ departments, employees, projects, onSave, onCan
       departmentId: Number(departmentId),
       isExternal,
       employeeCode: isExternal ? null : employeeCode.trim(),
-      projectIds,
+      allocations,
     });
   }
 
@@ -136,16 +137,11 @@ export function EmployeeDrawer({ departments, employees, projects, onSave, onCan
 
       <div className={controls.field}>
         <label>Allocate to projects</label>
-        <div style={{ maxHeight: 180, overflowY: 'auto', border: '1px solid var(--ruleStrong)', borderRadius: 6, padding: 8 }}>
-          {projects.length === 0 && <div className={controls.hint}>No projects to allocate yet.</div>}
-          {projects.map((p) => (
-            <label key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 0', fontSize: 12.5, cursor: 'pointer' }}>
-              <input type="checkbox" checked={projectIds.includes(p.id)} onChange={() => toggleProject(p.id)} />
-              {p.name} <span style={{ color: 'var(--slate)' }}>[{p.code}]</span>
-            </label>
-          ))}
+        <ProjectAllocationList projects={projects} value={allocations} onChange={setAllocations} maxHeight={220} />
+        <div className={controls.hint}>
+          Optional — ticking a project also requires its billing classification and category. More projects can
+          always be allocated later from the Resources tab.
         </div>
-        <div className={controls.hint}>Optional — more projects can always be added later from the Resources tab.</div>
       </div>
 
       <div className={styles.footer}>

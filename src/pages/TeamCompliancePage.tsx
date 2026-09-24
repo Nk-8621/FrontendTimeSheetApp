@@ -8,7 +8,9 @@ import { useTeamCompliance } from '../hooks/api/useTeam';
 import { useWeekDetail } from '../hooks/api/useApprovals';
 import { useSession } from '../session/SessionContext';
 import { mondayOf, addDays, toISO, weekDays } from '../lib/dates';
+import { downloadCsv } from '../lib/csv';
 import type { TeamComplianceRowDto } from '../api/types';
+import controls from '../styles/controls.module.css';
 import queueStyles from '../components/approvals/ApprovalQueue.module.css';
 import kpiStyles from '../components/timesheet/KpiStrip.module.css';
 import styles from './TeamCompliance.module.css';
@@ -137,6 +139,24 @@ export function TeamCompliancePage() {
   const pctBillable = totalHours ? Math.round((totalBillable / totalHours) * 100) : 0;
   const pctPartialBillable = totalHours ? Math.round((totalPartialBillable / totalHours) * 100) : 0;
 
+  /** One row per person, for the week currently on screen - the same
+   * per-employee totals already shown in the grid below, not the day-by-day
+   * detail. Whether to also offer a line-by-line export is a separate
+   * conversation for later. */
+  function handleExportSummary() {
+    if (!rows || rows.length === 0) return;
+    downloadCsv(
+      `team-compliance-summary-${weekStart}.csv`,
+      ['Employee Code', 'Name', 'Designation', 'Department', 'Total Hours', 'Capacity Hours', 'Billable Hours', 'Partial Billable Hours', 'Non-Billable Hours', 'Bill %', 'Status'],
+      rows.map((r) => [
+        r.employeeCode, r.fullName, r.designation, r.departmentName,
+        r.totalHours, r.capacityHours, r.billableHours, r.partialBillableHours, r.nonBillableHours,
+        r.totalHours ? Math.round((r.billableHours / r.totalHours) * 100) : 0,
+        r.status,
+      ]),
+    );
+  }
+
   return (
     <>
       <PageHeader crumb="Oversight" title="Team Compliance">
@@ -184,6 +204,12 @@ export function TeamCompliancePage() {
                 <div className={kpiStyles.v}>{zeroLogged.length}</div>
                 <div className={kpiStyles.d}>of {rows.length} in scope</div>
               </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+              <button className={controls.btn} onClick={handleExportSummary} disabled={rows.length === 0}>
+                Download weekly summary (CSV)
+              </button>
             </div>
 
             <div className={queueStyles.table} style={{ overflowX: 'auto' }}>
