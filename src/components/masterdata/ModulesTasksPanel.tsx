@@ -41,8 +41,9 @@ export function ModulesTasksPanel({ projects, modules, tasks, mutations }: Modul
           onChange={(e) => setProjectId(e.target.value ? Number(e.target.value) : '')}
         >
           <option value="">Select a project…</option>
-          {projects.map((p) => <option key={p.id} value={p.id}>{p.name} [{p.code}]</option>)}
+          {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
+        <div className={controls.hint}>Pick a project to view and edit its modules and tasks.</div>
       </div>
 
       {selectedProject && (
@@ -62,10 +63,6 @@ export function ModulesTasksPanel({ projects, modules, tasks, mutations }: Modul
         ) : (
           <div className={controls.hint} style={{ marginTop: 10 }}>No project type set for this project.</div>
         )
-      )}
-
-      {projectId === '' && (
-        <div className={controls.hint} style={{ marginTop: 12 }}>Pick a project to see its modules and tasks.</div>
       )}
 
       {projectId !== '' && (

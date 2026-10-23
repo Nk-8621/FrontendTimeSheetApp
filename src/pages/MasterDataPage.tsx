@@ -33,8 +33,8 @@ import styles from './MasterData.module.css';
 
 type Tab = 'dept' | 'acc' | 'proj' | 'modtask' | 'ptype' | 'res' | 'palloc' | 'hol';
 const TABS: [Tab, string][] = [
-  ['dept', 'Departments'], ['acc', 'Customers & Internal'], ['proj', 'Projects'],
-  ['ptype', 'Project Types'], ['modtask', 'Modules & Task Types'],
+  ['dept', 'Departments'], ['acc', 'Customers & Internal'], ['ptype', 'Project Types'],
+  ['proj', 'Projects'], ['modtask', 'Modules & Task Types'],
   ['res', 'Resources'], ['palloc', 'Resource Allocation'], ['hol', 'Holiday calendar'],
 ];
 
@@ -427,11 +427,10 @@ export function MasterDataPage() {
 
             {tab === 'dept' && (
               <RecordsCard count={departments.data?.length ?? 0}>
-                <thead><tr><th>Code</th><th>Department</th><th>Parent</th><th style={{ textAlign: 'right' }}>Accounts</th><th style={{ textAlign: 'right' }}>Projects</th><th style={{ textAlign: 'right' }}>Resources</th><th className={styles.editCol} /></tr></thead>
+                <thead><tr><th>Department</th><th>Parent</th><th style={{ textAlign: 'right' }}>Accounts</th><th style={{ textAlign: 'right' }}>Projects</th><th style={{ textAlign: 'right' }}>Resources</th><th className={styles.editCol} /></tr></thead>
                 <tbody>
                   {departments.data?.map((d) => (
                     <tr key={d.id}>
-                      <td className="num">{d.code}</td>
                       <td>{d.name}</td>
                       <td style={{ color: 'var(--slate)' }}>{d.parentDepartmentId ? deptName(d.parentDepartmentId) : '—'}</td>
                       <td className="num" style={{ textAlign: 'right' }}>{accounts.data?.filter((a) => a.departmentId === d.id).length ?? 0}</td>
@@ -463,11 +462,10 @@ export function MasterDataPage() {
 
             {tab === 'proj' && (
               <RecordsCard count={filteredProjects.length}>
-                <thead><tr><th>Code</th><th>Project</th><th>Customer / Internal</th><th>Project type</th><th>Default type</th><th>Bill type</th><th>Customer PO</th><th>Project lead</th><th>Project manager</th><th style={{ textAlign: 'right' }}>Modules</th><th>Status</th><th style={{ width: 150 }} /><th className={styles.editCol} /></tr></thead>
+                <thead><tr><th>Project</th><th>Customer / Internal</th><th>Project type</th><th>Default type</th><th>Bill type</th><th>Customer PO</th><th>Project lead</th><th>Project manager</th><th style={{ textAlign: 'right' }}>Modules</th><th>Status</th><th style={{ width: 150 }} /><th className={styles.editCol} /></tr></thead>
                 <tbody>
                   {filteredProjects.map((p) => (
                     <tr key={p.id}>
-                      <td className="num">{p.code}</td>
                       <td>
                         {p.name}
                         {/* Created by an employee via "+ Others" on Add Task Line - still
@@ -517,10 +515,10 @@ export function MasterDataPage() {
 
             {tab === 'ptype' && (
               <RecordsCard count={projectTypes.data?.length ?? 0}>
-                <thead><tr><th>Name</th><th>Code</th><th style={{ textAlign: 'right' }}>Modules</th><th style={{ textAlign: 'right' }}>Tasks</th><th style={{ textAlign: 'right' }}>Projects using it</th><th style={{ width: 170 }} /></tr></thead>
+                <thead><tr><th>Name</th><th style={{ textAlign: 'right' }}>Modules</th><th style={{ textAlign: 'right' }}>Tasks</th><th style={{ textAlign: 'right' }}>Projects using it</th><th style={{ width: 170 }} /></tr></thead>
                 <tbody>
                   {projectTypesWithTemplates.isError && (
-                    <tr><td colSpan={6} style={{ color: 'var(--clay)', textAlign: 'center', padding: 20 }}>Couldn't load Project Type templates — admin access is required for this tab.</td></tr>
+                    <tr><td colSpan={5} style={{ color: 'var(--clay)', textAlign: 'center', padding: 20 }}>Couldn't load Project Type templates — admin access is required for this tab.</td></tr>
                   )}
                   {projectTypes.data?.map((t) => {
                     const full = projectTypesWithTemplates.data?.find((x) => x.id === t.id);
@@ -530,7 +528,6 @@ export function MasterDataPage() {
                     return (
                       <tr key={t.id}>
                         <td>{t.name}</td>
-                        <td className="num" style={{ color: 'var(--slate)' }}>{t.code}</td>
                         <td className="num" style={{ textAlign: 'right' }}>{moduleCount}</td>
                         <td className="num" style={{ textAlign: 'right' }}>{taskCount}</td>
                         <td className="num" style={{ textAlign: 'right' }}>{projectCount}</td>
@@ -769,7 +766,7 @@ function ResourceAllocationsPanel() {
 
   return (
     <RecordsCard count={data?.length ?? 0}>
-      <thead><tr><th>Code</th><th>Project</th><th style={{ textAlign: 'right' }}>Resources</th><th className={styles.editCol} /></tr></thead>
+      <thead><tr><th>Project</th><th style={{ textAlign: 'right' }}>Resources</th><th className={styles.editCol} /></tr></thead>
       <tbody>
         {data?.map((row) => <ProjectAllocationRow key={row.projectId} row={row} />)}
       </tbody>
@@ -784,7 +781,6 @@ function ProjectAllocationRow({ row }: { row: { projectId: number; projectCode: 
   return (
     <>
       <tr>
-        <td className="num">{row.projectCode}</td>
         <td>{row.projectName}</td>
         <td className="num" style={{ textAlign: 'right' }}>{row.resourceCount}</td>
         <td className={styles.editCol}>
@@ -793,7 +789,7 @@ function ProjectAllocationRow({ row }: { row: { projectId: number; projectCode: 
       </tr>
       {expanded && (
         <tr>
-          <td colSpan={4} style={{ background: '#FAFBFD', padding: '10px 14px' }}>
+          <td colSpan={3} style={{ background: '#FAFBFD', padding: '10px 14px' }}>
             {isLoading && <span style={{ fontSize: 11.5, color: 'var(--slate)' }}>Loading…</span>}
             {allocated && allocated.length === 0 && <span style={{ fontSize: 11.5, color: 'var(--slate)' }}>No employees allocated.</span>}
             {allocated && allocated.length > 0 && (
