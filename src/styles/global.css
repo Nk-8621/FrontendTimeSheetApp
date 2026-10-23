@@ -15,8 +15,8 @@ body {
   font-family: var(--sans);
   background: var(--canvas);
   color: var(--ink);
-  font-size: 14px;
-  line-height: 1.5;
+  font-size: 13px;
+  line-height: 1.45;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -44,7 +44,7 @@ input, select, textarea {
 
 .app-shell {
   display: grid;
-  grid-template-columns: 248px 1fr;
+  grid-template-columns: 212px 1fr;
   grid-template-rows: 100vh;
   height: 100vh;
   width: 100%;
@@ -61,7 +61,7 @@ input, select, textarea {
 }
 
 .page-content {
-  padding: 24px 32px 60px;
+  padding: 18px 20px 60px;
   overflow-x: auto;
 }
 
