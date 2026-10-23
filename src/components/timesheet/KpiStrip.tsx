@@ -39,7 +39,7 @@ export function KpiStrip({ totalHours, capacityHours, billableHours, partialBill
       </div>
 
       <div className={`${styles.kpi} ${styles.p}`}>
-        <div className={styles.k}>Partial Billable</div>
+        <div className={styles.k}>Partial billable</div>
         <div className={styles.v}>
           {fmt(partialBillableHours)}
           <small> h</small>

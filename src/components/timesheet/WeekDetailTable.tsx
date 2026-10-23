@@ -1,4 +1,5 @@
 import type { ApprovalQueueItemDto } from '../../api/types';
+import { CLASSIFICATION_SHORT_LABELS } from '../../types/meridian';
 import styles from '../approvals/ApprovalQueue.module.css';
 
 const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -46,7 +47,7 @@ export function WeekDetailTable({ item }: { item: ApprovalQueueItemDto }) {
               </td>
               <td>
                 <span className={styles.ft}>
-                  {line.classification === 'Billable' ? 'Bill' : line.classification === 'PartialBillable' ? 'Partial' : 'Non-b'}
+                  {CLASSIFICATION_SHORT_LABELS[line.classification]}
                 </span>
                 {line.billingCategory && <div style={{ fontSize: 9, color: 'var(--slate2)', marginTop: 2 }}>{line.billingCategory}</div>}
               </td>

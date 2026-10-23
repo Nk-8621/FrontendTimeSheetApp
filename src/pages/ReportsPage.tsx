@@ -58,7 +58,7 @@ export function ReportsPage() {
     if (!activeRows.length) return;
     downloadCsv(
       `report-${activeTabMeta[1].toLowerCase().replace(/[^a-z]+/g, '-')}-${weekFrom}-to-${weekTo}.csv`,
-      ['Name', 'Detail', 'Total Hours', 'Billable', 'Partial Billable', 'Non-billable', 'Bill %', 'Resources'],
+      ['Name', 'Detail', 'Total Hours', 'Billable', 'Partial billable', 'Non-billable', 'Bill %', 'Resources'],
       activeRows.map((r) => [
         r.key, r.subLabel, r.totalHours, r.billableHours, r.partialBillableHours, r.nonBillableHours,
         r.totalHours ? Math.round((r.billableHours / r.totalHours) * 100) : 0, r.resourceCount,
@@ -119,7 +119,7 @@ export function ReportsPage() {
                 <div className={kpiStyles.d}>{data.actualHours ? Math.round((data.billableHours / data.actualHours) * 100) : 0}% of actual</div>
               </div>
               <div className={`${kpiStyles.kpi} ${kpiStyles.p}`}>
-                <div className={kpiStyles.k}>Partial Billable</div>
+                <div className={kpiStyles.k}>Partial billable</div>
                 <div className={kpiStyles.v}>{data.totalPartialBillableHours.toFixed(0)}<small> h</small></div>
                 <div className={kpiStyles.d}>{data.actualHours ? Math.round((data.totalPartialBillableHours / data.actualHours) * 100) : 0}% of actual</div>
               </div>
@@ -197,7 +197,7 @@ export function ReportsPage() {
 
             <div className={styles.legend}>
               <span><i className={styles.sw} style={{ background: 'var(--oxide)' }} /> Billable</span>
-              <span><i className={styles.sw} style={{ background: 'var(--violet)' }} /> Partial Billable</span>
+              <span><i className={styles.sw} style={{ background: 'var(--violet)' }} /> Partial billable</span>
               <span><i className={styles.sw} style={{ background: 'var(--slate2, #C7CEDA)' }} /> Non-billable</span>
               <span style={{ color: 'var(--slate2)' }}>Billing rates are maintained outside Meridian — this reports hours only.</span>
             </div>

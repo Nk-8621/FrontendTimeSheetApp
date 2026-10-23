@@ -23,6 +23,10 @@ export function RejectDrawer({ employeeName, onConfirm, onCancel }: RejectDrawer
   const [note, setNote] = useState('');
   const [showReasonError, setShowReasonError] = useState(false);
 
+  // The final text is "<reason> — <note>", stored in a 200-character column on
+  // the approval trail - so the note gets whatever room the reason leaves.
+  const noteLimit = Math.max(20, 200 - (reason ? reason.length + 3 : 0));
+
   function handleConfirm() {
     if (!reason || !note.trim()) {
       setShowReasonError(true);
@@ -50,11 +54,13 @@ export function RejectDrawer({ employeeName, onConfirm, onCancel }: RejectDrawer
         <textarea
           className={controls.textarea}
           value={note}
+          maxLength={noteLimit}
           onChange={(e) => setNote(e.target.value)}
           placeholder="Be specific — e.g. Thursday shows 8 h on NML but you were on the Wockhardt call all afternoon."
           autoFocus
         />
         {showReasonError && !note.trim() && <div className={styles.errMsg}>Add a short note.</div>}
+        <div className={controls.hint}>{note.length} / {noteLimit} characters</div>
       </div>
       <div className={styles.footer}>
         <button className={`${controls.btn} ${controls.dgr}`} onClick={handleConfirm}>

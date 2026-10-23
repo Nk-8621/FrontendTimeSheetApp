@@ -20,7 +20,7 @@ const OTHERS = '__others__';
 const CLASSIFICATION_LABEL: Record<'Billable' | 'NonBillable' | 'PartialBillable', string> = {
   Billable: 'billable',
   NonBillable: 'non-billable',
-  PartialBillable: 'partial-billable',
+  PartialBillable: 'partial billable',
 };
 
 interface EntryDrawerProps {
@@ -131,9 +131,13 @@ export function EntryDrawer({ employeeCode, dayTypes, existing, duplicateFrom, o
   // that line doesn't show an empty/mismatched project selection.
   const allocatedProjectIds = new Set(allocations.map((a) => a.projectId));
   if (source) allocatedProjectIds.add(source.projectId);
+  // Inactive projects drop off the list (as the Master Data project form
+  // promises) - except the line's own project when editing an existing line.
+  // A duplicate is a brand-new line, which the backend rejects on an inactive
+  // project, so it isn't offered there.
   const allocatedProjects = Array.from(allocatedProjectIds)
     .map((id) => projById(id))
-    .filter((p): p is NonNullable<ReturnType<typeof projById>> => Boolean(p));
+    .filter((p): p is NonNullable<ReturnType<typeof projById>> => Boolean(p) && (p!.isActive || p!.id === existing?.projectId));
   const modulesForProj = proj !== '' ? modules.filter((m) => m.projectId === proj) : [];
   const tasksForMod = mod !== '' ? tasks.filter((t) => t.moduleId === mod) : [];
 
@@ -356,7 +360,7 @@ export function EntryDrawer({ employeeCode, dayTypes, existing, duplicateFrom, o
               <div className={styles.segBill}>
                 <button className={classification === 'Billable' ? styles.on : ''} onClick={() => updateClassification('Billable')}>Billable</button>
                 <button className={classification === 'NonBillable' ? styles.on : ''} onClick={() => updateClassification('NonBillable')}>Non-billable</button>
-                <button className={classification === 'PartialBillable' ? styles.on : ''} onClick={() => updateClassification('PartialBillable')}>Partial Billable</button>
+                <button className={classification === 'PartialBillable' ? styles.on : ''} onClick={() => updateClassification('PartialBillable')}>Partial billable</button>
               </div>
               {classification !== 'PartialBillable' && (
                 <div className={styles.segCat}>
@@ -457,6 +461,7 @@ export function EntryDrawer({ employeeCode, dayTypes, existing, duplicateFrom, o
         <textarea
           className={controls.textarea}
           value={note}
+          maxLength={500}
           onChange={(e) => {
             setNote(e.target.value);
             setShowNoteError(false);
@@ -464,7 +469,7 @@ export function EntryDrawer({ employeeCode, dayTypes, existing, duplicateFrom, o
           placeholder="Be specific — this is what your lead reads when approving."
         />
         {showNoteError && <div className={styles.errMsg}>Add a description of what you worked on.</div>}
-        <div className={controls.hint}>Required for every line.</div>
+        <div className={controls.hint}>Required for every line · {note.length} / 500 characters</div>
       </div>
 
       <div className={styles.footer}>
@@ -475,7 +480,14 @@ export function EntryDrawer({ employeeCode, dayTypes, existing, duplicateFrom, o
         {existing && onDelete && (
           <>
             <div style={{ flex: 1 }} />
-            <button className={`${controls.btn} ${controls.dgr}`} onClick={onDelete}>Remove line</button>
+            <button
+              className={`${controls.btn} ${controls.dgr}`}
+              onClick={() => {
+                if (window.confirm('Remove this task line and its hours from the week? This can\'t be undone.')) onDelete?.();
+              }}
+            >
+              Remove line
+            </button>
           </>
         )}
       </div>

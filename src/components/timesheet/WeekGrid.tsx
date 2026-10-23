@@ -1,6 +1,6 @@
 import { Fragment } from 'react';
 import type { TimeEntryDto, DayTypeDto } from '../../api/types';
-import { DAY_NAMES, DAY_TYPE_LABELS } from '../../types/meridian';
+import { CLASSIFICATION_SHORT_LABELS, DAY_NAMES, DAY_TYPE_LABELS } from '../../types/meridian';
 import { useMasterDataLookup } from '../../hooks/api/useMasterDataLookup';
 import { useEmployeeProjectAllocations } from '../../hooks/api/useEmployees';
 import { ImportExcelButton } from './ImportExcelButton';
@@ -14,7 +14,9 @@ interface WeekGridProps {
   rows: TimeEntryDto[];
   dayTypes: DayTypeDto[];
   editable: boolean;
-  status: string; // WeekStatusDto
+  /** Mirrors WeekApprovalService.RecallAsync: PendingL1, or PendingL2 when
+   * the week skipped Level 1 and nobody has approved it yet. */
+  canRecall: boolean;
   onHourChange: (entryId: number, dayIndex: number, value: number) => void;
   onCycleClassification: (entry: TimeEntryDto) => void;
   onEditLine: (entryId: number) => void;
@@ -22,6 +24,8 @@ interface WeekGridProps {
   onAddLine: () => void;
   onSubmit: () => void;
   canSubmit: boolean;
+  /** Shown beside a disabled Submit button - which days don't balance yet. */
+  submitBlockedReason?: string;
   onRecall: () => void;
 }
 
@@ -35,7 +39,7 @@ export function WeekGrid({
   rows,
   dayTypes,
   editable,
-  status,
+  canRecall,
   onHourChange,
   onCycleClassification,
   onEditLine,
@@ -43,6 +47,7 @@ export function WeekGrid({
   onAddLine,
   onSubmit,
   canSubmit,
+  submitBlockedReason,
   onRecall,
 }: WeekGridProps) {
   const { deptName, accById, projById, projAccountId, projDeptId, modName, taskName } = useMasterDataLookup();
@@ -151,16 +156,16 @@ export function WeekGrid({
                           <button
                             className={`${styles.bt} ${r.classification === 'Billable' ? styles.b : r.classification === 'PartialBillable' ? styles.pb : styles.n}`}
                             onClick={() => onCycleClassification(r)}
-                            title="Click to cycle Billable / Non-billable / Partial Billable"
+                            title="Click to cycle Billable / Non-billable / Partial billable"
                           >
-                            {r.classification === 'Billable' ? 'Billable' : r.classification === 'PartialBillable' ? 'Partial' : 'Non-bill'}
+                            {CLASSIFICATION_SHORT_LABELS[r.classification]}
                           </button>
                         ) : (
                           <span
                             className={`${styles.bt} ${r.classification === 'Billable' ? styles.b : r.classification === 'PartialBillable' ? styles.pb : styles.n}`}
                             title={editable ? 'Set by your admin for this project' : undefined}
                           >
-                            {r.classification === 'Billable' ? 'Billable' : r.classification === 'PartialBillable' ? 'Partial' : 'Non-bill'}
+                            {CLASSIFICATION_SHORT_LABELS[r.classification]}
                           </span>
                         )}
                       </td>
@@ -204,10 +209,10 @@ export function WeekGrid({
                       <td className={styles.tc}>
                         {editable && (
                           <>
-                           <button className={styles.editBtn} title="Edit line" onClick={() => onEditLine(r.id)}>
+                           <button className={styles.editBtn} title="Edit line" aria-label={`Edit line ${taskName(r.taskId)}`} onClick={() => onEditLine(r.id)}>
                               ✎
                             </button>
-                            <button className={styles.editBtn} title="Duplicate line — same task, blank hours & description" onClick={() => onDuplicateLine(r.id)}>
+                            <button className={styles.editBtn} title="Duplicate line — same task, blank hours & description" aria-label={`Duplicate line ${taskName(r.taskId)}`} onClick={() => onDuplicateLine(r.id)}>
                               ⧉
                            </button>
                           </>
@@ -248,7 +253,7 @@ export function WeekGrid({
       <div className={styles.gridFoot}>
         <div className={styles.legend}>
           <span><i className={`${styles.sw} ${styles.b}`} /> Billable</span>
-          <span><i className={`${styles.sw} ${styles.pb}`} /> Partial Billable</span>
+          <span><i className={`${styles.sw} ${styles.pb}`} /> Partial billable</span>
           <span><i className={`${styles.sw} ${styles.n}`} /> Non-billable</span>
           <span><i className={styles.sw} style={{ background: 'var(--violetTint)', border: '1px solid var(--violetLine)' }} /> WFH</span>
           <span><i className={styles.sw} style={{ background: 'repeating-linear-gradient(45deg,#FBE9E7 0 4px,#F5D9D6 4px 8px)' }} /> Leave (Keka or an approved/pending full-day request)</span>
@@ -258,18 +263,20 @@ export function WeekGrid({
         <div style={{ flex: 1 }} />
         {editable ? (
           <>
-            <span style={{ fontSize: 11, color: 'var(--slate)' }}>Saved automatically as draft</span>
+            <span style={{ fontSize: 11, color: !canSubmit && submitBlockedReason ? 'var(--amber)' : 'var(--slate)', maxWidth: 420, textAlign: 'right' }}>
+              {!canSubmit && submitBlockedReason ? submitBlockedReason : 'Saved automatically as draft'}
+            </span>
            <button
                 className={`${controls.btn} ${controls.pri}`}
                 onClick={onSubmit}
                 disabled={!canSubmit}
-                title={canSubmit ? undefined : 'Every working day must total exactly 8 hours before you can submit'}
+                title={canSubmit ? undefined : 'Every working day must total exactly its available hours (8 h, or 4 h on a half-day leave) before you can submit'}
               >
             Submit week for approval
           </button>
           </>
         ) : (
-          status === 'PendingL1' && <button className={controls.btn} onClick={onRecall}>Recall submission</button>
+          canRecall && <button className={controls.btn} onClick={onRecall}>Recall submission</button>
         )}
       </div>
     </div>

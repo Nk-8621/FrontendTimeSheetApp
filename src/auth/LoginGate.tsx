@@ -89,7 +89,7 @@ function AzureGate({ children }: { children: ReactNode }) {
         if (cancelled) return;
         setError(
           err instanceof ApiError && err.status === 401
-            ? "No employee record found for this Microsoft account. Contact your admin to get set up in Meridian first."
+            ? "No active employee record was found for this Microsoft account — either you haven't been set up yet, or your access has been deactivated. Contact your admin."
             : "Couldn't sign you in - please try again, or contact your admin if this keeps happening."
         );
         setStatus('error');

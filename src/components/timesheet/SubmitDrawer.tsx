@@ -73,7 +73,7 @@ export function SubmitDrawer({
           <tbody>
             <tr><td style={{ color: 'var(--slate)' }}>Total hours</td><td style={{ textAlign: 'right', fontWeight: 600 }}>{fmt(totalHours)} h</td></tr>
             <tr><td style={{ color: 'var(--slate)' }}>Billable</td><td style={{ textAlign: 'right', fontWeight: 600 }}>{fmt(billableHours)} h</td></tr>
-            <tr><td style={{ color: 'var(--slate)' }}>Partial Billable</td><td style={{ textAlign: 'right', fontWeight: 600 }}>{fmt(partialBillableHours)} h</td></tr>
+            <tr><td style={{ color: 'var(--slate)' }}>Partial billable</td><td style={{ textAlign: 'right', fontWeight: 600 }}>{fmt(partialBillableHours)} h</td></tr>
             <tr><td style={{ color: 'var(--slate)' }}>Non-billable</td><td style={{ textAlign: 'right', fontWeight: 600 }}>{fmt(nonBillable)} h</td></tr>
             <tr><td style={{ color: 'var(--slate)' }}>Task lines</td><td style={{ textAlign: 'right', fontWeight: 600 }}>{entryCount}</td></tr>
             <tr><td style={{ color: 'var(--slate)' }}>Level 1 approver</td><td style={{ textAlign: 'right', fontWeight: 600 }}>{leadName}</td></tr>

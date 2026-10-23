@@ -45,6 +45,11 @@ export function ApprovalsPage({ level2, title }: ApprovalsPageProps) {
   const otherWeeksCount = (queue?.length ?? 0) - weekQueue.length;
 
   async function handleBulkApprove() {
+    // Approval can't be undone from the UI (Level 2 also locks the week), so
+    // a one-click bulk action gets the same confirm step as other
+    // irreversible actions here.
+    const names = clean.map((c) => c.fullName).join(', ');
+    if (!window.confirm(`Approve ${clean.length} timesheet${clean.length > 1 ? 's' : ''} at Level ${level2 ? 2 : 1} for ${dayMonth(selectedWeek)} – ${dayMonth(addDays(selectedWeek, 6))}?\n\n${names}`)) return;
     let succeeded = 0;
     for (const item of clean) {
       try {
@@ -58,7 +63,7 @@ export function ApprovalsPage({ level2, title }: ApprovalsPageProps) {
     queryClient.invalidateQueries({ queryKey: ['approval-queue'] });
     queryClient.invalidateQueries({ queryKey: ['pending-approvals'] });
     if (succeeded > 0) toast(`${succeeded} timesheet${succeeded > 1 ? 's' : ''} approved at Level ${level2 ? 2 : 1}`, 'ok');
-    if (succeeded < clean.length) toast(`${clean.length - succeeded} could not be approved - please check them individually`, 'bad');
+    if (succeeded < clean.length) toast(`${clean.length - succeeded} could not be approved — please check them individually`, 'bad');
   }
 
   return (
@@ -74,18 +79,18 @@ export function ApprovalsPage({ level2, title }: ApprovalsPageProps) {
       <div className="page-content">
         <Banner kind={level2 ? undefined : 'warn'}>
           {level2
-            ? <><b>Level 2 - delivery head.</b> These weeks already cleared Level 1. Your approval locks the week.</>
-            : <><b>Level 1 - reporting lead / project manager.</b> You are approving that the effort is real and correctly attributed. Approved weeks move to Level 2.</>}
+            ? <><b>Level 2 — delivery head.</b> These weeks already cleared Level 1. Your approval locks the week.</>
+            : <><b>Level 1 — reporting lead / project manager.</b> You are approving that the effort is real and correctly attributed. Approved weeks move to Level 2.</>}
         </Banner>
 
         {otherWeeksCount > 0 && (
           <Banner kind="warn">
-            <b>{otherWeeksCount} more timesheet{otherWeeksCount > 1 ? 's are' : ' is'} pending from other weeks</b> - use the week selector above to check them too.
+            <b>{otherWeeksCount} more timesheet{otherWeeksCount > 1 ? 's are' : ' is'} pending from other weeks</b> — use the week selector above to check them too.
           </Banner>
         )}
 
-        {isLoading && <Banner>Loading the queue...</Banner>}
-        {isError && <Banner kind="reject">Couldn't load the approval queue - check that the backend API is reachable.</Banner>}
+        {isLoading && <Banner>Loading the queue…</Banner>}
+        {isError && <Banner kind="reject">Couldn't load the approval queue — check that the backend API is reachable.</Banner>}
 
         {queue && (
           <>
@@ -93,7 +98,7 @@ export function ApprovalsPage({ level2, title }: ApprovalsPageProps) {
               <div className={`${kpiStyles.kpi} ${kpiStyles.w}`}>
                 <div className={kpiStyles.k}>Awaiting you</div>
                 <div className={kpiStyles.v}>{weekQueue.length}</div>
-                <div className={kpiStyles.d}>this week{otherWeeksCount > 0 ? ` - ${queue.length} total across all weeks` : ''}</div>
+                <div className={kpiStyles.d}>this week{otherWeeksCount > 0 ? ` — ${queue.length} total across all weeks` : ''}</div>
               </div>
               <div className={`${kpiStyles.kpi} ${kpiStyles.a}`}>
                 <div className={kpiStyles.v}>{totalHours.toFixed(1)}<small> h</small></div>
@@ -114,7 +119,7 @@ export function ApprovalsPage({ level2, title }: ApprovalsPageProps) {
 
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 9 }}>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--slate)' }}>
-                {dayMonth(selectedWeek)} - {dayMonth(addDays(selectedWeek, 6))}
+                {dayMonth(selectedWeek)} – {dayMonth(addDays(selectedWeek, 6))}
               </div>
               <div style={{ flex: 1 }} />
               <span style={{ fontSize: 11, color: 'var(--slate)' }}>Click a row to see the hours behind it</span>
@@ -125,7 +130,7 @@ export function ApprovalsPage({ level2, title }: ApprovalsPageProps) {
                 <div className={styles.empty}>
                   <div style={{ fontWeight: 600, marginBottom: 4 }}>Nothing pending for this week</div>
                   {otherWeeksCount > 0
-                    ? `${otherWeeksCount} timesheet${otherWeeksCount > 1 ? 's are' : ' is'} still pending from another week - use the arrows above to find it.`
+                    ? `${otherWeeksCount} timesheet${otherWeeksCount > 1 ? 's are' : ' is'} still pending from another week — use the arrows above to find it.`
                     : 'Nothing is waiting on your approval right now.'}
                 </div>
               </div>

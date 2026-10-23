@@ -28,12 +28,12 @@ export function useApprovalMutations(employeeCode: string | undefined, weekStart
   });
 
   const approveLevel1 = useMutation({
-    mutationFn: () => approvalsApi.approveLevel1(employeeCode!, weekStart),
+    mutationFn: (comment?: string) => approvalsApi.approveLevel1(employeeCode!, weekStart, comment),
     onSuccess: invalidate,
   });
 
   const approveLevel2 = useMutation({
-    mutationFn: () => approvalsApi.approveLevel2(employeeCode!, weekStart),
+    mutationFn: (comment?: string) => approvalsApi.approveLevel2(employeeCode!, weekStart, comment),
     onSuccess: invalidate,
   });
 
@@ -45,10 +45,13 @@ export function useApprovalMutations(employeeCode: string | undefined, weekStart
   return { submit, recall, approveLevel1, approveLevel2, reject };
 }
 
-export function usePendingApprovals(level2: boolean) {
+/** `enabled` lets the sidebar skip this (server-side, fairly heavy) lookup
+ * for anyone who doesn't have that approval screen at all. */
+export function usePendingApprovals(level2: boolean, enabled = true) {
   return useQuery({
     queryKey: ['pending-approvals', level2],
     queryFn: () => approvalsApi.getPending(level2),
+    enabled,
   });
 }
 

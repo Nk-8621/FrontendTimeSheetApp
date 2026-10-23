@@ -12,6 +12,7 @@ import type {
   ProjectTypeTaskTemplateDto, CreateProjectTypeTaskTemplateRequest, UpdateProjectTypeTaskTemplateRequest,
   QuickAddProjectRequest, QuickAddModuleRequest, QuickAddTaskRequest,
   ProjectResourceAllocationDto, AllocatedEmployeeDto,
+  MasterDataUsageDto,
 } from './types';
 
 export const masterDataApi = {
@@ -53,6 +54,13 @@ export const masterDataApi = {
 
   createTask: (body: CreateTaskRequest) => http.post<WorkTaskDto>('/api/masterdata/tasks', body),
   updateTask: (id: number, body: UpdateTaskRequest) => http.put<WorkTaskDto>(`/api/masterdata/tasks/${id}`, body),
+
+  // A Module / Task Type can only be deleted while no timesheet line uses it -
+  // the usage call tells the screen which case it's in before asking.
+  getModuleUsage: (id: number) => http.get<MasterDataUsageDto>(`/api/masterdata/modules/${id}/usage`),
+  getTaskUsage: (id: number) => http.get<MasterDataUsageDto>(`/api/masterdata/tasks/${id}/usage`),
+  deleteModule: (id: number) => http.delete<void>(`/api/masterdata/modules/${id}`),
+  deleteTask: (id: number) => http.delete<void>(`/api/masterdata/tasks/${id}`),
 
   createHoliday: (body: CreateHolidayRequest) => http.post<HolidayDto>('/api/masterdata/holidays', body),
   updateHoliday: (id: number, body: UpdateHolidayRequest) => http.put<HolidayDto>(`/api/masterdata/holidays/${id}`, body),

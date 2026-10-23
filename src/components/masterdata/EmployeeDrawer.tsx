@@ -81,7 +81,7 @@ export function EmployeeDrawer({ departments, employees, projects, onSave, onCan
         </div>
         <div className={controls.hint}>
           {isExternal
-            ? 'A login code (EXT####) is generated automatically - they log in with email instead.'
+            ? 'A login code (EXT####) is generated automatically — they log in with email instead.'
             : 'Enter the real employee code assigned by HR.'}
         </div>
       </div>

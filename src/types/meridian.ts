@@ -20,6 +20,20 @@ export const NAV_GROUPS: Record<string, { group: string; icon: string; title: st
 export const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
 export const STANDARD_HOURS_PER_DAY = 8;
 
+/** The one wording for billing classification across every screen. */
+export const CLASSIFICATION_LABELS: Record<string, string> = {
+  Billable: 'Billable',
+  NonBillable: 'Non-billable',
+  PartialBillable: 'Partial billable',
+};
+
+/** Shorter versions for narrow table cells (week grid, approval detail). */
+export const CLASSIFICATION_SHORT_LABELS: Record<string, string> = {
+  Billable: 'Billable',
+  NonBillable: 'Non-bill',
+  PartialBillable: 'Partial',
+};
+
 export const DAY_TYPE_LABELS: Record<string, { css: string; label: string }> = {
   W: { css: '', label: 'Working' },
   WFH: { css: 'wfh', label: 'WFH' },

@@ -31,7 +31,7 @@ export function ImportExcelButton({ employeeCode, weekStart }: ImportExcelButton
           toast(
             result.linesImported > 0
               ? `${result.linesImported} line${result.linesImported > 1 ? 's' : ''} imported`
-              : 'No rows found to import - check the file matches the template',
+              : 'No rows found to import — check the file matches the template',
             result.linesImported > 0 ? 'ok' : 'bad',
           );
           return;

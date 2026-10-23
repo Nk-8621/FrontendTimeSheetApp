@@ -13,7 +13,7 @@ const BILLING_TYPES = ['Fixed', 'T&M', 'Consumption', 'NB-ValueAdd', 'NB-L&D', '
 const DEFAULT_BILLABLE_OPTIONS: { value: TimeEntryClassification; label: string }[] = [
   { value: 'Billable', label: 'Billable' },
   { value: 'NonBillable', label: 'Non-billable' },
-  { value: 'PartialBillable', label: 'Partial-billable' },
+  { value: 'PartialBillable', label: 'Partial billable' },
 ];
 
 interface ProjectRow {
@@ -89,6 +89,13 @@ export function ProjectDrawer({ existing, departments, accounts, projectTypes, e
 
   const accountsForDept = departmentId !== '' ? accounts.filter((a) => a.departmentId === departmentId) : [];
   const canSetProjectType = !existing || existing.projectTypeId == null;
+
+  // Lead / Manager / Delivery Head pickers offer active employees only - plus
+  // whoever an existing project already points at, so editing a project whose
+  // lead has since left doesn't silently blank that field.
+  const alreadyAssignedIds = [existing?.projectLeadEmployeeId, existing?.projectManagerEmployeeId, existing?.deliveryHeadEmployeeId];
+  const pickableEmployees = employees.filter((e) => e.isActive || alreadyAssignedIds.includes(e.id));
+  const employeeOptionLabel = (e: EmployeeDto) => `${e.fullName} (${e.employeeCode})${e.isActive ? '' : ' — inactive'}`;
 
   // Distinct customer/internal names across the whole system, regardless of
   // department - this is what "previous functionality" looked like before
@@ -297,21 +304,21 @@ export function ProjectDrawer({ existing, departments, accounts, projectTypes, e
         <label>Project Lead</label>
         <select className={controls.select} value={projectLeadEmployeeId} onChange={(e) => setProjectLeadEmployeeId(e.target.value ? Number(e.target.value) : '')}>
           <option value="">Not set</option>
-          {employees.map((emp) => <option key={emp.id} value={emp.id}>{emp.fullName} ({emp.employeeCode})</option>)}
+          {pickableEmployees.map((emp) => <option key={emp.id} value={emp.id}>{employeeOptionLabel(emp)}</option>)}
         </select>
       </div>
       <div className={controls.field}>
         <label>Project Manager</label>
         <select className={controls.select} value={projectManagerEmployeeId} onChange={(e) => setProjectManagerEmployeeId(e.target.value ? Number(e.target.value) : '')}>
           <option value="">Not set</option>
-          {employees.map((emp) => <option key={emp.id} value={emp.id}>{emp.fullName} ({emp.employeeCode})</option>)}
+          {pickableEmployees.map((emp) => <option key={emp.id} value={emp.id}>{employeeOptionLabel(emp)}</option>)}
         </select>
       </div>
       <div className={controls.field}>
         <label>Delivery Head</label>
         <select className={controls.select} value={deliveryHeadEmployeeId} onChange={(e) => setDeliveryHeadEmployeeId(e.target.value ? Number(e.target.value) : '')}>
           <option value="">Not set</option>
-          {employees.map((emp) => <option key={emp.id} value={emp.id}>{emp.fullName} ({emp.employeeCode})</option>)}
+          {pickableEmployees.map((emp) => <option key={emp.id} value={emp.id}>{employeeOptionLabel(emp)}</option>)}
         </select>
       </div>
 
@@ -329,7 +336,10 @@ export function ProjectDrawer({ existing, departments, accounts, projectTypes, e
             </button>
           ))}
         </div>
-        <div className={controls.hint}>Applies to new task lines by default. Employees can override per line.</div>
+        <div className={controls.hint}>
+          The starting classification for this project. Each employee's actual classification is set when you allocate
+          them to the project (Resources tab › Projects) — employees don't choose it per line.
+        </div>
       </div>
 
       {canSetProjectType ? (
@@ -341,7 +351,7 @@ export function ProjectDrawer({ existing, departments, accounts, projectTypes, e
           </select>
           <div className={controls.hint}>
             {existing
-              ? "This project predates project types and has none yet. Setting one here just classifies it — unlike on creation, it will NOT auto-add Modules/Tasks from that type's template. Can't be changed again once saved."
+              ? "This project has no project type yet. Setting one here also adds that type's template Modules/Tasks that this project doesn't already have (nothing existing is renamed or removed). Can't be changed again once saved."
               : "Auto-generates the full Module/Task tree from that type's template, so the project is usable immediately. Can't be changed once the project is created. Manage the templates themselves on the Project Types tab."}
           </div>
         </div>

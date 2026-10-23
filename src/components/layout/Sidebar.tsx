@@ -8,8 +8,8 @@ import styles from './Sidebar.module.css';
 export function Sidebar() {
   const { employeeCode, roleLabel, nav, logout } = useSession();
 
-  const { data: pendingL1 } = usePendingApprovals(false);
-  const { data: pendingL2 } = usePendingApprovals(true);
+  const { data: pendingL1 } = usePendingApprovals(false, nav.includes('ap1'));
+  const { data: pendingL2 } = usePendingApprovals(true, nav.includes('ap2'));
   const { data: notifications } = useNotifications();
   const unreadCount = notifications?.filter((n) => !n.isBroadcast && !n.readAt).length ?? 0;
 

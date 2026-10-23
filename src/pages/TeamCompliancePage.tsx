@@ -64,7 +64,18 @@ function TeamComplianceRow({ row, weekStart }: TeamComplianceRowProps) {
 
   return (
     <>
-      <tr onClick={() => setIsOpen((o) => !o)} style={{ cursor: 'pointer' }}>
+      <tr
+        onClick={() => setIsOpen((o) => !o)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setIsOpen((o) => !o);
+          }
+        }}
+        tabIndex={0}
+        aria-expanded={isOpen}
+        style={{ cursor: 'pointer' }}
+      >
         <td style={{ padding: '9px 14px', borderTop: '1px solid var(--rule)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <div style={{ width: 23, height: 23, borderRadius: '50%', background: 'var(--oxideTint)', color: 'var(--oxide)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9.5, fontWeight: 700, flexShrink: 0 }}>{initials}</div>
@@ -81,7 +92,7 @@ function TeamComplianceRow({ row, weekStart }: TeamComplianceRowProps) {
             <td key={i} style={{ padding: '4px', borderTop: '1px solid var(--rule)', textAlign: 'center' }}>
               <div
                 className={`${styles.hc} ${cellClass(h, row.dailyDayTypes[i], leaveHalf)}`}
-                title={`${DAY_NAMES[i]} - ${row.dailyDayTypes[i]}${leaveHalf ? ` (${leaveHalf})` : ''}`}
+                title={`${DAY_NAMES[i]} — ${row.dailyDayTypes[i]}${leaveHalf ? ` (${leaveHalf})` : ''}`}
               >
                 {cellContent(h, row.dailyDayTypes[i], leaveHalf)}
               </div>
@@ -147,7 +158,7 @@ export function TeamCompliancePage() {
     if (!rows || rows.length === 0) return;
     downloadCsv(
       `team-compliance-summary-${weekStart}.csv`,
-      ['Employee Code', 'Name', 'Designation', 'Department', 'Total Hours', 'Capacity Hours', 'Billable Hours', 'Partial Billable Hours', 'Non-Billable Hours', 'Bill %', 'Status'],
+      ['Employee Code', 'Name', 'Designation', 'Department', 'Total Hours', 'Capacity Hours', 'Billable Hours', 'Partial billable Hours', 'Non-billable Hours', 'Bill %', 'Status'],
       rows.map((r) => [
         r.employeeCode, r.fullName, r.designation, r.departmentName,
         r.totalHours, r.capacityHours, r.billableHours, r.partialBillableHours, r.nonBillableHours,
@@ -166,8 +177,8 @@ export function TeamCompliancePage() {
         <Banner>
           {isAdmin ? 'Showing every employee in the organization.' : 'Showing your direct reports.'}
         </Banner>
-        {isLoading && <Banner>Loading compliance data...</Banner>}
-        {isError && <Banner kind="reject">Couldn't load compliance data - check that the backend API is reachable.</Banner>}
+        {isLoading && <Banner>Loading compliance data…</Banner>}
+        {isError && <Banner kind="reject">Couldn't load compliance data — check that the backend API is reachable.</Banner>}
 
         {rows && (
           <>
@@ -182,7 +193,7 @@ export function TeamCompliancePage() {
               <div className={`${kpiStyles.kpi} ${kpiStyles.a}`}>
                 <div className={kpiStyles.k}>Team hours logged</div>
                 <div className={kpiStyles.v}>{totalHours.toFixed(0)}<small> / {totalCapacity.toFixed(0)}</small></div>
-                <div className={kpiStyles.d}>{pctOfCapacity}% of capacity - {elapsedDays} of 7 days elapsed</div>
+                <div className={kpiStyles.d}>{pctOfCapacity}% of capacity — {elapsedDays} of 7 days elapsed</div>
               </div>
               <div className={`${kpiStyles.kpi} ${kpiStyles.g}`}>
                 <div className={kpiStyles.k}>Billable share</div>

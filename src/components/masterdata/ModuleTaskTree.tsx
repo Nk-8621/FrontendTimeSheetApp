@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { ModuleDto, WorkTaskDto } from '../../api/types';
 import { ApiError } from '../../api/httpClient';
+import { masterDataApi } from '../../api/masterData';
 import { useUI } from '../ui/UIProvider';
 import controls from '../../styles/controls.module.css';
 import errStyles from '../timesheet/EntryDrawer.module.css';
@@ -12,6 +13,8 @@ export interface ModuleTaskTreeMutations {
   updateModule: { mutateAsync: (args: { id: number; body: { name?: string; projectTypeId?: number | null } }) => Promise<ModuleDto> };
   createTask: { mutateAsync: (body: { moduleId: number; name: string }) => Promise<WorkTaskDto> };
   updateTask: { mutateAsync: (args: { id: number; body: { name?: string } }) => Promise<WorkTaskDto> };
+  deleteModule: { mutateAsync: (id: number) => Promise<void> };
+  deleteTask: { mutateAsync: (id: number) => Promise<void> };
 }
 
 interface ModuleTaskTreeProps {
@@ -173,30 +176,85 @@ export function ModuleTaskTree({
     setEditError('');
   }
 
-  function handleRenameModule(mod: ModuleDto) {
+  /** A renamed Module/Task keeps its id, so every timesheet line already
+   * logged against it shows the new name too - including approved weeks.
+   * Ask first whenever that's the case. Returns false if the admin cancels. */
+  function confirmRenameOfUsedItem(oldName: string, newName: string, usedByLines: number) {
+    if (usedByLines === 0) return true;
+    return window.confirm(
+      `"${oldName}" is used in ${usedByLines} timesheet line(s).\n\n` +
+      `Renaming it to "${newName}" also changes the name shown on those existing timesheets, including approved weeks. Continue?`,
+    );
+  }
+
+  async function handleRenameModule(mod: ModuleDto) {
     const name = editValue.trim();
-    if (!name) { setEditingModuleId(null); return; }
+    if (!name || name === mod.name) { setEditingModuleId(null); return; }
     if (name.toLowerCase() !== mod.name.toLowerCase()
       && modules.some((m) => m.id !== mod.id && m.name.toLowerCase() === name.toLowerCase())) {
       setEditError(`A module named "${name}" already exists for this project.`);
       return;
     }
-    mutations.updateModule.mutateAsync({ id: mod.id, body: { name } })
-      .then(() => setEditingModuleId(null))
-      .catch((err) => showError(err, 'Could not rename this module'));
+    try {
+      const usage = await masterDataApi.getModuleUsage(mod.id);
+      if (!confirmRenameOfUsedItem(mod.name, name, usage.timeEntryCount)) return;
+      await mutations.updateModule.mutateAsync({ id: mod.id, body: { name } });
+      setEditingModuleId(null);
+    } catch (err) {
+      showError(err, 'Could not rename this module');
+    }
   }
 
-  function handleRenameTask(t: WorkTaskDto) {
+  async function handleRenameTask(t: WorkTaskDto) {
     const name = editValue.trim();
-    if (!name) { setEditingTaskId(null); return; }
+    if (!name || name === t.name) { setEditingTaskId(null); return; }
     if (name.toLowerCase() !== t.name.toLowerCase()
       && tasksFor(t.moduleId).some((o) => o.id !== t.id && o.name.toLowerCase() === name.toLowerCase())) {
       setEditError(`A task named "${name}" already exists under this module.`);
       return;
     }
-    mutations.updateTask.mutateAsync({ id: t.id, body: { name } })
-      .then(() => setEditingTaskId(null))
-      .catch((err) => showError(err, 'Could not rename this task'));
+    try {
+      const usage = await masterDataApi.getTaskUsage(t.id);
+      if (!confirmRenameOfUsedItem(t.name, name, usage.timeEntryCount)) return;
+      await mutations.updateTask.mutateAsync({ id: t.id, body: { name } });
+      setEditingTaskId(null);
+    } catch (err) {
+      showError(err, 'Could not rename this task');
+    }
+  }
+
+  /** Only possible while no timesheet line uses the module (checked first,
+   * so the admin sees why instead of a failed delete). Its task types go too. */
+  async function handleDeleteModule(mod: ModuleDto) {
+    try {
+      const usage = await masterDataApi.getModuleUsage(mod.id);
+      if (usage.timeEntryCount > 0) {
+        toast(`"${mod.name}" can't be deleted — it's used in ${usage.timeEntryCount} timesheet line(s). You can still rename it.`, 'bad');
+        return;
+      }
+      const taskCount = tasksFor(mod.id).length;
+      const alsoTasks = taskCount > 0 ? ` and its ${taskCount} task type${taskCount !== 1 ? 's' : ''}` : '';
+      if (!window.confirm(`Delete the module "${mod.name}"${alsoTasks}? This can't be undone.`)) return;
+      await mutations.deleteModule.mutateAsync(mod.id);
+      toast(`Module "${mod.name}" deleted`, 'ok');
+    } catch (err) {
+      showError(err, 'Could not delete this module');
+    }
+  }
+
+  async function handleDeleteTask(t: WorkTaskDto) {
+    try {
+      const usage = await masterDataApi.getTaskUsage(t.id);
+      if (usage.timeEntryCount > 0) {
+        toast(`"${t.name}" can't be deleted — it's used in ${usage.timeEntryCount} timesheet line(s). You can still rename it.`, 'bad');
+        return;
+      }
+      if (!window.confirm(`Delete the task type "${t.name}"? This can't be undone.`)) return;
+      await mutations.deleteTask.mutateAsync(t.id);
+      toast(`Task type "${t.name}" deleted`, 'ok');
+    } catch (err) {
+      showError(err, 'Could not delete this task type');
+    }
   }
 
   return (
@@ -232,7 +290,8 @@ export function ModuleTaskTree({
               <>
                 <b style={{ flex: 1 }}>{mod.name}</b>
                 <span className={controls.hint}>{tasksFor(mod.id).length} task{tasksFor(mod.id).length !== 1 ? 's' : ''}</span>
-                <button style={{ background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => startRenameModule(mod)}>✎</button>
+                <button style={{ background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => startRenameModule(mod)} title="Rename module" aria-label={`Rename module ${mod.name}`}>✎</button>
+                <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--clay)' }} onClick={() => handleDeleteModule(mod)} title="Delete module (only if no hours are logged against it)" aria-label={`Delete module ${mod.name}`}>✕</button>
               </>
             )}
           </div>
@@ -257,7 +316,8 @@ export function ModuleTaskTree({
                 ) : (
                   <>
                     <span style={{ flex: 1, color: 'var(--slate)' }}>{t.name}</span>
-                    <button style={{ background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => startRenameTask(t)}>✎</button>
+                    <button style={{ background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => startRenameTask(t)} title="Rename task type" aria-label={`Rename task type ${t.name}`}>✎</button>
+                    <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--clay)' }} onClick={() => handleDeleteTask(t)} title="Delete task type (only if no hours are logged against it)" aria-label={`Delete task type ${t.name}`}>✕</button>
                   </>
                 )}
               </li>

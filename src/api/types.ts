@@ -188,6 +188,12 @@ export interface UpdateModuleRequest {
   projectTypeId?: number | null;
 }
 
+/** How many timesheet lines use a Module or Task Type. 0 = it can be deleted;
+ * above 0, renaming it also changes the name on those existing lines. */
+export interface MasterDataUsageDto {
+  timeEntryCount: number;
+}
+
 export interface CreateTaskRequest {
   moduleId: number;
   name: string;
@@ -217,12 +223,18 @@ export interface CreateHolidayRequest {
   holidayDate: string;
   name: string;
   location: string;
+  /** Null/omitted = company-wide holiday. */
+  accountId?: number | null;
 }
 export interface UpdateHolidayRequest {
   id: number;
   holidayDate: string;
   name?: string;
   location?: string;
+  /** Null/omitted leaves the client scope unchanged on the backend - send
+   * clearAccountId: true to turn a client-specific holiday company-wide. */
+  accountId?: number | null;
+  clearAccountId?: boolean;
 }
 
 export interface HolidayDto {
@@ -287,6 +299,17 @@ export interface EmployeeDto {
   managerName: string | null;
   isActive: boolean;
   primaryAccountId: number | null;
+  email: string | null;
+}
+
+/** Admin edit of an existing employee (Resources tab › Edit). All fields are
+ * sent every time. Employee code and Internal/External can't be changed. */
+export interface UpdateEmployeeRequest {
+  fullName: string;
+  email: string;
+  designation: string;
+  departmentId: number;
+  managerEmployeeCode: string;
 }
 
 /** Monday..Sunday, matching the backend's HoursByDay array order. */
@@ -334,6 +357,8 @@ export interface DayTypeDto {
   date: string;
   dayType: ApiDayType;
   capacityHours: number;
+  /** Only set when dayType is 'LH' - which half-day leave request drove it. */
+  requestType?: DayTypeRequestType | null;
 }
 
 export type WeekStatusDto = 'Draft' | 'PendingL1' | 'PendingL2' | 'Approved' | 'Rejected';

@@ -15,7 +15,7 @@ const BILLING_TYPES = ['Fixed', 'T&M', 'Consumption', 'NB-ValueAdd', 'NB-L&D', '
 const DEFAULT_BILLABLE_OPTIONS: { value: TimeEntryClassification; label: string }[] = [
   { value: 'Billable', label: 'Billable' },
   { value: 'NonBillable', label: 'Non-billable' },
-  { value: 'PartialBillable', label: 'Partial-billable' },
+  { value: 'PartialBillable', label: 'Partial billable' },
 ];
 
 type SectionKey = 'customer' | 'project' | 'modules' | 'review';
@@ -92,6 +92,8 @@ export function ProjectSetupFlow({ onDone, onSwitchToClassicForm }: ProjectSetup
     toast(err instanceof ApiError ? err.message : fallback, 'bad');
   }
 
+  // A brand-new project only offers active people as Lead/Manager/Delivery Head.
+  const activeEmployees = (employees.data ?? []).filter((e) => e.isActive);
   const accountsForDept = departmentId !== '' ? accounts.data?.filter((a) => a.departmentId === departmentId) ?? [] : [];
   const selectedAccount = accountId !== '' ? accounts.data?.find((a) => a.id === accountId) : undefined;
   const selectedDepartment = departmentId !== '' ? departments.data?.find((d) => d.id === departmentId) : undefined;
@@ -319,21 +321,21 @@ export function ProjectSetupFlow({ onDone, onSwitchToClassicForm }: ProjectSetup
           <label>Project Lead</label>
           <select className={controls.select} value={projectLeadEmployeeId} onChange={(e) => setProjectLeadEmployeeId(e.target.value ? Number(e.target.value) : '')}>
             <option value="">Not set</option>
-            {(employees.data ?? []).map((emp) => <option key={emp.id} value={emp.id}>{emp.fullName} ({emp.employeeCode})</option>)}
+            {activeEmployees.map((emp) => <option key={emp.id} value={emp.id}>{emp.fullName} ({emp.employeeCode})</option>)}
           </select>
         </div>
         <div className={controls.field}>
           <label>Project Manager</label>
           <select className={controls.select} value={projectManagerEmployeeId} onChange={(e) => setProjectManagerEmployeeId(e.target.value ? Number(e.target.value) : '')}>
             <option value="">Not set</option>
-            {(employees.data ?? []).map((emp) => <option key={emp.id} value={emp.id}>{emp.fullName} ({emp.employeeCode})</option>)}
+            {activeEmployees.map((emp) => <option key={emp.id} value={emp.id}>{emp.fullName} ({emp.employeeCode})</option>)}
           </select>
         </div>
         <div className={controls.field}>
           <label>Delivery Head</label>
           <select className={controls.select} value={deliveryHeadEmployeeId} onChange={(e) => setDeliveryHeadEmployeeId(e.target.value ? Number(e.target.value) : '')}>
             <option value="">Not set</option>
-            {(employees.data ?? []).map((emp) => <option key={emp.id} value={emp.id}>{emp.fullName} ({emp.employeeCode})</option>)}
+            {activeEmployees.map((emp) => <option key={emp.id} value={emp.id}>{emp.fullName} ({emp.employeeCode})</option>)}
           </select>
         </div>
         <div className={controls.field}>

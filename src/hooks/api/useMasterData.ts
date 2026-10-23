@@ -147,6 +147,16 @@ export function useMasterDataMutations() {
     onSuccess: () => invalidate('tasks'),
   });
 
+  // Deleting a module also deletes its tasks on the server, so both refresh.
+  const deleteModule = useMutation({
+    mutationFn: (id: number) => masterDataApi.deleteModule(id),
+    onSuccess: () => invalidate('modules', 'tasks'),
+  });
+  const deleteTask = useMutation({
+    mutationFn: (id: number) => masterDataApi.deleteTask(id),
+    onSuccess: () => invalidate('tasks'),
+  });
+
   const createHoliday = useMutation({
     mutationFn: (body: CreateHolidayRequest) => masterDataApi.createHoliday(body),
     onSuccess: () => invalidate('holidays'),
@@ -207,6 +217,7 @@ export function useMasterDataMutations() {
     createProject, updateProject, syncProjectModuleTemplate,
     createModule, updateModule,
     createTask, updateTask,
+    deleteModule, deleteTask,
     createHoliday, updateHoliday, deleteHoliday,
     createProjectType, updateProjectType, deleteProjectType,
     createModuleTemplate, updateModuleTemplate, deleteModuleTemplate,

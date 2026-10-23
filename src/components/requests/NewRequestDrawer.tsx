@@ -82,6 +82,7 @@ export function NewRequestDrawer({ onSave, onCancel }: NewRequestDrawerProps) {
         <textarea
           className={controls.textarea}
           value={note}
+          maxLength={500}
           onChange={(e) => {
             setNote(e.target.value);
             setShowNoteError(false);

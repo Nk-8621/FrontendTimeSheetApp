@@ -13,7 +13,7 @@ const CATEGORY_OPTIONS: Record<TimeEntryClassification, TimeEntryBillingCategory
 const CLASSIFICATION_LABEL: Record<TimeEntryClassification, string> = {
   Billable: 'Billable',
   NonBillable: 'Non-billable',
-  PartialBillable: 'Partial Billable',
+  PartialBillable: 'Partial billable',
 };
 
 /** An allocation is only ready to save once every field the classification
@@ -38,6 +38,9 @@ interface ProjectAllocationListProps {
  * Resources tab's "Projects" allocation editor. */
 export function ProjectAllocationList({ projects, value, onChange, maxHeight = 280 }: ProjectAllocationListProps) {
   const byProjectId = new Map(value.map((a) => [a.projectId, a]));
+  // Only active projects can be newly ticked. An inactive one still shows if
+  // it's already allocated, so the admin can see it and untick it.
+  const listedProjects = projects.filter((p) => p.isActive || byProjectId.has(p.id));
 
   function toggle(projectId: number) {
     if (byProjectId.has(projectId)) {
@@ -53,8 +56,8 @@ export function ProjectAllocationList({ projects, value, onChange, maxHeight = 2
 
   return (
     <div style={{ maxHeight, overflowY: 'auto', border: '1px solid var(--ruleStrong)', borderRadius: 6, padding: 8 }}>
-      {projects.length === 0 && <div className={controls.hint}>No projects exist yet.</div>}
-      {projects.map((p) => {
+      {listedProjects.length === 0 && <div className={controls.hint}>No active projects exist yet.</div>}
+      {listedProjects.map((p) => {
         const allocation = byProjectId.get(p.id);
         const checked = Boolean(allocation);
         const categoryOptions = allocation ? CATEGORY_OPTIONS[allocation.classification] : [];
@@ -63,6 +66,7 @@ export function ProjectAllocationList({ projects, value, onChange, maxHeight = 2
             <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, cursor: 'pointer' }}>
               <input type="checkbox" checked={checked} onChange={() => toggle(p.id)} />
               {p.name} <span style={{ color: 'var(--slate)' }}>[{p.code}]</span>
+              {!p.isActive && <span style={{ color: 'var(--clay)', fontSize: 11 }}>inactive</span>}
             </label>
 
             {allocation && (

@@ -6,11 +6,14 @@ interface ApprovalTrailProps {
   trail: ApprovalEventDto[];
   leadName: string;
   l2Name: string;
+  /** True when this employee's reporting line has no Level 1 step (see
+   * WeekApprovalService.DetermineApprovalRoutingAsync). */
+  skipsLevel1?: boolean;
 }
 
 const STATUS_CSS: Record<string, string> = { Ok: 'ok', Pending: 'pd', Rejected: 'rj' };
 
-export function ApprovalTrail({ trail, leadName, l2Name }: ApprovalTrailProps) {
+export function ApprovalTrail({ trail, leadName, l2Name, skipsLevel1 = false }: ApprovalTrailProps) {
   return (
     <Card title="Approval trail" sub="2 levels">
       {trail.length > 0 ? (
@@ -24,7 +27,9 @@ export function ApprovalTrail({ trail, leadName, l2Name }: ApprovalTrailProps) {
         </div>
       ) : (
         <div className={styles.empty}>
-          Not submitted yet. On submit this goes to <b>{leadName}</b> (Level 1), then <b>{l2Name}</b> (Level 2).
+          {skipsLevel1
+            ? <>Not submitted yet. On submit this goes straight to <b>{l2Name}</b> for approval — there's no Level 1 step for your reporting line.</>
+            : <>Not submitted yet. On submit this goes to <b>{leadName}</b> (Level 1), then <b>{l2Name}</b> (Level 2).</>}
         </div>
       )}
     </Card>

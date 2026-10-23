@@ -7,14 +7,15 @@ import {
   useMasterDataMutations, useProjectResourceAllocations, useAllocatedEmployees,
 } from '../hooks/api/useMasterData';
 import {
-  useAllEmployees, useManager, useSkipManager, useSetPrimaryAccount,
+  useAllEmployees, useSetPrimaryAccount,
   useCreateEmployee, useDeactivateEmployee, useReactivateEmployee,
-  useEmployeeProjectAllocations, useSetEmployeeProjectAllocations,
+  useEmployeeProjectAllocations, useSetEmployeeProjectAllocations, useUpdateEmployee,
 } from '../hooks/api/useEmployees';
 import { ApiError } from '../api/httpClient';
-import type { AccountDto, ProjectDto, ProjectTypeDto, HolidayDto, EmployeeProjectAllocationInput } from '../api/types';
+import type { AccountDto, DepartmentDto, EmployeeDto, ProjectDto, ProjectTypeDto, HolidayDto, EmployeeProjectAllocationInput } from '../api/types';
+import { useSession } from '../session/SessionContext';
 import { StatusPill } from '../components/ui/StatusPill';
-import { ACTIVE_STATUS_LABELS } from '../types/meridian';
+import { ACTIVE_STATUS_LABELS, CLASSIFICATION_LABELS } from '../types/meridian';
 import { AccountDrawer } from '../components/masterdata/AccountDrawer';
 import { ProjectDrawer } from '../components/masterdata/ProjectDrawer';
 import { ProjectSetupFlow } from '../components/masterdata/ProjectSetupFlow';
@@ -24,6 +25,7 @@ import { EmployeeDrawer } from '../components/masterdata/EmployeeDrawer';
 import { ProjectTypeDrawer } from '../components/masterdata/ProjectTypeDrawer';
 import { ProjectTypeTemplateDrawer } from '../components/masterdata/ProjectTypeTemplateDrawer';
 import { EmployeeAllocationsDrawer } from '../components/masterdata/EmployeeAllocationsDrawer';
+import { EmployeeEditDrawer } from '../components/masterdata/EmployeeEditDrawer';
 import controls from '../styles/controls.module.css';
 import drawerStyles from '../components/timesheet/EntryDrawer.module.css';
 import styles from './MasterData.module.css';
@@ -52,7 +54,11 @@ function RecordsCard({ count, children }: { count: number; children: ReactNode }
 
 export function MasterDataPage() {
   const [tab, setTab] = useState<Tab>('dept');
+  // One search box, shared by the long list tabs (Customers, Projects,
+  // Resources) and cleared on every tab switch.
+  const [search, setSearch] = useState('');
   const { openDrawer, closeDrawer, toast } = useUI();
+  const { employeeCode: myEmployeeCode } = useSession();
 
   const departments = useDepartments();
   const accounts = useAccounts();
@@ -77,6 +83,22 @@ export function MasterDataPage() {
   const deptName = (id: number) => departments.data?.find((d) => d.id === id)?.name ?? '—';
   const accName = (id: number) => accounts.data?.find((a) => a.id === id)?.name ?? '—';
   const projAccount = (accId: number) => accounts.data?.find((a) => a.id === accId);
+
+  // Pickers that assign a person to something new (manager on Add Employee)
+  // only offer active employees - a deactivated person can no longer sign in
+  // or approve anything.
+  const activeEmployees = (employees.data ?? []).filter((e) => e.isActive);
+  const employeeById = new Map((employees.data ?? []).map((e) => [e.id, e]));
+
+  const searchText = search.trim().toLowerCase();
+  const matches = (...values: (string | null | undefined)[]) =>
+    !searchText || values.some((v) => v?.toLowerCase().includes(searchText));
+  const filteredAccounts = (accounts.data ?? []).filter((a) => matches(a.name, a.accountType, deptName(a.departmentId)));
+  const filteredProjects = (projects.data ?? []).filter((p) =>
+    matches(p.code, p.name, accName(p.accountId), p.projectTypeName, p.projectLeadEmployeeName, p.projectManagerEmployeeName));
+  const filteredEmployees = (employees.data ?? []).filter((e) =>
+    matches(e.fullName, e.employeeCode, e.designation, deptName(e.departmentId), e.managerName));
+  const showSearch = tab === 'acc' || tab === 'proj' || tab === 'res';
 
   function showError(err: unknown, fallback: string) {
     toast(err instanceof ApiError ? err.message : fallback, 'bad');
@@ -180,7 +202,7 @@ export function MasterDataPage() {
   function handleSyncProjectModules(project: ProjectDto) {
     const confirmed = window.confirm(
       `Pull in any Modules/Tasks from "${project.projectTypeName ?? 'its Project Type'}" that "${project.name}" doesn't already have?\n\n` +
-      "This only adds what's missing - it never renames or removes any existing Module/Task, so nothing already logged against them is affected.",
+      "This only adds what's missing — it never renames or removes any existing Module/Task, so nothing already logged against them is affected.",
     );
     if (!confirmed) return;
     mutations.syncProjectModuleTemplate.mutate(project.id, {
@@ -227,7 +249,9 @@ export function MasterDataPage() {
       {
         onSuccess: () => toast('Project Type deleted', 'ok'),
         onError: (err) => {
-          if (err instanceof ApiError && /still use this Project Type/i.test(err.message)) {
+          // Matches MasterDataService.DeleteProjectTypeAsync's message:
+          // 'Project Type "X" is still used by N project(s) and M module(s)...'
+          if (err instanceof ApiError && /is still used by/i.test(err.message)) {
             promptReplacementAndDelete(type);
           } else {
             showError(err, 'Could not delete this Project Type');
@@ -293,7 +317,7 @@ export function MasterDataPage() {
       body: (
         <EmployeeDrawer
           departments={departments.data ?? []}
-          employees={employees.data ?? []}
+          employees={activeEmployees}
           projects={projects.data ?? []}
           onCancel={closeDrawer}
           onSave={(data) => {
@@ -302,6 +326,21 @@ export function MasterDataPage() {
               onError: (err) => showError(err, 'Could not create this employee'),
             });
           }}
+        />
+      ),
+    });
+  }
+
+  function handleEditEmployee(employee: EmployeeDto) {
+    openDrawer({
+      title: `Edit employee — ${employee.fullName}`,
+      body: (
+        <EmployeeEditor
+          employee={employee}
+          departments={departments.data ?? []}
+          employees={employees.data ?? []}
+          onClose={closeDrawer}
+          onShowError={showError}
         />
       ),
     });
@@ -343,8 +382,8 @@ export function MasterDataPage() {
       <div className="page-content">
         <Banner>
           Every level of the hierarchy is maintained here, so a new customer, project, or module never needs a
-          code change. Departments and locations are sourced from the real org chart and stay read-only. Leave is
-          not maintained in Meridian — it is read from Keka and appears on the grid as a closed day.
+          code change. Departments and locations are sourced from the real org chart and stay read-only. Leave and
+          WFH are not set up here — employees request them from their Requests screen, and their manager approves them.
         </Banner>
         {isLoading && <Banner>Loading master data…</Banner>}
         {isError && <Banner kind="reject">Couldn't load master data — check that the backend API is reachable.</Banner>}
@@ -353,9 +392,22 @@ export function MasterDataPage() {
           <>
             <div className={styles.tabs}>
               {TABS.map(([key, label]) => (
-                <button key={key} className={tab === key ? styles.on : ''} onClick={() => setTab(key)}>{label}</button>
+                <button key={key} className={tab === key ? styles.on : ''} onClick={() => { setTab(key); setSearch(''); }}>{label}</button>
               ))}
             </div>
+
+            {showSearch && (
+              <div style={{ marginBottom: 10, maxWidth: 360 }}>
+                <input
+                  className={controls.textInput}
+                  type="search"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder={tab === 'res' ? 'Search by name, code, designation, department…' : tab === 'proj' ? 'Search by code, name, customer, type, lead…' : 'Search by name, type, department…'}
+                  aria-label="Search this list"
+                />
+              </div>
+            )}
 
             {tab === 'dept' && (
               <RecordsCard count={departments.data?.length ?? 0}>
@@ -375,16 +427,16 @@ export function MasterDataPage() {
             )}
 
             {tab === 'acc' && (
-              <RecordsCard count={accounts.data?.length ?? 0}>
+              <RecordsCard count={filteredAccounts.length}>
                 <thead><tr><th>Customer / Internal</th><th>Type</th><th>Department</th><th style={{ textAlign: 'right' }}>Projects</th><th className={styles.editCol} /></tr></thead>
                 <tbody>
-                  {accounts.data?.map((a) => (
+                  {filteredAccounts.map((a) => (
                     <tr key={a.id}>
                       <td>{a.name}</td>
                       <td style={{ color: 'var(--slate)' }}>{a.accountType}</td>
                       <td style={{ color: 'var(--slate)' }}>{deptName(a.departmentId)}</td>
                       <td className="num" style={{ textAlign: 'right' }}>{projects.data?.filter((p) => p.accountId === a.id).length ?? 0}</td>
-                      <td className={styles.editCol}><button className={styles.editBtn} onClick={() => handleAddOrEditAccount(a)}>✎</button></td>
+                      <td className={styles.editCol}><button className={styles.editBtn} onClick={() => handleAddOrEditAccount(a)} title="Edit account" aria-label={`Edit account ${a.name}`}>✎</button></td>
                     </tr>
                   ))}
                 </tbody>
@@ -392,16 +444,25 @@ export function MasterDataPage() {
             )}
 
             {tab === 'proj' && (
-              <RecordsCard count={projects.data?.length ?? 0}>
+              <RecordsCard count={filteredProjects.length}>
                 <thead><tr><th>Code</th><th>Project</th><th>Customer / Internal</th><th>Project type</th><th>Default type</th><th>Bill type</th><th>Customer PO</th><th>Project lead</th><th>Project manager</th><th style={{ textAlign: 'right' }}>Modules</th><th>Status</th><th style={{ width: 150 }} /><th className={styles.editCol} /></tr></thead>
                 <tbody>
-                  {projects.data?.map((p) => (
+                  {filteredProjects.map((p) => (
                     <tr key={p.id}>
                       <td className="num">{p.code}</td>
-                      <td>{p.name}</td>
+                      <td>
+                        {p.name}
+                        {/* Created by an employee via "+ Others" on Add Task Line - still
+                            under "Pending Classification" until an admin fixes it up. */}
+                        {p.needsReview && (
+                          <div style={{ fontSize: 10.5, fontWeight: 600, color: 'var(--amber)', marginTop: 2 }} title="Created by an employee from Add Task Line — assign the real customer, code and billing type, then untick Needs review.">
+                            Needs review
+                          </div>
+                        )}
+                      </td>
                       <td style={{ color: 'var(--slate)' }}>{accName(p.accountId)}</td>
                       <td style={{ color: 'var(--slate)' }}>{p.projectTypeName ?? '—'}</td>
-                      <td>{{ Billable: 'Billable', NonBillable: 'Non-bill', PartialBillable: 'Partial-bill' }[p.defaultBillable]}</td>
+                      <td>{CLASSIFICATION_LABELS[p.defaultBillable]}</td>
                       <td style={{ color: 'var(--slate)' }}>{p.billingType ?? '—'}</td>
                       <td style={{ color: 'var(--slate)' }}>{p.customerPO ?? '—'}</td>
                       <td style={{ color: 'var(--slate)' }}>{p.projectLeadEmployeeName ?? '—'}</td>
@@ -420,7 +481,7 @@ export function MasterDataPage() {
                           </button>
                         )}
                       </td>
-                      <td className={styles.editCol}><button className={styles.editBtn} onClick={() => handleAddOrEditProject(p)}>✎</button></td>
+                      <td className={styles.editCol}><button className={styles.editBtn} onClick={() => handleAddOrEditProject(p)} title="Edit project" aria-label={`Edit project ${p.name}`}>✎</button></td>
                     </tr>
                   ))}
                 </tbody>
@@ -457,8 +518,8 @@ export function MasterDataPage() {
                         <td className="num" style={{ textAlign: 'right' }}>{projectCount}</td>
                         <td style={{ width: 170, textAlign: 'right', display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
                           <button className={`${controls.btn} ${controls.sm}`} onClick={() => handleManageTemplates(t)}>Templates</button>
-                          <button className={styles.editBtn} onClick={() => handleAddOrEditProjectType(t)}>✎</button>
-                          <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--clay)' }} onClick={() => handleDeleteProjectType(t)}>✕</button>
+                          <button className={styles.editBtn} onClick={() => handleAddOrEditProjectType(t)} title="Edit project type" aria-label={`Edit project type ${t.name}`}>✎</button>
+                          <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--clay)' }} onClick={() => handleDeleteProjectType(t)} title="Delete project type" aria-label={`Delete project type ${t.name}`}>✕</button>
                         </td>
                       </tr>
                     );
@@ -468,11 +529,21 @@ export function MasterDataPage() {
             )}
 
             {tab === 'res' && (
-              <RecordsCard count={employees.data?.length ?? 0}>
+              <RecordsCard count={filteredEmployees.length}>
                 <thead><tr><th>Resource</th><th>Designation</th><th>Department</th><th>Level 1 approver</th><th>Level 2 approver</th><th>Primary client</th><th>Status</th><th style={{ width: 160 }} /></tr></thead>
                 <tbody>
-                  {(employees.data ?? []).map((e) => (
-                    <ResourceRow key={e.id} employee={e} deptName={deptName} accounts={accounts.data ?? []} onShowError={showError} onEditAllocations={handleEditAllocations} />
+                  {filteredEmployees.map((e) => (
+                    <ResourceRow
+                      key={e.id}
+                      employee={e}
+                      employeeById={employeeById}
+                      isSelf={e.employeeCode.toLowerCase() === myEmployeeCode.toLowerCase()}
+                      deptName={deptName}
+                      accounts={accounts.data ?? []}
+                      onShowError={showError}
+                      onEdit={handleEditEmployee}
+                      onEditAllocations={handleEditAllocations}
+                    />
                   ))}
                 </tbody>
               </RecordsCard>
@@ -490,7 +561,7 @@ export function MasterDataPage() {
                       <td>{h.name}</td>
                       <td style={{ color: 'var(--slate)' }}>{h.location}</td>
                       <td style={{ color: 'var(--slate)' }}>{h.accountId ? accName(h.accountId) : 'All clients'}</td>
-                      <td className={styles.editCol}><button className={styles.editBtn} onClick={() => handleAddOrEditHoliday(h)}>✎</button></td>
+                      <td className={styles.editCol}><button className={styles.editBtn} onClick={() => handleAddOrEditHoliday(h)} title="Edit holiday" aria-label={`Edit holiday ${h.name}`}>✎</button></td>
                     </tr>
                   ))}
                 </tbody>
@@ -503,22 +574,25 @@ export function MasterDataPage() {
   );
 }
 
-interface ResourceEmployee {
-  id: number; employeeCode: string; fullName: string; initials: string; designation: string; departmentId: number;
-  primaryAccountId?: number | null; isActive: boolean;
-}
-
 function ResourceRow({
-  employee, deptName, accounts, onShowError, onEditAllocations,
+  employee, employeeById, isSelf, deptName, accounts, onShowError, onEdit, onEditAllocations,
 }: {
-  employee: ResourceEmployee;
+  employee: EmployeeDto;
+  /** The full employee list, already loaded for this tab - Level 1/Level 2
+   * approvers are looked up here instead of two extra API calls per row. */
+  employeeById: Map<number, EmployeeDto>;
+  /** Hides Deactivate on the signed-in admin's own row (the backend refuses it too). */
+  isSelf: boolean;
   deptName: (id: number) => string;
   accounts: AccountDto[];
   onShowError: (err: unknown, fallback: string) => void;
+  onEdit: (employee: EmployeeDto) => void;
   onEditAllocations: (employee: { employeeCode: string; fullName: string }) => void;
 }) {
-  const { data: manager } = useManager(employee.employeeCode);
-  const { data: skipManager } = useSkipManager(employee.employeeCode);
+  const managerOf = (e: EmployeeDto | undefined) =>
+    e && e.managerEmployeeId !== null ? employeeById.get(e.managerEmployeeId) : undefined;
+  const manager = managerOf(employee);
+  const skipManager = managerOf(manager);
   const setPrimaryAccount = useSetPrimaryAccount();
   const deactivate = useDeactivateEmployee();
   const reactivate = useReactivateEmployee();
@@ -533,7 +607,7 @@ function ResourceRow({
 
   function handleDeactivate() {
     const confirmed = window.confirm(
-      `Deactivate ${employee.fullName}? Anyone reporting directly to them will be reassigned to their manager's manager. This does not delete any of their historical timesheet data.`,
+      `Deactivate ${employee.fullName}? They will no longer be able to sign in, and anyone reporting directly to them will be moved up to ${manager?.fullName ?? 'their manager'}. This does not delete any of their historical timesheet data.`,
     );
     if (!confirmed) return;
     deactivate.mutate(employee.employeeCode, { onError: (err) => onShowError(err, 'Could not deactivate this employee') });
@@ -572,10 +646,13 @@ function ResourceRow({
       <td><StatusPill status={employee.isActive ? 'Active' : 'Inactive'} labels={ACTIVE_STATUS_LABELS} /></td>
       <td>
         <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+          <button className={`${controls.btn} ${controls.sm}`} onClick={() => onEdit(employee)} disabled={!employee.isActive}>
+            Edit
+          </button>
           <button className={`${controls.btn} ${controls.sm}`} onClick={() => onEditAllocations(employee)}>
             Projects
           </button>
-          {employee.isActive ? (
+          {isSelf ? null : employee.isActive ? (
             <button className={`${controls.btn} ${controls.sm} ${controls.dgr}`} onClick={handleDeactivate} disabled={deactivate.isPending}>
               Deactivate
             </button>
@@ -587,6 +664,41 @@ function ResourceRow({
         </div>
       </td>
     </tr>
+  );
+}
+
+/** Wraps EmployeeEditDrawer with the save mutation it needs - same split as
+ * EmployeeAllocationsEditor below, so the drawer itself stays presentational
+ * and "Saving…" state stays live (a drawer body is frozen once opened). */
+function EmployeeEditor({
+  employee, departments, employees, onClose, onShowError,
+}: {
+  employee: EmployeeDto;
+  departments: DepartmentDto[];
+  employees: EmployeeDto[];
+  onClose: () => void;
+  onShowError: (err: unknown, fallback: string) => void;
+}) {
+  const updateEmployee = useUpdateEmployee();
+  const { toast } = useUI();
+
+  return (
+    <EmployeeEditDrawer
+      employee={employee}
+      departments={departments}
+      employees={employees}
+      isSaving={updateEmployee.isPending}
+      onCancel={onClose}
+      onSave={(body) => {
+        updateEmployee.mutate(
+          { employeeCode: employee.employeeCode, body },
+          {
+            onSuccess: () => { onClose(); toast('Employee updated', 'ok'); },
+            onError: (err) => onShowError(err, 'Could not update this employee'),
+          },
+        );
+      }}
+    />
   );
 }
 
@@ -658,7 +770,7 @@ function ProjectAllocationRow({ row }: { row: { projectId: number; projectCode: 
         <td>{row.projectName}</td>
         <td className="num" style={{ textAlign: 'right' }}>{row.resourceCount}</td>
         <td className={styles.editCol}>
-          <button className={styles.editBtn} onClick={() => setExpanded((e) => !e)}>{expanded ? '▾' : '▸'}</button>
+          <button className={styles.editBtn} onClick={() => setExpanded((e) => !e)} aria-expanded={expanded} aria-label={`${expanded ? 'Hide' : 'Show'} employees on ${row.projectName}`}>{expanded ? '▾' : '▸'}</button>
         </td>
       </tr>
       {expanded && (

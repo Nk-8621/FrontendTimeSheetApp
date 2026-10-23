@@ -26,7 +26,7 @@ export function MyTimesheetsPage() {
                 <th>Status</th>
                 <th style={{ textAlign: 'right' }}>Total</th>
                 <th style={{ textAlign: 'right' }}>Billable</th>
-                <th style={{ textAlign: 'right' }}>Partial Billable</th>
+                <th style={{ textAlign: 'right' }}>Partial billable</th>
                 <th style={{ textAlign: 'right' }}>Submitted</th>
                 <th />
               </tr>

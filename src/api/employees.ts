@@ -1,5 +1,5 @@
 import { http } from './httpClient';
-import type { AccessProfileDto, EmployeeDto, EmployeeProjectAllocationDto, EmployeeProjectAllocationInput, SetEmployeeProjectAllocationsRequest } from './types';
+import type { AccessProfileDto, EmployeeDto, EmployeeProjectAllocationDto, EmployeeProjectAllocationInput, SetEmployeeProjectAllocationsRequest, UpdateEmployeeRequest } from './types';
 
 export const employeesApi = {
   getAll: () => http.get<EmployeeDto[]>('/api/employees'),
@@ -25,6 +25,8 @@ export const employeesApi = {
    * added later from the Resources tab). */
   allocations?: EmployeeProjectAllocationInput[] | null;
 }) => http.post<EmployeeDto>('/api/employees', request),
+
+update: (employeeCode: string, body: UpdateEmployeeRequest) => http.put<EmployeeDto>(`/api/employees/${employeeCode}`, body),
 
 deactivate: (employeeCode: string) => http.post<void>(`/api/employees/${employeeCode}/deactivate`),
 reactivate: (employeeCode: string) => http.post<void>(`/api/employees/${employeeCode}/reactivate`),

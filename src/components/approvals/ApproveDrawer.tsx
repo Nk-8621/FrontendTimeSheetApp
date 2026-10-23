@@ -31,9 +31,11 @@ export function ApproveDrawer({ flags, nextStepText, onConfirm, onCancel }: Appr
         <textarea
           className={controls.textarea}
           value={comment}
+          maxLength={200}
           onChange={(e) => setComment(e.target.value)}
           placeholder="Visible to the employee and to the next approval level."
         />
+        <div className={controls.hint}>Shown on the week's approval trail. Up to 200 characters.</div>
       </div>
       <Banner>{nextStepText}</Banner>
       <div className={styles.footer}>
