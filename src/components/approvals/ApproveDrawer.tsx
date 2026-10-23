@@ -5,17 +5,16 @@ import styles from '../timesheet/EntryDrawer.module.css';
 
 interface ApproveDrawerProps {
   flags: string[];
-  nextStepText: string;
   onConfirm: (comment: string) => void;
   onCancel: () => void;
 }
 
-export function ApproveDrawer({ flags, nextStepText, onConfirm, onCancel }: ApproveDrawerProps) {
+export function ApproveDrawer({ flags, onConfirm, onCancel }: ApproveDrawerProps) {
   const [comment, setComment] = useState('');
 
   return (
     <div>
-      {flags.length > 0 ? (
+      {flags.length > 0 && (
         <Banner kind="warn">
           <b>This week has {flags.length} flag{flags.length > 1 ? 's' : ''}</b>
           <ul style={{ margin: '5px 0 0', paddingLeft: 16 }}>
@@ -23,8 +22,6 @@ export function ApproveDrawer({ flags, nextStepText, onConfirm, onCancel }: Appr
           </ul>
           <div style={{ marginTop: 6 }}>Approving records that you have seen and accepted these.</div>
         </Banner>
-      ) : (
-        <Banner><b>No flags.</b> Hours match available capacity and every substantial line is described.</Banner>
       )}
       <div className={controls.field}>
         <label>Comment (optional)</label>
@@ -37,7 +34,6 @@ export function ApproveDrawer({ flags, nextStepText, onConfirm, onCancel }: Appr
         />
         <div className={controls.hint}>Shown on the week's approval trail. Up to 200 characters.</div>
       </div>
-      <Banner>{nextStepText}</Banner>
       <div className={styles.footer}>
         <button className={`${controls.btn} ${controls.ok}`} onClick={() => onConfirm(comment.trim())}>Approve</button>
         <button className={controls.btn} onClick={onCancel}>Cancel</button>

@@ -31,7 +31,7 @@ export function MyTimesheetPage() {
   });
   const thisWeek = mondayOf(toISO(new Date()));
 
-  const { data: week, isLoading, isError } = useWeek(employeeCode, weekStart);
+  const { data: week, isError } = useWeek(employeeCode, weekStart);
   const { data: manager } = useManager(employeeCode);
   const skipManagerQuery = useSkipManager(employeeCode);
   const skipManager = skipManagerQuery.data;
@@ -220,27 +220,12 @@ export function MyTimesheetPage() {
     </PageHeader>
 
       <div className="page-content">
-        {isLoading && <Banner>Loading your timesheet…</Banner>}
         {isError && <Banner kind="reject">Couldn't load this week — check that the backend API is running and reachable.</Banner>}
 
         {week && (
           <>
             {week.week.status === 'Rejected' && (
               <Banner kind="reject"><b>Returned by {week.week.rejectedByName ?? ''}:</b> {week.week.rejectionReason} — correct the entries and submit again.</Banner>
-            )}
-            {week.week.status === 'PendingL1' && (
-              <Banner>Awaiting Level 1 approval from <b>{leadName}</b>. Recall it if you need to make changes.</Banner>
-            )}
-            {week.week.status === 'PendingL2' && (
-              hasLevel1Approval
-                ? <Banner>Level 1 approved. Awaiting Level 2 approval from <b>{l2Name}</b>. Entries are read-only from here.</Banner>
-                : <Banner>Awaiting approval from <b>{l2Name}</b> (no Level 1 step for your reporting line). Recall it if you need to make changes.</Banner>
-            )}
-            {week.week.status === 'Approved' && (
-              <Banner>Week locked. Approved at both levels. Corrections need an adjustment request.</Banner>
-            )}
-            {week.dayTypes.some((d) => d.dayType === 'H') && (
-              <Banner><b>Holiday this week</b> — one or more days are marked as a holiday.</Banner>
             )}
 
             <KpiStrip

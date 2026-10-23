@@ -36,7 +36,6 @@ export function ApprovalQueueItem({ item, level2 }: ApprovalQueueItemProps) {
       body: (
         <ApproveDrawer
           flags={item.flags}
-          nextStepText={level2 ? 'On approval the week is locked. Later changes need an adjustment request.' : 'On approval this moves to Level 2.'}
           onCancel={closeDrawer}
           onConfirm={(comment) => {
             const mutation = level2 ? mutations.approveLevel2 : mutations.approveLevel1;

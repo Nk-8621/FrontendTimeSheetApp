@@ -39,8 +39,6 @@ export function SubmitDrawer({
 
   return (
     <div>
-      {isLoading && <Banner>Checking this week for issues…</Banner>}
-
       {!isLoading && errors.length > 0 && (
         <Banner kind="reject">
           <div>
@@ -60,11 +58,6 @@ export function SubmitDrawer({
             </ul>
             <div style={{ marginTop: 6 }}>You can still submit — your lead will see these flags.</div>
           </div>
-        </Banner>
-      )}
-      {!isLoading && errors.length === 0 && warnings.length === 0 && (
-        <Banner>
-          <b>Nothing to flag.</b> {fmt(totalHours)} h logged, all lines described.
         </Banner>
       )}
 

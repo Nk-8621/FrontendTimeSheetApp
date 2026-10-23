@@ -380,12 +380,6 @@ export function MasterDataPage() {
         )}
       </PageHeader>
       <div className="page-content">
-        <Banner>
-          Every level of the hierarchy is maintained here, so a new customer, project, or module never needs a
-          code change. Departments and locations are sourced from the real org chart and stay read-only. Leave and
-          WFH are not set up here — employees request them from their Requests screen, and their manager approves them.
-        </Banner>
-        {isLoading && <Banner>Loading master data…</Banner>}
         {isError && <Banner kind="reject">Couldn't load master data — check that the backend API is reachable.</Banner>}
 
         {!isLoading && !isError && (
@@ -746,7 +740,7 @@ function EmployeeAllocationsEditor({
 function ResourceAllocationsPanel() {
   const { data, isLoading, isError } = useProjectResourceAllocations();
 
-  if (isLoading) return <Banner>Loading resource allocations…</Banner>;
+  if (isLoading) return null;
   if (isError) return <Banner kind="reject">Couldn't load resource allocations — check that you have admin access.</Banner>;
 
   return (

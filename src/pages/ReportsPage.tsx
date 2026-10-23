@@ -38,7 +38,7 @@ export function ReportsPage() {
   const [tab, setTab] = useState<Tab>('dept');
 
   const departments = useDepartments();
-  const { data, isLoading, isError } = useReportsSummary(weekFrom, weekTo, departmentId || undefined, approvalStatus);
+  const { data, isError } = useReportsSummary(weekFrom, weekTo, departmentId || undefined, approvalStatus);
 
   const fromOptions = useMemo(() => weekOptions(10, currentWeek), [currentWeek]);
   const toOptions = fromOptions;
@@ -102,7 +102,6 @@ export function ReportsPage() {
           <button className={controls.btn} onClick={handleExport} disabled={!activeRows.length}>Export CSV</button>
         </div>
 
-        {isLoading && <Banner>Loading report…</Banner>}
         {isError && <Banner kind="reject">Couldn't load the report — check that the backend API is reachable.</Banner>}
 
         {data && (

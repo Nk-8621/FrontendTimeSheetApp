@@ -14,7 +14,7 @@ import styles from '../components/requests/RequestList.module.css';
 export function RequestApprovalPage() {
   const { employeeCode } = useSession();
   const { openDrawer, closeDrawer, toast } = useUI();
-  const { data: queue, isLoading, isError } = useDayTypeRequestQueue();
+  const { data: queue, isError } = useDayTypeRequestQueue();
   const mutations = useDayTypeRequestMutations(employeeCode);
 
   function handleApprove(requestId: number) {
@@ -47,12 +47,6 @@ export function RequestApprovalPage() {
       <PageHeader crumb="Approvals" title="Request Approval" />
 
       <div className="page-content">
-        <Banner kind="warn">
-          <b>Level 1 — reporting lead / project manager.</b> These requests already took effect on the employee's
-          timesheet. Rejecting one reverts that day back to normal automatically.
-        </Banner>
-
-        {isLoading && <Banner>Loading the queue…</Banner>}
         {isError && <Banner kind="reject">Couldn't load the request queue — check that the backend API is reachable.</Banner>}
 
         {queue && (

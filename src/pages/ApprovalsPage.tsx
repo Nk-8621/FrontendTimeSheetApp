@@ -18,7 +18,7 @@ interface ApprovalsPageProps {
 }
 
 export function ApprovalsPage({ level2, title }: ApprovalsPageProps) {
-  const { data: queue, isLoading, isError } = useApprovalQueue(level2);
+  const { data: queue, isError } = useApprovalQueue(level2);
   const { toast } = useUI();
   const queryClient = useQueryClient();
 
@@ -77,19 +77,6 @@ export function ApprovalsPage({ level2, title }: ApprovalsPageProps) {
         )}
       </PageHeader>
       <div className="page-content">
-        <Banner kind={level2 ? undefined : 'warn'}>
-          {level2
-            ? <><b>Level 2 — delivery head.</b> These weeks already cleared Level 1. Your approval locks the week.</>
-            : <><b>Level 1 — reporting lead / project manager.</b> You are approving that the effort is real and correctly attributed. Approved weeks move to Level 2.</>}
-        </Banner>
-
-        {otherWeeksCount > 0 && (
-          <Banner kind="warn">
-            <b>{otherWeeksCount} more timesheet{otherWeeksCount > 1 ? 's are' : ' is'} pending from other weeks</b> — use the week selector above to check them too.
-          </Banner>
-        )}
-
-        {isLoading && <Banner>Loading the queue…</Banner>}
         {isError && <Banner kind="reject">Couldn't load the approval queue — check that the backend API is reachable.</Banner>}
 
         {queue && (

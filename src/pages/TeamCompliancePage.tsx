@@ -6,7 +6,6 @@ import { Banner } from '../components/timesheet/Banner';
 import { WeekDetailTable } from '../components/timesheet/WeekDetailTable';
 import { useTeamCompliance } from '../hooks/api/useTeam';
 import { useWeekDetail } from '../hooks/api/useApprovals';
-import { useSession } from '../session/SessionContext';
 import { mondayOf, addDays, toISO, weekDays } from '../lib/dates';
 import { downloadCsv } from '../lib/csv';
 import type { TeamComplianceRowDto } from '../api/types';
@@ -131,9 +130,8 @@ function TeamComplianceRow({ row, weekStart }: TeamComplianceRowProps) {
 }
 
 export function TeamCompliancePage() {
-  const { isAdmin } = useSession();
   const [weekStart, setWeekStart] = useState(() => mondayOf(toISO(new Date())));
-  const { data: rows, isLoading, isError } = useTeamCompliance(weekStart);
+  const { data: rows, isError } = useTeamCompliance(weekStart);
   const today = toISO(new Date());
 
   const shiftWeek = (direction: -1 | 1) => setWeekStart((w) => addDays(w, direction * 7));
@@ -174,21 +172,10 @@ export function TeamCompliancePage() {
         <WeekNav weekStart={weekStart} onShift={shiftWeek} />
       </PageHeader>
       <div className="page-content">
-        <Banner>
-          {isAdmin ? 'Showing every employee in the organization.' : 'Showing your direct reports.'}
-        </Banner>
-        {isLoading && <Banner>Loading compliance data…</Banner>}
         {isError && <Banner kind="reject">Couldn't load compliance data — check that the backend API is reachable.</Banner>}
 
         {rows && (
           <>
-            {zeroLogged.length > 0 && (
-              <Banner kind="warn">
-                <b>{zeroLogged.length} team member{zeroLogged.length > 1 ? 's have' : ' has'} logged nothing this week:</b>{' '}
-                {zeroLogged.map((z) => z.fullName).join(', ')}.
-              </Banner>
-            )}
-
             <div className={kpiStyles.kpis}>
               <div className={`${kpiStyles.kpi} ${kpiStyles.a}`}>
                 <div className={kpiStyles.k}>Team hours logged</div>

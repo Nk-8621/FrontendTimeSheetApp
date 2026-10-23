@@ -15,7 +15,7 @@ import styles from '../components/requests/RequestList.module.css';
 export function RequestsPage() {
   const { employeeCode } = useSession();
   const { openDrawer, closeDrawer, toast } = useUI();
-  const { data: requests, isLoading, isError } = useMyDayTypeRequests(employeeCode);
+  const { data: requests, isError } = useMyDayTypeRequests(employeeCode);
   const mutations = useDayTypeRequestMutations(employeeCode);
 
   function handleNewRequest() {
@@ -44,12 +44,6 @@ export function RequestsPage() {
       </PageHeader>
 
       <div className="page-content">
-        <Banner>
-          Request WFH or Leave for a single day. It takes effect immediately — shown as Pending until your Level 1
-          manager approves or rejects it. A rejection reverts the day automatically.
-        </Banner>
-
-        {isLoading && <Banner>Loading your requests…</Banner>}
         {isError && <Banner kind="reject">Couldn't load your requests — check that the backend API is reachable.</Banner>}
 
         {requests && (
