@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { masterDataApi } from '../../api/masterData';
 import type {
-  CreateAccountRequest, UpdateAccountRequest, CreateProjectRequest, UpdateProjectRequest,
+  SaveDepartmentRequest, CreateAccountRequest, UpdateAccountRequest, CreateProjectRequest, UpdateProjectRequest,
   CreateModuleRequest, UpdateModuleRequest, CreateTaskRequest, UpdateTaskRequest,
   CreateHolidayRequest, UpdateHolidayRequest,
   CreateProjectTypeRequest, UpdateProjectTypeRequest, DeleteProjectTypeRequest,
@@ -104,6 +104,15 @@ export function useAllocatedEmployees(projectId: number | undefined) {
 export function useMasterDataMutations() {
   const queryClient = useQueryClient();
   const invalidate = (...keys: string[]) => keys.forEach((k) => queryClient.invalidateQueries({ queryKey: [k] }));
+
+  const createDepartment = useMutation({
+    mutationFn: (body: SaveDepartmentRequest) => masterDataApi.createDepartment(body),
+    onSuccess: () => invalidate('departments'),
+  });
+  const updateDepartment = useMutation({
+    mutationFn: ({ id, body }: { id: number; body: SaveDepartmentRequest }) => masterDataApi.updateDepartment(id, body),
+    onSuccess: () => invalidate('departments'),
+  });
 
   const createAccount = useMutation({
     mutationFn: (body: CreateAccountRequest) => masterDataApi.createAccount(body),
@@ -213,6 +222,7 @@ export function useMasterDataMutations() {
   });
 
   return {
+    createDepartment, updateDepartment,
     createAccount, updateAccount,
     createProject, updateProject, syncProjectModuleTemplate,
     createModule, updateModule,

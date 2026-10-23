@@ -129,6 +129,12 @@ export interface UpdateProjectTypeTaskTemplateRequest {
 
 // ---- Admin-only create/update requests (Master Data screen) ----
 
+/** Create and edit both send every field. parentDepartmentId null = top-level. */
+export interface SaveDepartmentRequest {
+  code: string;
+  name: string;
+  parentDepartmentId: number | null;
+}
 export interface CreateAccountRequest {
   departmentId: number;
   name: string;

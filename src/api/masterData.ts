@@ -1,6 +1,6 @@
 import { http } from './httpClient';
 import type {
-  AccountDto, CreateAccountRequest, UpdateAccountRequest,
+  AccountDto, CreateAccountRequest, UpdateAccountRequest, SaveDepartmentRequest,
   CreateHolidayRequest, UpdateHolidayRequest, HolidayDto,
   CreateModuleRequest, UpdateModuleRequest,
   CreateProjectRequest, UpdateProjectRequest,
@@ -40,6 +40,8 @@ export const masterDataApi = {
     http.get<AllocatedEmployeeDto[]>(`/api/masterdata/projects/${projectId}/allocated-employees`),
 
   // ---- Mutations (Admin only — backend enforces this regardless) ----
+  createDepartment: (body: SaveDepartmentRequest) => http.post<DepartmentDto>('/api/masterdata/departments', body),
+  updateDepartment: (id: number, body: SaveDepartmentRequest) => http.put<DepartmentDto>(`/api/masterdata/departments/${id}`, body),
   createAccount: (body: CreateAccountRequest) => http.post<AccountDto>('/api/masterdata/accounts', body),
   updateAccount: (id: number, body: UpdateAccountRequest) => http.put<AccountDto>(`/api/masterdata/accounts/${id}`, body),
 

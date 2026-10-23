@@ -17,6 +17,7 @@ import { useSession } from '../session/SessionContext';
 import { StatusPill } from '../components/ui/StatusPill';
 import { ACTIVE_STATUS_LABELS, CLASSIFICATION_LABELS } from '../types/meridian';
 import { AccountDrawer } from '../components/masterdata/AccountDrawer';
+import { DepartmentDrawer } from '../components/masterdata/DepartmentDrawer';
 import { ProjectDrawer } from '../components/masterdata/ProjectDrawer';
 import { ProjectSetupFlow } from '../components/masterdata/ProjectSetupFlow';
 import { ModulesTasksPanel } from '../components/masterdata/ModulesTasksPanel';
@@ -102,6 +103,27 @@ export function MasterDataPage() {
 
   function showError(err: unknown, fallback: string) {
     toast(err instanceof ApiError ? err.message : fallback, 'bad');
+  }
+
+  function handleAddOrEditDepartment(existing?: DepartmentDto) {
+    openDrawer({
+      title: existing ? 'Edit department' : 'New department',
+      body: (
+        <DepartmentDrawer
+          existing={existing}
+          departments={departments.data ?? []}
+          onCancel={closeDrawer}
+          onSave={(data) => {
+            const action = existing
+              ? mutations.updateDepartment.mutateAsync({ id: existing.id, body: data })
+              : mutations.createDepartment.mutateAsync(data);
+            action
+              .then(() => { closeDrawer(); toast(existing ? 'Department updated' : 'Department created', 'ok'); })
+              .catch((err) => showError(err, 'Could not save this department'));
+          }}
+        />
+      ),
+    });
   }
 
   function handleAddOrEditAccount(existing?: AccountDto) {
@@ -362,7 +384,7 @@ export function MasterDataPage() {
   }
 
   const addHandlers: Record<Tab, (() => void) | null> = {
-    dept: null,
+    dept: () => handleAddOrEditDepartment(),
     acc: () => handleAddOrEditAccount(),
     proj: () => handleOpenGuidedProjectSetup(),
     modtask: null,
@@ -405,15 +427,17 @@ export function MasterDataPage() {
 
             {tab === 'dept' && (
               <RecordsCard count={departments.data?.length ?? 0}>
-                <thead><tr><th>Code</th><th>Department</th><th style={{ textAlign: 'right' }}>Accounts</th><th style={{ textAlign: 'right' }}>Projects</th><th style={{ textAlign: 'right' }}>Resources</th></tr></thead>
+                <thead><tr><th>Code</th><th>Department</th><th>Parent</th><th style={{ textAlign: 'right' }}>Accounts</th><th style={{ textAlign: 'right' }}>Projects</th><th style={{ textAlign: 'right' }}>Resources</th><th className={styles.editCol} /></tr></thead>
                 <tbody>
                   {departments.data?.map((d) => (
                     <tr key={d.id}>
                       <td className="num">{d.code}</td>
                       <td>{d.name}</td>
+                      <td style={{ color: 'var(--slate)' }}>{d.parentDepartmentId ? deptName(d.parentDepartmentId) : '—'}</td>
                       <td className="num" style={{ textAlign: 'right' }}>{accounts.data?.filter((a) => a.departmentId === d.id).length ?? 0}</td>
                       <td className="num" style={{ textAlign: 'right' }}>{projects.data?.filter((p) => projAccount(p.accountId)?.departmentId === d.id).length ?? 0}</td>
                       <td className="num" style={{ textAlign: 'right' }}>{employees.data?.filter((e) => e.departmentId === d.id).length ?? 0}</td>
+                      <td className={styles.editCol}><button className={styles.editBtn} onClick={() => handleAddOrEditDepartment(d)} title="Edit department" aria-label={`Edit department ${d.name}`}>✎</button></td>
                     </tr>
                   ))}
                 </tbody>

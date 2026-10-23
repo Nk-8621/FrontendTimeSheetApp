@@ -4,6 +4,7 @@ import { WeekNav } from '../components/timesheet/WeekNav';
 import { StatusPill } from '../components/ui/StatusPill';
 import { Banner } from '../components/timesheet/Banner';
 import { WeekDetailTable } from '../components/timesheet/WeekDetailTable';
+import { BillableSplitRing } from '../components/timesheet/BillableSplitRing';
 import { useTeamCompliance } from '../hooks/api/useTeam';
 import { useWeekDetail } from '../hooks/api/useApprovals';
 import { mondayOf, addDays, toISO, weekDays } from '../lib/dates';
@@ -75,16 +76,16 @@ function TeamComplianceRow({ row, weekStart }: TeamComplianceRowProps) {
         aria-expanded={isOpen}
         style={{ cursor: 'pointer' }}
       >
-        <td style={{ padding: '9px 14px', borderTop: '1px solid var(--rule)' }}>
+        <td style={{ padding: '14px 16px', borderTop: '1px solid var(--rule)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 23, height: 23, borderRadius: '50%', background: 'var(--oxideTint)', color: 'var(--oxide)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9.5, fontWeight: 700, flexShrink: 0 }}>{initials}</div>
+            <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--oxideTint)', color: 'var(--oxide)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12.5, fontWeight: 700, flexShrink: 0 }}>{initials}</div>
             <div>
               <div style={{ fontWeight: 600 }}>{row.fullName}</div>
-              <div style={{ fontSize: 10.5, color: 'var(--slate)' }}>{row.designation}</div>
+              <div style={{ fontSize: 12, color: 'var(--slate)', marginTop: 2 }}>{row.designation}</div>
             </div>
           </div>
         </td>
-        <td style={{ padding: '9px 14px', borderTop: '1px solid var(--rule)', fontSize: 11, color: 'var(--slate)' }}>{row.departmentName}</td>
+        <td style={{ padding: '14px 16px', borderTop: '1px solid var(--rule)', fontSize: 12.5, color: 'var(--slate)' }}>{row.departmentName}</td>
         {row.dailyHours.map((h, i) => {
           const leaveHalf = row.dailyLeaveHalf[i];
           return (
@@ -98,11 +99,11 @@ function TeamComplianceRow({ row, weekStart }: TeamComplianceRowProps) {
             </td>
           );
         })}
-        <td className="num" style={{ padding: '9px 14px', borderTop: '1px solid var(--rule)', textAlign: 'right', fontWeight: 600, color: row.totalHours < row.capacityHours ? 'var(--amber)' : undefined }}>
+        <td className="num" style={{ padding: '14px 16px', borderTop: '1px solid var(--rule)', textAlign: 'right', fontWeight: 600, color: row.totalHours < row.capacityHours ? 'var(--amber)' : undefined }}>
           {row.totalHours.toFixed(1) || '0'}
         </td>
-        <td className="num" style={{ padding: '9px 14px', borderTop: '1px solid var(--rule)', textAlign: 'right', color: 'var(--slate)' }}>{row.capacityHours.toFixed(0)}</td>
-        <td style={{ padding: '9px 14px', borderTop: '1px solid var(--rule)' }}>
+        <td className="num" style={{ padding: '14px 16px', borderTop: '1px solid var(--rule)', textAlign: 'right', color: 'var(--slate)' }}>{row.capacityHours.toFixed(0)}</td>
+        <td style={{ padding: '14px 16px', borderTop: '1px solid var(--rule)' }}>
           {row.totalHours ? (
             <>
               <div className={styles.bar}>
@@ -110,11 +111,11 @@ function TeamComplianceRow({ row, weekStart }: TeamComplianceRowProps) {
                 <i style={{ width: `${pctPartial}%`, background: 'var(--violet)', display: 'block', height: '100%' }} />
                 <i style={{ width: `${pctNon}%`, background: 'var(--slate2, #C7CEDA)', display: 'block', height: '100%' }} />
               </div>
-              <div className="num" style={{ fontSize: 10, color: 'var(--slate)', marginTop: 2 }}>{pctBill}% billable · {pctPartial}% partial</div>
+              <div className="num" style={{ fontSize: 12, color: 'var(--slate)', marginTop: 6 }}>{pctBill}% billable · {pctPartial}% partial</div>
             </>
           ) : <span style={{ color: 'var(--slate2)' }}>-</span>}
         </td>
-        <td style={{ padding: '9px 14px', borderTop: '1px solid var(--rule)' }}><StatusPill status={row.status} /></td>
+        <td style={{ padding: '14px 16px', borderTop: '1px solid var(--rule)' }}><StatusPill status={row.status} /></td>
       </tr>
       {isOpen && (
         <tr>
@@ -145,8 +146,7 @@ export function TeamCompliancePage() {
   const submittedCount = rows?.filter((r) => r.status !== 'Draft' && r.status !== 'Rejected' && r.status !== 'NotStarted').length ?? 0;
   const elapsedDays = days.filter((d) => d <= today).length;
   const pctOfCapacity = totalCapacity ? Math.round((totalHours / totalCapacity) * 100) : 0;
-  const pctBillable = totalHours ? Math.round((totalBillable / totalHours) * 100) : 0;
-  const pctPartialBillable = totalHours ? Math.round((totalPartialBillable / totalHours) * 100) : 0;
+  const pctOf = (part: number, whole: number) => (whole ? Math.round((part / whole) * 100) : 0);
 
   /** One row per person, for the week currently on screen - the same
    * per-employee totals already shown in the grid below, not the day-by-day
@@ -180,27 +180,25 @@ export function TeamCompliancePage() {
               <div className={`${kpiStyles.kpi} ${kpiStyles.a}`}>
                 <div className={kpiStyles.k}>Team hours logged</div>
                 <div className={kpiStyles.v}>{totalHours.toFixed(0)}<small> / {totalCapacity.toFixed(0)}</small></div>
+                <div className={kpiStyles.meter}><i style={{ width: `${Math.min(pctOfCapacity, 100)}%`, background: 'var(--oxide)' }} /></div>
                 <div className={kpiStyles.d}>{pctOfCapacity}% of capacity — {elapsedDays} of 7 days elapsed</div>
               </div>
-              <div className={`${kpiStyles.kpi} ${kpiStyles.g}`}>
-                <div className={kpiStyles.k}>Billable share</div>
-                <div className={kpiStyles.v}>{pctBillable}<small>%</small></div>
-                <div className={kpiStyles.d}>{totalBillable.toFixed(0)} h billable of {totalHours.toFixed(0)} h</div>
-              </div>
-              <div className={`${kpiStyles.kpi} ${kpiStyles.p}`}>
-                <div className={kpiStyles.k}>Partial billable share</div>
-                <div className={kpiStyles.v}>{pctPartialBillable}<small>%</small></div>
-                <div className={kpiStyles.d}>{totalPartialBillable.toFixed(0)} h partial of {totalHours.toFixed(0)} h</div>
-              </div>
+              <BillableSplitRing
+                billableHours={totalBillable}
+                partialBillableHours={totalPartialBillable}
+                nonBillableHours={Math.max(0, totalHours - totalBillable - totalPartialBillable)}
+              />
               <div className={`${kpiStyles.kpi} ${submittedCount === rows.length ? kpiStyles.g : kpiStyles.w}`}>
                 <div className={kpiStyles.k}>Submitted</div>
                 <div className={kpiStyles.v}>{submittedCount}<small> / {rows.length}</small></div>
+                <div className={kpiStyles.meter}><i style={{ width: `${pctOf(submittedCount, rows.length)}%`, background: 'var(--verd)' }} /></div>
                 <div className={kpiStyles.d}>weeks sent for approval</div>
               </div>
               <div className={`${kpiStyles.kpi} ${kpiStyles.r}`}>
                 <div className={kpiStyles.k}>Nothing logged</div>
-                <div className={kpiStyles.v}>{zeroLogged.length}</div>
-                <div className={kpiStyles.d}>of {rows.length} in scope</div>
+                <div className={kpiStyles.v}>{zeroLogged.length}<small> / {rows.length}</small></div>
+                <div className={kpiStyles.meter}><i style={{ width: `${pctOf(zeroLogged.length, rows.length)}%`, background: 'var(--clay)' }} /></div>
+                <div className={kpiStyles.d}>people with no hours this week</div>
               </div>
             </div>
 
@@ -214,18 +212,18 @@ export function TeamCompliancePage() {
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr>
-                    <th style={{ textAlign: 'left', padding: '10px 14px', fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--slate)', borderBottom: '1px solid var(--ruleStrong)' }}>Resource</th>
-                    <th style={{ textAlign: 'left', padding: '10px 14px', fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--slate)', borderBottom: '1px solid var(--ruleStrong)' }}>Department</th>
+                    <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--slate)', background: '#F8FAFD', borderBottom: '1px solid var(--rule)' }}>Resource</th>
+                    <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--slate)', background: '#F8FAFD', borderBottom: '1px solid var(--rule)' }}>Department</th>
                     {DAY_NAMES.map((d, i) => (
-                      <th key={d} style={{ width: 44, textAlign: 'center', padding: '10px 4px', fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--slate)', borderBottom: '1px solid var(--ruleStrong)' }}>
+                      <th key={d} style={{ width: 44, textAlign: 'center', padding: '12px 4px', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--slate)', background: '#F8FAFD', borderBottom: '1px solid var(--rule)' }}>
                         {d}
                         <div className="num" style={{ fontWeight: 400, fontSize: 9, color: 'var(--slate2)' }}>{Number(days[i].slice(-2))}</div>
                       </th>
                     ))}
-                    <th style={{ textAlign: 'right', padding: '10px 14px', fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--slate)', borderBottom: '1px solid var(--ruleStrong)' }}>Logged</th>
-                    <th style={{ textAlign: 'right', padding: '10px 14px', fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--slate)', borderBottom: '1px solid var(--ruleStrong)' }}>Cap.</th>
-                    <th style={{ width: 112, textAlign: 'left', padding: '10px 14px', fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--slate)', borderBottom: '1px solid var(--ruleStrong)' }}>Billable split</th>
-                    <th style={{ textAlign: 'left', padding: '10px 14px', fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--slate)', borderBottom: '1px solid var(--ruleStrong)' }}>Status</th>
+                    <th style={{ textAlign: 'right', padding: '12px 16px', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--slate)', background: '#F8FAFD', borderBottom: '1px solid var(--rule)' }}>Logged</th>
+                    <th style={{ textAlign: 'right', padding: '12px 16px', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--slate)', background: '#F8FAFD', borderBottom: '1px solid var(--rule)' }}>Cap.</th>
+                    <th style={{ width: 112, textAlign: 'left', padding: '12px 16px', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--slate)', background: '#F8FAFD', borderBottom: '1px solid var(--rule)' }}>Billable split</th>
+                    <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--slate)', background: '#F8FAFD', borderBottom: '1px solid var(--rule)' }}>Status</th>
                   </tr>
                 </thead>
                 <tbody>

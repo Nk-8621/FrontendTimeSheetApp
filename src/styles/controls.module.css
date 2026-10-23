@@ -1,8 +1,8 @@
 .btn {
   font-family: var(--sans);
-  font-size: 12px;
-  font-weight: 500;
-  padding: 5px 11px;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 9px 16px;
   border-radius: var(--r);
   border: 1px solid var(--ruleStrong);
   background: var(--paper);
@@ -34,8 +34,8 @@
   font-weight: 600;
 }
 .pri:hover:not(:disabled) {
-  background: #1d5480;
-  border-color: #1d5480;
+  background: #1A44B0;
+  border-color: #1A44B0;
 }
 
 .ok {
@@ -69,8 +69,8 @@
 }
 
 .sm {
-  padding: 3px 8px;
-  font-size: 11px;
+  padding: 7px 13px;
+  font-size: 13px;
 }
 
 .select,
@@ -79,8 +79,8 @@
   width: 100%;
   border: 1px solid var(--ruleStrong);
   border-radius: var(--r);
-  padding: 7px 9px;
-  font-size: 12.5px;
+  padding: 10px 12px;
+  font-size: 14px;
   background: var(--paper);
   color: var(--ink);
 }
@@ -89,6 +89,7 @@
 .textarea:focus {
   outline: none;
   border-color: var(--oxideMid);
+  box-shadow: 0 0 0 3px var(--oxideTint);
 }
 .select:disabled,
 .textInput:disabled {
@@ -103,20 +104,20 @@
 }
 
 .field {
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 .field label {
   display: block;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--ink2);
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 .field .req {
   color: var(--clay);
 }
 .hint {
-  font-size: 10.5px;
+  font-size: 12px;
   color: var(--slate);
   margin-top: 3px;
 }
