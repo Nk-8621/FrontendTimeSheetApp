@@ -1,6 +1,6 @@
 import { Fragment } from 'react';
 import type { TimeEntryDto, DayTypeDto } from '../../api/types';
-import { CLASSIFICATION_SHORT_LABELS, DAY_NAMES, DAY_TYPE_LABELS } from '../../types/meridian';
+import { CLASSIFICATION_SHORT_LABELS, DAY_NAMES, DAY_TYPE_LABELS, MAX_HOURS_PER_LINE } from '../../types/meridian';
 import { useMasterDataLookup } from '../../hooks/api/useMasterDataLookup';
 import { useEmployeeProjectAllocations } from '../../hooks/api/useEmployees';
 import { ImportExcelButton } from './ImportExcelButton';
@@ -24,8 +24,10 @@ interface WeekGridProps {
   onAddLine: () => void;
   onSubmit: () => void;
   canSubmit: boolean;
-  /** Shown beside a disabled Submit button - which days don't balance yet. */
+  /** Short note beside a disabled Submit button, e.g. "2 working days not complete". */
   submitBlockedReason?: string;
+  /** Day-by-day list shown when hovering over that note. */
+  submitBlockedDetails?: string;
   onRecall: () => void;
 }
 
@@ -48,6 +50,7 @@ export function WeekGrid({
   onSubmit,
   canSubmit,
   submitBlockedReason,
+  submitBlockedDetails,
   onRecall,
 }: WeekGridProps) {
   const { deptName, accById, projById, projAccountId, projDeptId, modName, taskName } = useMasterDataLookup();
@@ -172,18 +175,17 @@ export function WeekGrid({
                       {days.map((_, i) => {
                         const t = dayTypes[i].dayType;
                         const blocked = t === 'L' || t === 'H';
-                        // A day cell is only directly editable in the grid once this line
-                        // already has hours on it. An unclaimed day (still 0) is locked —
-                        // logging hours for this task on a new day has to go through
-                        // "+ Add task line" or the duplicate (⧉) button, which creates a
-                        // separate line with its own description, rather than silently
-                        // stretching this line's existing description across another day.
+                        // Any working day can be typed into directly - the same task on
+                        // another day (e.g. Tuesday) needs no new line or description.
+                        // Days with no available hours (weekly off) stay locked, unless
+                        // the line already has hours there so they can be cleared.
                         const claimed = r.hoursByDay[i] > 0;
+                        const open = cap[i] > 0 || claimed;
                         const cls = [
                           styles.hr,
                           blocked ? (t === 'L' ? styles.blocked : styles.blockedH) : '',
                           t === 'O' ? styles.wknd : '',
-                          !editable || (!blocked && !claimed) ? styles.locked : '',
+                          !editable || (!blocked && !open) ? styles.locked : '',
                         ].join(' ');
                         return (
                           <td key={i} className={cls}>
@@ -192,13 +194,16 @@ export function WeekGrid({
                               inputMode="decimal"
                               value={fmtH(r.hoursByDay[i]) === '—' ? '' : fmtH(r.hoursByDay[i])}
                               placeholder="·"
-                              readOnly={!editable || blocked || !claimed}
-                              title={editable && !blocked && !claimed ? 'No hours logged here yet for this task line — use \"+ Add task line\" or the duplicate (⧉) button to add a new line for this day.' : undefined}
+                              readOnly={!editable || blocked || !open}
+                              title={editable && !blocked && !open ? 'No working hours on this day' : undefined}
                               aria-label={`${DAY_NAMES[i]} hours`}
                               onChange={(e) => {
                                 let v = parseFloat(e.target.value);
                                 if (Number.isNaN(v) || v < 0) v = 0;
-                                if (v > 4) v = 4;
+                                // A line holds at most 8 h, and the whole day can't go
+                                // over its available hours (8 h, or 4 h on a half-day leave).
+                                const leftInDay = Math.max(0, cap[i] - (dayTotals[i] - r.hoursByDay[i]));
+                                v = Math.min(v, MAX_HOURS_PER_LINE, leftInDay);
                                 onHourChange(r.id, i, v);
                               }}
                             />
@@ -263,7 +268,10 @@ export function WeekGrid({
         <div style={{ flex: 1 }} />
         {editable ? (
           <>
-            <span style={{ fontSize: 11, color: !canSubmit && submitBlockedReason ? 'var(--amber)' : 'var(--slate)', maxWidth: 420, textAlign: 'right' }}>
+            <span
+              style={{ fontSize: 11, color: !canSubmit && submitBlockedReason ? 'var(--amber)' : 'var(--slate)', textAlign: 'right' }}
+              title={!canSubmit && submitBlockedDetails ? submitBlockedDetails : undefined}
+            >
               {!canSubmit && submitBlockedReason ? submitBlockedReason : 'Saved automatically as draft'}
             </span>
            <button

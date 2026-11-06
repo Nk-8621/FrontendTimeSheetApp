@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { TimeEntryDto, DayTypeDto, CreateTimeEntryRequest, WeekHours } from '../../api/types';
-import { DAY_NAMES } from '../../types/meridian';
+import { DAY_NAMES, MAX_HOURS_PER_LINE } from '../../types/meridian';
 import { useMasterDataLookup } from '../../hooks/api/useMasterDataLookup';
 import { useQuickAddMutations } from '../../hooks/api/useMasterData';
 import { useEmployeeProjectAllocations } from '../../hooks/api/useEmployees';
@@ -26,6 +26,8 @@ const CLASSIFICATION_LABEL: Record<'Billable' | 'NonBillable' | 'PartialBillable
 interface EntryDrawerProps {
   employeeCode: string;
   dayTypes: DayTypeDto[];
+  /** All lines of this week - used to work out how many hours are left on each day. */
+  weekEntries: TimeEntryDto[];
   existing?: TimeEntryDto;
   duplicateFrom?: TimeEntryDto;
   onSave: (data: CreateTimeEntryRequest) => void;
@@ -38,7 +40,7 @@ const dayMonth = (iso: string) => {
   return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', timeZone: 'UTC' });
 };
 
-export function EntryDrawer({ employeeCode, dayTypes, existing, duplicateFrom, onSave, onDelete, onCancel }: EntryDrawerProps) {
+export function EntryDrawer({ employeeCode, dayTypes, weekEntries, existing, duplicateFrom, onSave, onDelete, onCancel }: EntryDrawerProps) {
   const { modules, tasks, projById, modById, taskById } = useMasterDataLookup();
   const { data: myAllocations } = useEmployeeProjectAllocations(employeeCode);
   const allocations = myAllocations ?? [];
@@ -168,6 +170,25 @@ export function EntryDrawer({ employeeCode, dayTypes, existing, duplicateFrom, o
     // LH (half-day leave) still has 4h available to work - only full leave,
     // holiday and weekly off are actually closed to entry.
     return !(t === 'W' || t === 'WFH' || t === 'LH');
+  }
+
+  // Hours already logged on each day by the OTHER lines of this week.
+  const usedByOtherLines = dayTypes.map((_, i) =>
+    weekEntries
+      .filter((e) => e.id !== existing?.id)
+      .reduce((total, e) => total + e.hoursByDay[i], 0),
+  );
+
+  // Most this line can hold on a day: 8 h per line, and the whole day can't
+  // go over its available hours (8 h, or 4 h on a half-day leave).
+  function maxHoursFor(i: number) {
+    const leftInDay = dayTypes[i].capacityHours - usedByOtherLines[i];
+    return Math.max(0, Math.min(MAX_HOURS_PER_LINE, leftInDay));
+  }
+
+  // A working day whose hours are all used can't take a new task line.
+  function dayFull(i: number) {
+    return !capacityClosed(i) && maxHoursFor(i) === 0;
   }
 
   function handleSave() {
@@ -393,7 +414,8 @@ export function EntryDrawer({ employeeCode, dayTypes, existing, duplicateFrom, o
         <label>{pickMode ? 'Which day is this for?' : 'Hours'} {pickMode && <span className={controls.req}>*</span>}</label>
         <div className={styles.dayPick}>
           {dayTypes.map((dt, i) => {
-            const closed = capacityClosed(i);
+            const full = dayFull(i);
+            const closed = capacityClosed(i) || full;
             if (!pickMode) {
               if (!claimedDays.includes(i)) return null;
               return (
@@ -407,7 +429,7 @@ export function EntryDrawer({ employeeCode, dayTypes, existing, duplicateFrom, o
                     onChange={(e) => {
                       let v = parseFloat(e.target.value);
                       if (Number.isNaN(v) || v < 0) v = 0;
-                      v = Math.min(4, v);
+                      v = Math.min(maxHoursFor(i), v);
                       setHours((h) => h.map((x, idx) => (idx === i ? v : x)));
                     }}
                   />
@@ -419,7 +441,7 @@ export function EntryDrawer({ employeeCode, dayTypes, existing, duplicateFrom, o
               <label
                 key={dt.date}
                 className={`${closed ? styles.off : ''} ${selected ? styles.on : ''}`}
-                title={dayMonth(dt.date)}
+                title={full ? `${dayMonth(dt.date)} — day is full` : `${dayMonth(dt.date)} — ${maxHoursFor(i)} h left`}
                 onClick={() => {
                   if (closed || i === selectedDay) return;
                   setHours([0, 0, 0, 0, 0, 0, 0]);
@@ -437,12 +459,12 @@ export function EntryDrawer({ employeeCode, dayTypes, existing, duplicateFrom, o
                     onChange={(e) => {
                       let v = parseFloat(e.target.value);
                       if (Number.isNaN(v) || v < 0) v = 0;
-                      v = Math.min(4, v);
+                      v = Math.min(maxHoursFor(i), v);
                       setHours((h) => h.map((x, idx) => (idx === i ? v : x)));
                     }}
                   />
                 ) : (
-                  <span className={styles.dayTileDash}>{closed ? '—' : '·'}</span>
+                  <span className={styles.dayTileDash}>{full ? 'Full' : closed ? '—' : '·'}</span>
                 )}
               </label>
             );
@@ -451,8 +473,10 @@ export function EntryDrawer({ employeeCode, dayTypes, existing, duplicateFrom, o
         {showDayError && <div className={styles.errMsg}>Select which day this task line is for.</div>}
         <div className={controls.hint}>
           {pickMode
-            ? 'Pick one day for this task line — up to 4 hours. Days marked leave, holiday or weekly off are closed for entry. To log this task on another day, save this line first and then use the duplicate (⧉) button.'
-            : 'Maximum 4 hours per day. To log this task on a different day, use the duplicate (⧉) button on the week grid instead.'}
+            ? selectedDay !== null
+              ? `Up to ${maxHoursFor(selectedDay)} h left on this day. A day can hold at most 8 h in total (4 h on a half-day leave).`
+              : 'Pick one day for this task line. Days that are full, on leave, holidays or weekly off are closed.'
+            : 'A day can hold at most 8 h in total (4 h on a half-day leave). To log this task on another day, type the hours straight into the week grid.'}
         </div>
       </div>
 

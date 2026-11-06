@@ -86,6 +86,7 @@ export function MyTimesheetPage() {
         <EntryDrawer
           employeeCode={employeeCode}
           dayTypes={week.dayTypes}
+          weekEntries={week.entries}
           onCancel={closeDrawer}
           onSave={(data) => {
             mutations.addEntry.mutate(data, {
@@ -107,6 +108,7 @@ export function MyTimesheetPage() {
         <EntryDrawer
           employeeCode={employeeCode}
           dayTypes={week.dayTypes}
+          weekEntries={week.entries}
           existing={entry}
           onCancel={closeDrawer}
           onSave={(data) => {
@@ -138,6 +140,7 @@ export function MyTimesheetPage() {
         <EntryDrawer
           employeeCode={employeeCode}
           dayTypes={week.dayTypes}
+          weekEntries={week.entries}
           duplicateFrom={entry}
           onCancel={closeDrawer}
           onSave={(data) => {
@@ -188,8 +191,8 @@ export function MyTimesheetPage() {
   }
 
   // Every working day must total exactly its capacity (non-working days
-  // aren't required to total anything). Kept as a list, not just a boolean,
-  // so the grid can tell the employee WHICH days are holding up Submit.
+  // aren't required to total anything). The grid shows a short count; the
+  // day-by-day detail appears when hovering over that note.
   const unbalancedDays = week
     ? week.dayTypes
         .map((dt, dayIndex) => ({ dt, dayIndex, total: week.entries.reduce((sum, e) => sum + e.hoursByDay[dayIndex], 0) }))
@@ -197,10 +200,11 @@ export function MyTimesheetPage() {
     : [];
   const canSubmit = Boolean(week) && unbalancedDays.length === 0;
   const submitBlockedReason = unbalancedDays.length
-    ? `To submit, each working day must match its hours: ${unbalancedDays
-        .map(({ dt, dayIndex, total }) => `${DAY_NAMES[dayIndex]} ${dayMonth(dt.date)} has ${Math.round(total * 100) / 100} of ${dt.capacityHours} h`)
-        .join(', ')}.`
+    ? `${unbalancedDays.length} working day${unbalancedDays.length > 1 ? 's' : ''} not complete`
     : undefined;
+  const submitBlockedDetails = unbalancedDays
+    .map(({ dt, dayIndex, total }) => `${DAY_NAMES[dayIndex]} ${dayMonth(dt.date)}: ${Math.round(total * 100) / 100} of ${dt.capacityHours} h`)
+    .join('\n');
 
   return (
     <>
@@ -253,6 +257,7 @@ export function MyTimesheetPage() {
               onSubmit={handleSubmit}
               canSubmit={canSubmit}
               submitBlockedReason={submitBlockedReason}
+              submitBlockedDetails={submitBlockedDetails}
               onRecall={handleRecall}
             />
 

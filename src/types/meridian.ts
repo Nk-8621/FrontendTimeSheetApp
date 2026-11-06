@@ -18,6 +18,10 @@ export const NAV_GROUPS: Record<string, { group: string; icon: string; title: st
 };
 
 export const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
+
+/** Most hours one task line can hold on one day (same as
+ *  TimeEntryRules.MaxHoursPerLinePerDay on the backend). */
+export const MAX_HOURS_PER_LINE = 8;
 export const STANDARD_HOURS_PER_DAY = 8;
 
 /** The one wording for billing classification across every screen. */

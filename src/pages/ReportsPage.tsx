@@ -40,7 +40,7 @@ export function ReportsPage() {
   const departments = useDepartments();
   const { data, isError } = useReportsSummary(weekFrom, weekTo, departmentId || undefined, approvalStatus);
 
-  const fromOptions = useMemo(() => weekOptions(10, currentWeek), [currentWeek]);
+  const fromOptions = useMemo(() => weekOptions(26, currentWeek), [currentWeek]);
   const toOptions = fromOptions;
 
   const rowsForTab: Record<Tab, ReportRollupRowDto[]> = {
