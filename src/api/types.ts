@@ -338,6 +338,9 @@ export interface TimeEntryDto {
   /** Set when this line is a task under a user story - `note` is then the task name. */
   userStoryId: number | null;
   userStoryName: string | null;
+  /** The story's dates (YYYY-MM-DD) - days outside them are locked for this line. */
+  userStoryStartDate: string | null;
+  userStoryEndDate: string | null;
 }
 
 export interface CreateTimeEntryRequest {
@@ -367,6 +370,9 @@ export interface UserStoryDto {
   name: string;
   projectId: number;
   projectName: string;
+  /** First and last day the story runs (YYYY-MM-DD). */
+  startDate: string;
+  endDate: string;
   isActive: boolean;
   createdAt: string;
 }
@@ -374,6 +380,15 @@ export interface UserStoryDto {
 export interface CreateUserStoryRequest {
   name: string;
   projectId: number;
+  startDate: string;
+  endDate: string;
+}
+
+/** Edit a story's name and dates - the project can't change. */
+export interface UpdateUserStoryRequest {
+  name: string;
+  startDate: string;
+  endDate: string;
 }
 
 export interface CreateStoryTaskRequest {

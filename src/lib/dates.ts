@@ -34,6 +34,29 @@ export function weekLabel(weekStart: string): string {
   return `${dayMonth(weekStart)} – ${dayMonth(addDays(weekStart, 6))}, ${parseISO(weekStart).getUTCFullYear()}`;
 }
 
+/** Today's date (YYYY-MM-DD) on the user's own clock, not UTC. */
+export function todayLocalISO(): string {
+  const d = new Date();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${month}-${day}`;
+}
+
+/** True when date (YYYY-MM-DD) is between start and end, both included. */
+export function isWithin(date: string, start: string, end: string): boolean {
+  return date >= start && date <= end;
+}
+
+/** True when the ranges [aStart, aEnd] and [bStart, bEnd] share at least one day. */
+export function rangesOverlap(aStart: string, aEnd: string, bStart: string, bEnd: string): boolean {
+  return aStart <= bEnd && bStart <= aEnd;
+}
+
+/** "12 Nov - 10 Dec" style label for a date range. */
+export function rangeLabel(start: string, end: string): string {
+  return `${dayMonth(start)} – ${dayMonth(end)}`;
+}
+
 export function dayOfWeek(s: string): number {
   return parseISO(s).getUTCDay(); // 0 = Sunday, 6 = Saturday
 }

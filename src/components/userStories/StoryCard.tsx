@@ -1,5 +1,6 @@
 import type { TimeEntryDto, UserStoryDto } from '../../api/types';
 import { DAY_NAMES } from '../../types/meridian';
+import { rangeLabel } from '../../lib/dates';
 import controls from '../../styles/controls.module.css';
 import styles from './UserStories.module.css';
 
@@ -7,11 +8,14 @@ interface StoryCardProps {
   story: UserStoryDto;
   /** This week's tasks under the story. */
   tasks: TimeEntryDto[];
+  /** False when the story is shown only as history (its dates don't cover this week). */
+  runsThisWeek: boolean;
   expanded: boolean;
   editable: boolean;
   onToggle: () => void;
   onAddTask: () => void;
   onEditTask: (entryId: number) => void;
+  onEditStory: () => void;
 }
 
 const fmtH = (n: number) => String(Math.round(n * 100) / 100);
@@ -26,7 +30,7 @@ function daysText(hoursByDay: number[]) {
 }
 
 /** One user story with this week's tasks under it. */
-export function StoryCard({ story, tasks, expanded, editable, onToggle, onAddTask, onEditTask }: StoryCardProps) {
+export function StoryCard({ story, tasks, runsThisWeek, expanded, editable, onToggle, onAddTask, onEditTask, onEditStory }: StoryCardProps) {
   const storyHours = sum(tasks.map((t) => sum(t.hoursByDay)));
 
   return (
@@ -37,6 +41,7 @@ export function StoryCard({ story, tasks, expanded, editable, onToggle, onAddTas
           <span className={styles.name}>{story.name}</span>
           <span className={styles.meta}>
             <span className={styles.project}>{story.projectName}</span>
+            <span className={styles.range}>{rangeLabel(story.startDate, story.endDate)}</span>
             <span>{tasks.length} task{tasks.length === 1 ? '' : 's'} this week</span>
           </span>
         </span>
@@ -58,15 +63,18 @@ export function StoryCard({ story, tasks, expanded, editable, onToggle, onAddTas
               ) : <span />}
             </div>
           ))}
-          <div className={styles.cardFoot}>
+          <div className={`${styles.cardFoot} ${styles.cardActions}`}>
             <button
               type="button"
               className={`${controls.btn} ${controls.sm}`}
               onClick={onAddTask}
-              disabled={!editable || !story.isActive}
-              title={editable ? undefined : 'This week has been submitted'}
+              disabled={!editable || !story.isActive || !runsThisWeek}
+              title={!editable ? 'This week has been submitted' : !runsThisWeek ? "This week is outside the story's dates" : undefined}
             >
               + Add task
+            </button>
+            <button type="button" className={`${controls.btn} ${controls.sm}`} onClick={onEditStory}>
+              ✎ Edit story
             </button>
           </div>
         </div>

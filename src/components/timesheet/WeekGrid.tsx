@@ -4,6 +4,7 @@ import type { TimeEntryDto, DayTypeDto } from '../../api/types';
 import { CLASSIFICATION_SHORT_LABELS, DAY_NAMES, DAY_TYPE_LABELS, MAX_HOURS_PER_LINE } from '../../types/meridian';
 import { useMasterDataLookup } from '../../hooks/api/useMasterDataLookup';
 import { useEmployeeProjectAllocations } from '../../hooks/api/useEmployees';
+import { isWithin, rangeLabel } from '../../lib/dates';
 import { ImportExcelButton } from './ImportExcelButton';
 import { DownloadTemplateButton } from './DownloadTemplateButton';
 import controls from '../../styles/controls.module.css';
@@ -154,7 +155,10 @@ export function WeekGrid({
                         {r.userStoryId !== null && r.userStoryId !== undefined ? (
                           // Task added under a user story: story on top, task name below.
                           <div className={styles.hcell}>
-                            <div className={styles.hpath}><b>◎ {r.userStoryName}</b></div>
+                            <div className={styles.hpath}>
+                              <b>◎ {r.userStoryName}</b>
+                              {r.userStoryStartDate && r.userStoryEndDate && <> · {rangeLabel(r.userStoryStartDate, r.userStoryEndDate)}</>}
+                            </div>
                             <div className={styles.htask}>{r.note}</div>
                           </div>
                         ) : (
@@ -192,7 +196,11 @@ export function WeekGrid({
                         // Days with no available hours (weekly off) stay locked, unless
                         // the line already has hours there so they can be cleared.
                         const claimed = r.hoursByDay[i] > 0;
-                        const open = cap[i] > 0 || claimed;
+                        // A user story task can't get hours outside the story's dates
+                        // (hours already there can still be reduced or cleared).
+                        const outsideStory = Boolean(r.userStoryStartDate && r.userStoryEndDate)
+                          && !isWithin(days[i], r.userStoryStartDate!, r.userStoryEndDate!);
+                        const open = (cap[i] > 0 && !outsideStory) || claimed;
                         const cls = [
                           styles.hr,
                           blocked ? (t === 'L' ? styles.blocked : styles.blockedH) : '',
@@ -207,7 +215,7 @@ export function WeekGrid({
                               value={fmtH(r.hoursByDay[i]) === '—' ? '' : fmtH(r.hoursByDay[i])}
                               placeholder="·"
                               readOnly={!editable || blocked || !open}
-                              title={editable && !blocked && !open ? 'No working hours on this day' : undefined}
+                              title={editable && !blocked && !open ? (outsideStory ? "Outside the user story's dates" : 'No working hours on this day') : undefined}
                               aria-label={`${DAY_NAMES[i]} hours`}
                               onChange={(e) => {
                                 let v = parseFloat(e.target.value);
@@ -216,6 +224,7 @@ export function WeekGrid({
                                 // over its available hours (8 h, or 4 h on a half-day leave).
                                 const leftInDay = Math.max(0, cap[i] - (dayTotals[i] - r.hoursByDay[i]));
                                 v = Math.min(v, MAX_HOURS_PER_LINE, leftInDay);
+                                if (outsideStory) v = Math.min(v, r.hoursByDay[i]);
                                 onHourChange(r.id, i, v);
                               }}
                             />
