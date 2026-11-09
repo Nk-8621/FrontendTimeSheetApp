@@ -1,4 +1,5 @@
 import { Fragment } from 'react';
+import { Link } from 'react-router-dom';
 import type { TimeEntryDto, DayTypeDto } from '../../api/types';
 import { CLASSIFICATION_SHORT_LABELS, DAY_NAMES, DAY_TYPE_LABELS, MAX_HOURS_PER_LINE } from '../../types/meridian';
 import { useMasterDataLookup } from '../../hooks/api/useMasterDataLookup';
@@ -20,8 +21,6 @@ interface WeekGridProps {
   onHourChange: (entryId: number, dayIndex: number, value: number) => void;
   onCycleClassification: (entry: TimeEntryDto) => void;
   onEditLine: (entryId: number) => void;
-  onDuplicateLine: (entryId: number) => void;
-  onAddLine: () => void;
   onSubmit: () => void;
   canSubmit: boolean;
   /** Short note beside a disabled Submit button, e.g. "2 working days not complete". */
@@ -45,8 +44,6 @@ export function WeekGrid({
   onHourChange,
   onCycleClassification,
   onEditLine,
-  onDuplicateLine,
-  onAddLine,
   onSubmit,
   canSubmit,
   submitBlockedReason,
@@ -77,13 +74,12 @@ export function WeekGrid({
     <div className={styles.gridWrap}>
       <div className={styles.cardHd}>
         <h3>Week grid</h3>
-        <span className={styles.sub}>Department › Customer/Internal › Project › Module › Task</span>
+        <span className={styles.sub}>Department › Customer/Internal › Project › User story › Task</span>
         <div style={{ flex: 1 }} />
         {editable && (
           <>
             <ImportExcelButton employeeCode={employeeCode} weekStart={weekStart} />
             <DownloadTemplateButton />
-            <button className={`${controls.btn} ${controls.pri} ${controls.sm}`} onClick={onAddLine}>+ Add task line</button>
           </>
         )}
       </div>
@@ -91,7 +87,7 @@ export function WeekGrid({
         <table className={styles.wk}>
           <thead>
             <tr>
-              <th className={styles.hier}>Module › Task</th>
+              <th className={styles.hier}>User story › Task</th>
               <th className={styles.bcol}>Type</th>
               {days.map((d, i) => {
                 const t = dayTypes[i].dayType;
@@ -125,8 +121,15 @@ export function WeekGrid({
               <tr>
                 <td colSpan={11}>
                   <div className={styles.empty}>
-                    <div className={styles.big}>No hours logged for this week</div>
-                    Add your first task line, or download the template and import a filled-in Excel sheet to get started.
+                    <div className={styles.big}>No tasks logged for this week yet</div>
+                    Tasks you add under a user story appear here with their hours.
+                    {editable && (
+                      <div style={{ marginTop: 12 }}>
+                        <Link to={`/stories?week=${weekStart}`} className={`${controls.btn} ${controls.pri} ${controls.sm}`}>
+                          Add tasks from User Stories →
+                        </Link>
+                      </div>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -148,11 +151,20 @@ export function WeekGrid({
                   {groups[pid].map((r) => (
                     <tr key={r.id}>
                       <td className={styles.hier}>
-                        <div className={styles.hcell}>
-                          <div className={styles.hpath}><b>{modName(r.moduleId)}</b></div>
-                          <div className={styles.htask}>{taskName(r.taskId)}</div>
-                          {r.note && <div className={styles.hnote}>{r.note}</div>}
-                        </div>
+                        {r.userStoryId !== null && r.userStoryId !== undefined ? (
+                          // Task added under a user story: story on top, task name below.
+                          <div className={styles.hcell}>
+                            <div className={styles.hpath}><b>◎ {r.userStoryName}</b></div>
+                            <div className={styles.htask}>{r.note}</div>
+                          </div>
+                        ) : (
+                          // Older line (Add task line / Excel import): Module › Task + description.
+                          <div className={styles.hcell}>
+                            <div className={styles.hpath}><b>{modName(r.moduleId)}</b></div>
+                            <div className={styles.htask}>{taskName(r.taskId)}</div>
+                            {r.note && <div className={styles.hnote}>{r.note}</div>}
+                          </div>
+                        )}
                       </td>
                       <td className={styles.tc}>
                         {editable && !allocatedProjectIds.has(r.projectId) ? (
@@ -214,12 +226,9 @@ export function WeekGrid({
                       <td className={styles.tc}>
                         {editable && (
                           <>
-                           <button className={styles.editBtn} title="Edit line" aria-label={`Edit line ${taskName(r.taskId)}`} onClick={() => onEditLine(r.id)}>
+                           <button className={styles.editBtn} title="Edit task" aria-label={`Edit task ${r.note ?? taskName(r.taskId)}`} onClick={() => onEditLine(r.id)}>
                               ✎
                             </button>
-                            <button className={styles.editBtn} title="Duplicate line — same task, blank hours & description" aria-label={`Duplicate line ${taskName(r.taskId)}`} onClick={() => onDuplicateLine(r.id)}>
-                              ⧉
-                           </button>
                           </>
                         )}
                       </td>

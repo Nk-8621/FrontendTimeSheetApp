@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { timesheetApi } from '../../api/timesheet';
-import type { CreateTimeEntryRequest, UpdateTimeEntryRequest } from '../../api/types';
+import type { CreateStoryTaskRequest, CreateTimeEntryRequest, UpdateTimeEntryRequest } from '../../api/types';
 
 const weekKey = (employeeCode: string, weekStart: string) => ['week', employeeCode, weekStart];
 
@@ -31,6 +31,11 @@ export function useTimesheetMutations(employeeCode: string | undefined, weekStar
     onSuccess: invalidate,
   });
 
+  const addStoryTask = useMutation({
+    mutationFn: (body: CreateStoryTaskRequest) => timesheetApi.addStoryTask(employeeCode!, weekStart, body),
+    onSuccess: invalidate,
+  });
+
   const updateEntry = useMutation({
     mutationFn: ({ id, body }: { id: number; body: UpdateTimeEntryRequest }) => timesheetApi.updateEntry(id, body),
     onSuccess: invalidate,
@@ -52,5 +57,5 @@ export function useTimesheetMutations(employeeCode: string | undefined, weekStar
     onSuccess: invalidate,
   });
 
-  return { addEntry, updateEntry, removeEntry, setDayType, copyLastWeek };
+  return { addEntry, addStoryTask, updateEntry, removeEntry, setDayType, copyLastWeek };
 }

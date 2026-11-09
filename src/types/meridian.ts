@@ -5,6 +5,7 @@
 export type RoleId = 'EMP' | 'LEAD' | 'L2' | 'ADMIN';
 
 export const NAV_GROUPS: Record<string, { group: string; icon: string; title: string }> = {
+  stories: { group: 'My Work', icon: '◎', title: 'User Stories' },
   ts: { group: 'My Work', icon: '▤', title: 'My Timesheet' },
   hist: { group: 'My Work', icon: '❐', title: 'All Timesheets' },
   req: { group: 'My Work', icon: '✋', title: 'Requests' },

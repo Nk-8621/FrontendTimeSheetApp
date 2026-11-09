@@ -1,5 +1,5 @@
 import { http } from './httpClient';
-import type { CreateTimeEntryRequest, DayTypeDto, TimeEntryDto, UpdateTimeEntryRequest, WeekHistoryItemDto, WeekSummaryDto } from './types';
+import type { CreateStoryTaskRequest, CreateTimeEntryRequest, DayTypeDto, TimeEntryDto, UpdateTimeEntryRequest, WeekHistoryItemDto, WeekSummaryDto } from './types';
 
 export const timesheetApi = {
   getWeek: (employeeCode: string, weekStart: string) =>
@@ -10,6 +10,9 @@ export const timesheetApi = {
 
   addEntry: (employeeCode: string, weekStart: string, body: CreateTimeEntryRequest) =>
     http.post<TimeEntryDto>(`/api/timesheet/${employeeCode}/${weekStart}/entries`, body),
+
+  addStoryTask: (employeeCode: string, weekStart: string, body: CreateStoryTaskRequest) =>
+    http.post<TimeEntryDto>(`/api/timesheet/${employeeCode}/${weekStart}/story-tasks`, body),
 
   updateEntry: (timeEntryId: number, body: UpdateTimeEntryRequest) =>
     http.put<TimeEntryDto>(`/api/timesheet/entries/${timeEntryId}`, body),

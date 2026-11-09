@@ -10,6 +10,7 @@ import { WeekGrid } from '../components/timesheet/WeekGrid';
 import { ApprovalTrail } from '../components/timesheet/ApprovalTrail';
 import { DayTypesCard } from '../components/timesheet/DayTypesCard';
 import { EntryDrawer } from '../components/timesheet/EntryDrawer';
+import { StoryTaskDrawer } from '../components/userStories/StoryTaskDrawer';
 import { SubmitDrawer } from '../components/timesheet/SubmitDrawer';
 import { useUI } from '../components/ui/UIProvider';
 import { useSession } from '../session/SessionContext';
@@ -78,30 +79,22 @@ export function MyTimesheetPage() {
     );
   }
 
-  function handleAddLine() {
-    if (!week) return;
-    openDrawer({
-      title: 'Add task line',
-      body: (
-        <EntryDrawer
-          employeeCode={employeeCode}
-          dayTypes={week.dayTypes}
-          weekEntries={week.entries}
-          onCancel={closeDrawer}
-          onSave={(data) => {
-            mutations.addEntry.mutate(data, {
-              onSuccess: () => { closeDrawer(); toast('Task line added', 'ok'); },
-              onError: (err) => showError(err, 'Could not add line'),
-            });
-          }}
-        />
-      ),
-    });
-  }
-
   function handleEditLine(entryId: number) {
     const entry = week?.entries.find((e) => e.id === entryId);
     if (!entry || !week) return;
+
+    // A task added under a user story opens the same simple panel used on
+    // the User Stories page (story, task name, hours per day).
+    if (entry.userStoryId !== null && entry.userStoryId !== undefined) {
+      openDrawer({
+        title: 'Edit task',
+        subtitle: entry.userStoryName ?? undefined,
+        body: <StoryTaskDrawer employeeCode={employeeCode} weekStart={weekStart} entryId={entryId} onDone={closeDrawer} />,
+      });
+      return;
+    }
+
+    // Older lines (added before User Stories, or by Excel import) keep the classic editor.
     openDrawer({
       title: 'Edit task line',
       body: (
@@ -124,29 +117,6 @@ export function MyTimesheetPage() {
             mutations.removeEntry.mutate(entryId, {
               onSuccess: () => { closeDrawer(); toast('Line removed'); },
               onError: (err) => showError(err, 'Could not remove line'),
-            });
-          }}
-        />
-      ),
-    });
-  }
-
-    function handleDuplicateLine(entryId: number) {
-    const entry = week?.entries.find((e) => e.id === entryId);
-    if (!entry || !week) return;
-    openDrawer({
-      title: 'Add task line',
-      body: (
-        <EntryDrawer
-          employeeCode={employeeCode}
-          dayTypes={week.dayTypes}
-          weekEntries={week.entries}
-          duplicateFrom={entry}
-          onCancel={closeDrawer}
-          onSave={(data) => {
-            mutations.addEntry.mutate(data, {
-              onSuccess: () => { closeDrawer(); toast('Task line added', 'ok'); },
-              onError: (err) => showError(err, 'Could not add line'),
             });
           }}
         />
@@ -252,8 +222,6 @@ export function MyTimesheetPage() {
               onHourChange={handleHourChange}
               onCycleClassification={handleCycleClassification}
               onEditLine={handleEditLine}
-              onDuplicateLine={handleDuplicateLine}
-              onAddLine={handleAddLine}
               onSubmit={handleSubmit}
               canSubmit={canSubmit}
               submitBlockedReason={submitBlockedReason}

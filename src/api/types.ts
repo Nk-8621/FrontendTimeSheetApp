@@ -335,6 +335,9 @@ export interface TimeEntryDto {
   billingCategory: TimeEntryBillingCategory | null;
   note: string | null;
   hoursByDay: WeekHours;
+  /** Set when this line is a task under a user story - `note` is then the task name. */
+  userStoryId: number | null;
+  userStoryName: string | null;
 }
 
 export interface CreateTimeEntryRequest {
@@ -355,6 +358,28 @@ export interface UpdateTimeEntryRequest {
   billingCategory?: string | null;
   note?: string | null;
   hoursByDay?: WeekHours;
+  /** Moves a story task to another of the employee's user stories. */
+  userStoryId?: number;
+}
+
+export interface UserStoryDto {
+  id: number;
+  name: string;
+  projectId: number;
+  projectName: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface CreateUserStoryRequest {
+  name: string;
+  projectId: number;
+}
+
+export interface CreateStoryTaskRequest {
+  userStoryId: number;
+  taskName: string;
+  hoursByDay: WeekHours;
 }
 
 export type ApiDayType = 'W' | 'WFH' | 'L' | 'LH' | 'H' | 'O' | 'OD';

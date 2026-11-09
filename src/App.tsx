@@ -13,6 +13,7 @@ import { MyTimesheetPage } from './pages/MyTimesheetPage';
 // instead of all screens in one big file up front - My Timesheet (the
 // landing page) stays in the main file so the first screen isn't delayed.
 // React.lazy needs a default export, hence the small .then() per page.
+const UserStoriesPage = lazy(() => import('./pages/UserStoriesPage').then((m) => ({ default: m.UserStoriesPage })));
 const MyTimesheetsPage = lazy(() => import('./pages/MyTimesheetsPage').then((m) => ({ default: m.MyTimesheetsPage })));
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage').then((m) => ({ default: m.NotificationsPage })));
 const ApprovalsPage = lazy(() => import('./pages/ApprovalsPage').then((m) => ({ default: m.ApprovalsPage })));
@@ -45,6 +46,14 @@ function App() {
                   <Route element={<AppLayout />}>
                     <Route index element={<HomeRoute><MyTimesheetPage /></HomeRoute>} />
 
+                    <Route
+                      path="stories"
+                      element={
+                        <ProtectedRoute navKey="stories">
+                          <UserStoriesPage />
+                        </ProtectedRoute>
+                      }
+                    />
                     <Route
                       path="hist"
                       element={
