@@ -167,7 +167,7 @@ export function EntryDrawer({ employeeCode, dayTypes, existing, duplicateFrom, o
     const t = dayTypes[i]?.dayType;
     // LH (half-day leave) still has 4h available to work - only full leave,
     // holiday and weekly off are actually closed to entry.
-    return !(t === 'W' || t === 'WFH' || t === 'LH');
+    return !(t === 'W' || t === 'WFH' || t === 'OD' || t === 'LH');
   }
 
   function handleSave() {

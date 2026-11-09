@@ -109,6 +109,7 @@
 .dtBtn:hover { filter: brightness(0.96); }
 .dtBtn:disabled { cursor: not-allowed; }
 .dtBtn.wfh { background: var(--violetTint); color: var(--violet); }
+.dtBtn.od { background: var(--verdTint); color: var(--verd); }
 .dtBtn.lv { background: var(--clayTint); color: var(--clay); }
 .dtBtn.hd { background: var(--amberTint); color: var(--amber); }
 

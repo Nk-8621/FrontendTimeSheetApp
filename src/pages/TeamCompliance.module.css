@@ -25,6 +25,11 @@
   border: 1px solid var(--violetLine);
   color: var(--violet);
 }
+.hc.od {
+  background: var(--verdTint);
+  border: 1px solid var(--verdLine);
+  color: var(--verd);
+}
 .hc.lh {
   background: repeating-linear-gradient(45deg, #FBE9E7 0 4px, #FCF7F6 4px 8px);
   color: var(--clay);

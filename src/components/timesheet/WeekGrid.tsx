@@ -256,6 +256,7 @@ export function WeekGrid({
           <span><i className={`${styles.sw} ${styles.pb}`} /> Partial billable</span>
           <span><i className={`${styles.sw} ${styles.n}`} /> Non-billable</span>
           <span><i className={styles.sw} style={{ background: 'var(--violetTint)', border: '1px solid var(--violetLine)' }} /> WFH</span>
+          <span><i className={styles.sw} style={{ background: 'var(--verdTint)', border: '1px solid var(--verdLine)' }} /> On Duty</span>
           <span><i className={styles.sw} style={{ background: 'repeating-linear-gradient(45deg,#FBE9E7 0 4px,#F5D9D6 4px 8px)' }} /> Leave (Keka or an approved/pending full-day request)</span>
           <span><i className={styles.sw} style={{ background: 'repeating-linear-gradient(45deg,#FBE9E7 0 4px,#FCF7F6 4px 8px)' }} /> Half-day leave (still open for 4h)</span>
           <span><i className={styles.sw} style={{ background: 'repeating-linear-gradient(45deg,#FCF2E1 0 4px,#F6E7CB 4px 8px)' }} /> Holiday</span>

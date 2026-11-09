@@ -6,7 +6,7 @@ export type RoleId = 'EMP' | 'LEAD' | 'L2' | 'ADMIN';
 
 export const NAV_GROUPS: Record<string, { group: string; icon: string; title: string }> = {
   ts: { group: 'My Work', icon: '▤', title: 'My Timesheet' },
-  hist: { group: 'My Work', icon: '❐', title: 'My Timesheets' },
+  hist: { group: 'My Work', icon: '❐', title: 'All Timesheets' },
   req: { group: 'My Work', icon: '✋', title: 'Requests' },
   ap1: { group: 'Approvals', icon: '✓', title: 'Level 1 Approvals' },
   ap2: { group: 'Approvals', icon: '✓✓', title: 'Level 2 Approvals' },
@@ -41,6 +41,7 @@ export const DAY_TYPE_LABELS: Record<string, { css: string; label: string }> = {
   LH: { css: 'lv', label: 'Half-day Leave' },
   H: { css: 'hd', label: 'Holiday' },
   O: { css: '', label: 'Weekly Off' },
+  OD: { css: 'od', label: 'On Duty' },
 };
 
 export const DAY_TYPE_REQUEST_LABELS: Record<string, string> = {
@@ -48,6 +49,7 @@ export const DAY_TYPE_REQUEST_LABELS: Record<string, string> = {
   LeaveFirstHalf: 'Leave - First Half',
   LeaveSecondHalf: 'Leave - Second Half',
   LeaveFull: 'Full-day Leave',
+  OnDuty: 'On Duty',
 };
 
 export const DAY_TYPE_REQUEST_STATUS_LABELS: Record<string, { css: string; label: string }> = {

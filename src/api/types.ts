@@ -357,7 +357,7 @@ export interface UpdateTimeEntryRequest {
   hoursByDay?: WeekHours;
 }
 
-export type ApiDayType = 'W' | 'WFH' | 'L' | 'LH' | 'H' | 'O';
+export type ApiDayType = 'W' | 'WFH' | 'L' | 'LH' | 'H' | 'O' | 'OD';
 
 export interface DayTypeDto {
   date: string;
@@ -386,7 +386,7 @@ export interface WeekRecordDto {
   trail: ApprovalEventDto[];
 }
 
-export type DayTypeRequestType = 'WFH' | 'LeaveFirstHalf' | 'LeaveSecondHalf' | 'LeaveFull';
+export type DayTypeRequestType = 'WFH' | 'LeaveFirstHalf' | 'LeaveSecondHalf' | 'LeaveFull' | 'OnDuty';
 export type DayTypeRequestStatus = 'Pending' | 'Approved' | 'Rejected';
 
 export interface DayTypeRequestDto {

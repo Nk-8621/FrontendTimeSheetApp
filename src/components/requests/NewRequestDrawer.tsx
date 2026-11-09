@@ -10,10 +10,11 @@ interface NewRequestDrawerProps {
   onCancel: () => void;
 }
 
-const TYPES: DayTypeRequestType[] = ['WFH', 'LeaveFirstHalf', 'LeaveSecondHalf', 'LeaveFull'];
+const TYPES: DayTypeRequestType[] = ['WFH', 'OnDuty', 'LeaveFirstHalf', 'LeaveSecondHalf', 'LeaveFull'];
 
 const TYPE_HINTS: Record<DayTypeRequestType, string> = {
   WFH: 'The day stays a full 8h working day, just marked WFH.',
+  OnDuty: 'The day stays a full 8h working day, marked On Duty (e.g. client site, official travel).',
   LeaveFirstHalf: 'First half of the day is leave (4h); the second half is still worked and logged as usual.',
   LeaveSecondHalf: 'Second half of the day is leave (4h); the first half is still worked and logged as usual.',
   LeaveFull: 'The whole day counts as leave — no task hours needed.',
@@ -67,13 +68,15 @@ export function NewRequestDrawer({ onSave, onCancel }: NewRequestDrawerProps) {
 
       <div className={controls.field}>
         <label>Request type <span className={controls.req}>*</span></label>
-        <div className={styles.segBill}>
+        <select
+          className={controls.select}
+          value={requestType}
+          onChange={(e) => setRequestType(e.target.value as DayTypeRequestType)}
+        >
           {TYPES.map((t) => (
-            <button key={t} className={requestType === t ? styles.on : ''} onClick={() => setRequestType(t)}>
-              {DAY_TYPE_REQUEST_LABELS[t]}
-            </button>
+            <option key={t} value={t}>{DAY_TYPE_REQUEST_LABELS[t]}</option>
           ))}
-        </div>
+        </select>
         <div className={controls.hint}>{TYPE_HINTS[requestType]}</div>
       </div>
 
