@@ -12,8 +12,31 @@ import { useSession } from '../session/SessionContext';
 import { useWeek } from '../hooks/api/useTimesheet';
 import { useUserStories } from '../hooks/api/useUserStories';
 import { mondayOf, addDays, toISO } from '../lib/dates';
+import type { UserStoryDto, TimeEntryDto } from '../api/types';
 import controls from '../styles/controls.module.css';
 import styles from '../components/userStories/UserStories.module.css';
+
+/** The local calendar date (YYYY-MM-DD) a story was created on. The API
+ * sends CreatedAt in UTC, sometimes without the trailing "Z". */
+function createdOnDate(createdAt: string): string {
+  const hasZone = /[zZ]$|[+-]\d\d:\d\d$/.test(createdAt);
+  const d = new Date(hasZone ? createdAt : `${createdAt}Z`);
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${month}-${day}`;
+}
+
+/** Which stories to show for the selected week: a story shows if it has
+ * tasks in that week, or if it already existed by the end of that week
+ * (so it doesn't appear in weeks before it was created). */
+function storiesForWeek(stories: UserStoryDto[], weekEntries: TimeEntryDto[], weekStart: string): UserStoryDto[] {
+  const weekEnd = addDays(weekStart, 6);
+  return stories.filter((s) => {
+    const hasTasksThisWeek = weekEntries.some((e) => e.userStoryId === s.id);
+    const existedThisWeek = s.isActive && createdOnDate(s.createdAt) <= weekEnd;
+    return hasTasksThisWeek || existedThisWeek;
+  });
+}
 
 /**
  * User Stories: the employee creates a story (name + project) and adds the
@@ -34,7 +57,7 @@ export function UserStoriesPage() {
   const { data: week, isError: weekError } = useWeek(employeeCode, weekStart);
 
   const editable = week ? week.week.status === 'Draft' || week.week.status === 'Rejected' : false;
-  const activeStories = (stories ?? []).filter((s) => s.isActive);
+  const visibleStories = storiesForWeek(stories ?? [], week?.entries ?? [], weekStart);
 
   function toggle(storyId: number) {
     setExpanded((prev) => {
@@ -98,15 +121,24 @@ export function UserStoriesPage() {
           <div className={styles.locked}>This week has been submitted, so tasks can't be added or changed. Recall it from My Timesheet to edit.</div>
         )}
 
-        {stories && activeStories.length === 0 && (
+        {stories && week && visibleStories.length === 0 && (
           <div className={styles.empty}>
-            <div className={styles.big}>No user stories yet</div>
-            Create your first user story, then add the tasks you work on under it.
+            {stories.length === 0 ? (
+              <>
+                <div className={styles.big}>No user stories yet</div>
+                Create your first user story, then add the tasks you work on under it.
+              </>
+            ) : (
+              <>
+                <div className={styles.big}>No user stories in this week</div>
+                Your user stories start from the week they were created. Use the arrows to go to a later week, or create a new story.
+              </>
+            )}
           </div>
         )}
 
         <div className={styles.list}>
-          {activeStories.map((story) => (
+          {visibleStories.map((story) => (
             <StoryCard
               key={story.id}
               story={story}
