@@ -20,7 +20,7 @@ export function RequestsPage() {
 
   function handleNewRequest() {
     openDrawer({
-      title: 'Request WFH or Leave',
+      title: 'Request WFH, On Duty or Leave',
       body: (
         <NewRequestDrawer
           onCancel={closeDrawer}
@@ -37,18 +37,21 @@ export function RequestsPage() {
 
   return (
     <>
-      <PageHeader crumb="My Work" title="Requests">
-        <button className={`${controls.btn} ${controls.pri} ${controls.sm}`} onClick={handleNewRequest}>
-          + New request
-        </button>
-      </PageHeader>
+      <PageHeader crumb="My Work" title="Requests" />
 
       <div className="page-content">
         {isError && <Banner kind="reject">Couldn't load your requests — check that the backend API is reachable.</Banner>}
 
-        {requests && (
-          <Card title="Your requests" noPad>
-            {requests.length === 0 ? (
+        <Card
+          title="Your requests"
+          noPad
+          headerRight={
+            <button className={`${controls.btn} ${controls.pri} ${controls.sm}`} onClick={handleNewRequest}>
+              + New request
+            </button>
+          }
+        >
+          {requests && (requests.length === 0 ? (
               <div className={styles.empty}>No requests yet — use "+ New request" above to ask for WFH or Leave.</div>
             ) : (
               <table className={styles.table}>
@@ -76,9 +79,8 @@ export function RequestsPage() {
                   ))}
                 </tbody>
               </table>
-            )}
-          </Card>
-        )}
+            ))}
+        </Card>
       </div>
     </>
   );

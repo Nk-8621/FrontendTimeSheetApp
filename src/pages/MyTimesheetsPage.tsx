@@ -13,7 +13,7 @@ export function MyTimesheetsPage() {
 
   return (
     <>
-      <PageHeader crumb="My Work" title="My Timesheets" />
+      <PageHeader crumb="My Work" title="All Timesheets" />
       <div className="page-content">
         {isError && <Banner kind="reject">Couldn't load your history — check that the backend API is reachable.</Banner>}
 
@@ -26,7 +26,7 @@ export function MyTimesheetsPage() {
                 <th style={{ textAlign: 'right' }}>Total</th>
                 <th style={{ textAlign: 'right' }}>Billable</th>
                 <th style={{ textAlign: 'right' }}>Partial billable</th>
-                <th style={{ textAlign: 'right' }}>Submitted</th>
+                <th style={{ textAlign: 'right' }}>Submitted On</th>
                 <th />
               </tr>
             </thead>

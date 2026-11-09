@@ -23,6 +23,7 @@ function cellClass(hours: number, dayType: string, leaveHalf: string | null) {
   if (dayType === 'LH' && leaveHalf) return styles.split;
   if (dayType === 'LH' && hours === 0) return styles.lh;
   if (dayType === 'WFH' && hours === 0) return styles.wfh;
+  if (dayType === 'OD' && hours === 0) return styles.od;
   if (hours === 0) return styles.z;
   if (hours < 4) return styles.lo;
   if (hours < 8) return styles.md;
@@ -44,6 +45,7 @@ function cellContent(hours: number, dayType: string, leaveHalf: string | null) {
   if (hours) return hours.toFixed(1).replace(/\.0$/, '');
   if (dayType === 'LH') return 'L½';
   if (dayType === 'WFH') return 'WFH';
+  if (dayType === 'OD') return 'OD';
   return '·';
 }
 
@@ -246,6 +248,7 @@ export function TeamCompliancePage() {
                 <span><i className={styles.sw} style={{ background: 'repeating-linear-gradient(45deg,#FBE9E7 0 4px,#F5D9D6 4px 8px)' }} /> Leave</span>
                 <span><i className={styles.sw} style={{ background: 'repeating-linear-gradient(45deg,#FBE9E7 0 4px,#FCF7F6 4px 8px)' }} /> Half-day leave</span>
                 <span><i className={styles.sw} style={{ background: 'var(--violetTint)', border: '1px solid var(--violetLine)' }} /> WFH</span>
+                <span><i className={styles.sw} style={{ background: 'var(--verdTint)', border: '1px solid var(--verdLine)' }} /> On Duty</span>
                 <span><i className={styles.sw} style={{ background: 'repeating-linear-gradient(45deg,#FCF2E1 0 4px,#F6E7CB 4px 8px)' }} /> Holiday</span>
               </div>
             </div>
