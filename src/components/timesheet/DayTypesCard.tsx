@@ -24,8 +24,8 @@ export function DayTypesCard({ dayTypes }: DayTypesCardProps) {
               </td>
               <td>
                 {DAY_TYPE_LABELS[dt.dayType].label}
-                {dt.dayType === 'L' && <span style={{ color: 'var(--slate)' }}> — synced from Keka, or an approved/pending full-day leave request</span>}
-                {dt.dayType === 'LH' && <span style={{ color: 'var(--slate)' }}> — half-day leave request</span>}
+                {dt.dayType === 'L' && <span style={{ color: 'var(--slate)' }}> — synced from Keka, or an approved/pending full-day leave or comp-off request</span>}
+                {dt.dayType === 'LH' && <span style={{ color: 'var(--slate)' }}> — half-day leave or comp-off request</span>}
                 {dt.dayType === 'OD' && <span style={{ color: 'var(--slate)' }}> — approved/pending On Duty request</span>}
               </td>
               <td style={{ textAlign: 'right', color: 'var(--ink2)' }} className="num">

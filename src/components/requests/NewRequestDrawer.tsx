@@ -10,7 +10,7 @@ interface NewRequestDrawerProps {
   onCancel: () => void;
 }
 
-const TYPES: DayTypeRequestType[] = ['WFH', 'OnDuty', 'LeaveFirstHalf', 'LeaveSecondHalf', 'LeaveFull'];
+const TYPES: DayTypeRequestType[] = ['WFH', 'OnDuty', 'LeaveFirstHalf', 'LeaveSecondHalf', 'LeaveFull', 'CompOffFirstHalf', 'CompOffSecondHalf', 'CompOffFull'];
 
 const TYPE_HINTS: Record<DayTypeRequestType, string> = {
   WFH: 'The day stays a full 8h working day, just marked WFH.',
@@ -18,6 +18,9 @@ const TYPE_HINTS: Record<DayTypeRequestType, string> = {
   LeaveFirstHalf: 'First half of the day is leave (4h); the second half is still worked and logged as usual.',
   LeaveSecondHalf: 'Second half of the day is leave (4h); the first half is still worked and logged as usual.',
   LeaveFull: 'The whole day counts as leave — no task hours needed.',
+  CompOffFirstHalf: 'First half of the day is a comp-off (4h); the second half is still worked and logged as usual.',
+  CompOffSecondHalf: 'Second half of the day is a comp-off (4h); the first half is still worked and logged as usual.',
+  CompOffFull: 'A full compensatory day off — shown as leave, no task hours needed.',
 };
 
 // Mirrors DayTypeRequestService.SubmitAsync's earliest-allowed-date check on

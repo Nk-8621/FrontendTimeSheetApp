@@ -201,11 +201,14 @@ export function WeekGrid({
                         const outsideStory = Boolean(r.userStoryStartDate && r.userStoryEndDate)
                           && !isWithin(days[i], r.userStoryStartDate!, r.userStoryEndDate!);
                         const open = (cap[i] > 0 && !outsideStory) || claimed;
+                        // A weekly off is closed to entry just like a holiday, so it gets
+                        // the same hatched look - unless hours are already there to clear.
+                        const weeklyOff = t === 'O' && !claimed;
                         const cls = [
                           styles.hr,
                           blocked ? (t === 'L' ? styles.blocked : styles.blockedH) : '',
-                          t === 'O' ? styles.wknd : '',
-                          !editable || (!blocked && !open) ? styles.locked : '',
+                          weeklyOff ? styles.blockedO : t === 'O' ? styles.wknd : '',
+                          !editable || (!blocked && !weeklyOff && !open) ? styles.locked : '',
                         ].join(' ');
                         return (
                           <td key={i} className={cls}>
@@ -215,6 +218,7 @@ export function WeekGrid({
                               value={fmtH(r.hoursByDay[i]) === '—' ? '' : fmtH(r.hoursByDay[i])}
                               placeholder="·"
                               readOnly={!editable || blocked || !open}
+                              tabIndex={blocked || weeklyOff ? -1 : undefined}
                               title={editable && !blocked && !open ? (outsideStory ? "Outside the user story's dates" : 'No working hours on this day') : undefined}
                               aria-label={`${DAY_NAMES[i]} hours`}
                               onChange={(e) => {
@@ -283,6 +287,7 @@ export function WeekGrid({
           <span><i className={styles.sw} style={{ background: 'repeating-linear-gradient(45deg,#FBE9E7 0 4px,#F5D9D6 4px 8px)' }} /> Leave (Keka or an approved/pending full-day request)</span>
           <span><i className={styles.sw} style={{ background: 'repeating-linear-gradient(45deg,#FBE9E7 0 4px,#FCF7F6 4px 8px)' }} /> Half-day leave (still open for 4h)</span>
           <span><i className={styles.sw} style={{ background: 'repeating-linear-gradient(45deg,#FCF2E1 0 4px,#F6E7CB 4px 8px)' }} /> Holiday</span>
+          <span><i className={styles.sw} style={{ background: 'repeating-linear-gradient(45deg,#F1F3F6 0 4px,#E3E7EC 4px 8px)' }} /> Weekly off</span>
         </div>
         <div style={{ flex: 1 }} />
         {editable ? (
