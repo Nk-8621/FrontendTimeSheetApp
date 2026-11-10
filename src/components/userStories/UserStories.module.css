@@ -1,17 +1,27 @@
 /* ---- User Stories page ---- */
-.intro {
-  font-size: 12px;
-  color: var(--slate);
-  margin: 0 0 12px;
+/* Week, status and New user story - top right of the page body. */
+.toolbar {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 14px;
+  justify-content: flex-end;
   align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
 }
-.intro a {
+/* "View Timesheet" - below the story cards, on the right. */
+.viewTimesheet {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+.viewTimesheet a {
   color: var(--oxide);
+  font-size: 12.5px;
   font-weight: 600;
   text-decoration: none;
+}
+.viewTimesheet a:hover {
+  text-decoration: underline;
 }
 .locked {
   font-size: 12px;

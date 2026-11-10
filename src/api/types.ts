@@ -379,7 +379,9 @@ export interface UserStoryDto {
 
 export interface CreateUserStoryRequest {
   name: string;
-  projectId: number;
+  /** null = no project (only for employees with no allocated projects) - the
+   * story then goes to their department's "Internal Work" project. */
+  projectId: number | null;
   startDate: string;
   endDate: string;
 }

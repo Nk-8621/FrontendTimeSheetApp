@@ -93,21 +93,19 @@ export function UserStoriesPage() {
 
   return (
     <>
-      <PageHeader crumb="My Work" title="User Stories">
-        <WeekNav weekStart={weekStart} onShift={(d) => setWeekStart((w) => addDays(w, d * 7))} />
-        {week && <StatusPill status={week.week.status} />}
-        <button className={`${controls.btn} ${controls.pri}`} onClick={() => openStoryDrawer()}>+ New user story</button>
-      </PageHeader>
+      <PageHeader crumb="My Work" title="User Stories" />
 
       <div className="page-content">
         {(storiesError || weekError) && (
           <Banner kind="reject">Couldn't load your user stories - check that the backend API is running and reachable.</Banner>
         )}
 
-        <p className={styles.intro}>
-          <span>Open a story and add the tasks you worked on, with hours for each day. They appear in My Timesheet for this week.</span>
-          <Link to={`/?week=${weekStart}`}>View in My Timesheet →</Link>
-        </p>
+        {/* Week, its status and New user story sit at the top right of the page. */}
+        <div className={styles.toolbar}>
+          <WeekNav weekStart={weekStart} onShift={(d) => setWeekStart((w) => addDays(w, d * 7))} />
+          {week && <StatusPill status={week.week.status} />}
+          <button className={`${controls.btn} ${controls.pri}`} onClick={() => openStoryDrawer()}>+ New user story</button>
+        </div>
 
         {week && !editable && (
           <div className={styles.locked}>This week has been submitted, so tasks can't be added or changed. Recall it from My Timesheet to edit.</div>
@@ -115,17 +113,7 @@ export function UserStoriesPage() {
 
         {stories && week && visibleStories.length === 0 && (
           <div className={styles.empty}>
-            {stories.length === 0 ? (
-              <>
-                <div className={styles.big}>No user stories yet</div>
-                Create your first user story, then add the tasks you work on under it.
-              </>
-            ) : (
-              <>
-                <div className={styles.big}>No user stories in this week</div>
-                A story shows only in the weeks between its start and end dates. Use the arrows to go to another week, or create a new story.
-              </>
-            )}
+            <div className={styles.big}>No user story found</div>
           </div>
         )}
 
@@ -145,6 +133,12 @@ export function UserStoriesPage() {
             />
           ))}
         </div>
+
+        {visibleStories.length > 0 && (
+          <div className={styles.viewTimesheet}>
+            <Link to={`/?week=${weekStart}`}>View Timesheet →</Link>
+          </div>
+        )}
       </div>
     </>
   );
