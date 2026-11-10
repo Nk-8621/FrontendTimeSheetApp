@@ -3,9 +3,9 @@ import { useWeek, useTimesheetMutations } from '../../hooks/api/useTimesheet';
 import { useUserStories } from '../../hooks/api/useUserStories';
 import { useUI } from '../ui/UIProvider';
 import { ApiError } from '../../api/httpClient';
-import type { WeekHours } from '../../api/types';
+import type { UserStoryDto, WeekHours } from '../../api/types';
 import { DAY_NAMES, MAX_HOURS_PER_LINE } from '../../types/meridian';
-import { dayMonth } from '../../lib/dates';
+import { addDays, dayMonth, isWithin, rangeLabel, rangesOverlap } from '../../lib/dates';
 import controls from '../../styles/controls.module.css';
 import styles from './UserStories.module.css';
 
@@ -42,7 +42,16 @@ export function StoryTaskDrawer({ employeeCode, weekStart, defaultStoryId, entry
   if (!week) return <div className={controls.hint}>Loading this week…</div>;
 
   const editable = week.week.status === 'Draft' || week.week.status === 'Rejected';
-  const storyOptions = (stories ?? []).filter((s) => s.isActive || s.id === existing?.userStoryId);
+  // Stories that run in this week (plus the task's own story when editing).
+  const weekEnd = addDays(weekStart, 6);
+  const storyOptions = (stories ?? []).filter(
+    (s) => (s.isActive && rangesOverlap(s.startDate, s.endDate, weekStart, weekEnd)) || s.id === existing?.userStoryId,
+  );
+  const selectedStory = storyOptions.find((s) => s.id === storyId);
+
+  // A day outside the selected story's start-end dates is closed for new hours.
+  const isOutside = (story: UserStoryDto | undefined, i: number) =>
+    story !== undefined && !isWithin(week.dayTypes[i].date, story.startDate, story.endDate);
   const isPending = mutations.addStoryTask.isPending || mutations.updateEntry.isPending || mutations.removeEntry.isPending;
 
   // Hours already on each day from the OTHER lines of this week.
@@ -51,7 +60,19 @@ export function StoryTaskDrawer({ employeeCode, weekStart, defaultStoryId, entry
   );
   // Most this task can hold on a day: 8 h per line, and the day can't go over
   // its available hours (8 h, or 4 h on a half-day leave).
-  const maxFor = (i: number) => Math.max(0, Math.min(MAX_HOURS_PER_LINE, week.dayTypes[i].capacityHours - usedByOthers[i]));
+  // Outside the story's dates, hours already saved there can only be reduced.
+  const maxFor = (i: number) => {
+    if (isOutside(selectedStory, i)) return existing?.hoursByDay[i] ?? 0;
+    return Math.max(0, Math.min(MAX_HOURS_PER_LINE, week.dayTypes[i].capacityHours - usedByOthers[i]));
+  };
+
+  function changeStory(newStoryId: number | '') {
+    setStoryId(newStoryId);
+    setError('');
+    // Clear hours on days the newly picked story doesn't cover.
+    const story = storyOptions.find((s) => s.id === newStoryId);
+    setHours((h) => h.map((x, i) => (isOutside(story, i) ? 0 : x)));
+  }
 
   function setDayHours(i: number, raw: string) {
     let v = parseFloat(raw);
@@ -134,7 +155,7 @@ export function StoryTaskDrawer({ employeeCode, weekStart, defaultStoryId, entry
           id="taskStory"
           className={controls.select}
           value={storyId}
-          onChange={(e) => { setStoryId(e.target.value ? Number(e.target.value) : ''); setError(''); }}
+          onChange={(e) => changeStory(e.target.value ? Number(e.target.value) : '')}
         >
           <option value="">Select user story</option>
           {storyOptions.map((s) => (
@@ -160,11 +181,13 @@ export function StoryTaskDrawer({ employeeCode, weekStart, defaultStoryId, entry
         <label>Hours <span className={controls.req}>*</span></label>
         <div className={styles.days}>
           {week.dayTypes.map((dt, i) => {
+            const outside = isOutside(selectedStory, i);
             const closed = dt.capacityHours === 0;
             const left = maxFor(i);
-            const full = !closed && left === 0 && hours[i] === 0;
+            const full = !closed && !outside && left === 0 && hours[i] === 0;
+            const locked = (closed || outside || full) && hours[i] === 0;
             return (
-              <div key={dt.date} className={`${styles.day} ${closed || full ? styles.closed : ''}`}>
+              <div key={dt.date} className={`${styles.day} ${locked ? styles.closed : ''}`}>
                 <div className={styles.dayName}>{DAY_NAMES[i]}</div>
                 <div className={styles.dayDate}>{dayMonth(dt.date)}</div>
                 <input
@@ -172,16 +195,17 @@ export function StoryTaskDrawer({ employeeCode, weekStart, defaultStoryId, entry
                   inputMode="decimal"
                   aria-label={`${DAY_NAMES[i]} hours`}
                   value={hours[i] ? String(hours[i]) : ''}
-                  placeholder={closed ? '–' : '0'}
-                  disabled={closed || full}
+                  placeholder={closed || outside ? '–' : '0'}
+                  disabled={locked}
                   onChange={(e) => setDayHours(i, e.target.value)}
                 />
-                <div className={styles.left}>{closed ? 'off' : full ? 'full' : `${left} left`}</div>
+                <div className={styles.left}>{outside ? 'outside' : closed ? 'off' : full ? 'full' : `${left} left`}</div>
               </div>
             );
           })}
         </div>
         <div className={controls.hint}>
+          {selectedStory && <>Story runs {rangeLabel(selectedStory.startDate, selectedStory.endDate)} - days outside it are closed. </>}
           Fill in each day you worked on this task. A day holds at most 8 h (4 h on a half-day leave).
         </div>
       </div>
