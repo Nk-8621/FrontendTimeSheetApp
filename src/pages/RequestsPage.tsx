@@ -20,7 +20,7 @@ export function RequestsPage() {
 
   function handleNewRequest() {
     openDrawer({
-      title: 'Request WFH, On Duty or Leave',
+      title: 'Request WFH, On Duty, Leave or Comp-Off',
       body: (
         <NewRequestDrawer
           onCancel={closeDrawer}

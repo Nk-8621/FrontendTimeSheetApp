@@ -55,6 +55,9 @@ export const DAY_TYPE_REQUEST_LABELS: Record<string, string> = {
   LeaveSecondHalf: 'Leave - Second Half',
   LeaveFull: 'Full-day Leave',
   OnDuty: 'On Duty',
+  CompOffFirstHalf: 'Comp-Off - First Half',
+  CompOffSecondHalf: 'Comp-Off - Second Half',
+  CompOffFull: 'Comp-Off - Full Day',
 };
 
 export const DAY_TYPE_REQUEST_STATUS_LABELS: Record<string, { css: string; label: string }> = {

@@ -44,8 +44,11 @@
   color: #fff;
   font-weight: 600;
 }
+/* Must set its own background - otherwise .btn:hover's near-white background
+   wins and the white "Approve" text disappears on hover. */
 .ok:hover:not(:disabled) {
-  filter: brightness(1.12);
+  background: #0A5E4E;
+  border-color: #0A5E4E;
 }
 
 .dgr {

@@ -38,7 +38,7 @@ function cellContent(hours: number, dayType: string, leaveHalf: string | null) {
   if (dayType === 'LH' && leaveHalf) {
     const leaf = <span key="leaf" className={styles.leaf}>L</span>;
     const rest = <span key="rest" className={styles.rest}>{hours ? hours.toFixed(1).replace(/\.0$/, '') : '–'}</span>;
-    return leaveHalf === 'LeaveSecondHalf' ? <>{rest}{leaf}</> : <>{leaf}{rest}</>;
+    return leaveHalf === 'LeaveSecondHalf' || leaveHalf === 'CompOffSecondHalf' ? <>{rest}{leaf}</> : <>{leaf}{rest}</>;
   }
   if (dayType === 'L') return 'L';
   if (dayType === 'H') return 'H';
