@@ -537,6 +537,9 @@ export interface ApprovalQueueItemDto {
   flags: string[];
   lines: ApprovalQueueLineDto[];
   dayTypes: DayTypeDto[];
+  /** Only set in the "Returned by Level 2" list: who returned the week and why. */
+  returnedByName?: string | null;
+  returnReason?: string | null;
 }
 
 /** One row in any of the Reports screen's five rollup tabs. */

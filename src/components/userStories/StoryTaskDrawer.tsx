@@ -199,7 +199,7 @@ export function StoryTaskDrawer({ employeeCode, weekStart, defaultStoryId, entry
                   disabled={locked}
                   onChange={(e) => setDayHours(i, e.target.value)}
                 />
-                <div className={styles.left}>{outside ? 'outside' : closed ? 'off' : full ? 'full' : `${left} left`}</div>
+                <div className={styles.left}>{outside ? 'outside' : closed ? 'off' : full ? 'full' : `${left}h left`}</div>
               </div>
             );
           })}

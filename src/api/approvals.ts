@@ -28,6 +28,10 @@ export const approvalsApi = {
   getQueue: (level2: boolean) =>
     http.get<ApprovalQueueItemDto[]>(`/api/approvals/queue?level2=${level2}`),
 
+  // Level 1 page, "Returned by Level 2" tab (view only).
+  getReturnedByLevel2: () =>
+    http.get<ApprovalQueueItemDto[]>('/api/approvals/returned'),
+
   getWeekDetail: (employeeCode: string, weekStart: string) =>
   http.get<ApprovalQueueItemDto>(`/api/approvals/${employeeCode}/${weekStart}/detail`),
 };

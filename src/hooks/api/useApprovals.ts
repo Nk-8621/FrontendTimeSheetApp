@@ -64,6 +64,16 @@ export function useApprovalQueue(level2: boolean) {
   });
 }
 
+/** Weeks this Level 1 manager approved that Level 2 returned to the employee.
+ * Key starts with 'approval-queue', so it refreshes whenever the queue does. */
+export function useReturnedByLevel2(enabled: boolean) {
+  return useQuery({
+    queryKey: ['approval-queue', 'returned'],
+    queryFn: () => approvalsApi.getReturnedByLevel2(),
+    enabled,
+  });
+}
+
 export function useWeekDetail(employeeCode: string, weekStart: string, enabled: boolean) {
   return useQuery({
     queryKey: ['week-detail', employeeCode, weekStart],

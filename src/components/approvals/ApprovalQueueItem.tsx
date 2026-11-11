@@ -19,9 +19,11 @@ function initialsOf(name: string) {
 interface ApprovalQueueItemProps {
   item: ApprovalQueueItemDto;
   level2: boolean;
+  /** "Returned by Level 2" tab: show the week without Approve / Return buttons. */
+  readOnly?: boolean;
 }
 
-export function ApprovalQueueItem({ item, level2 }: ApprovalQueueItemProps) {
+export function ApprovalQueueItem({ item, level2, readOnly = false }: ApprovalQueueItemProps) {
   const [open, setOpen] = useState(false);
   const mutations = useApprovalMutations(item.employeeCode, item.weekStartDate);
   const { openDrawer, closeDrawer, toast } = useUI();
@@ -71,7 +73,7 @@ export function ApprovalQueueItem({ item, level2 }: ApprovalQueueItemProps) {
   const pctBillable = item.totalHours ? Math.round((item.billableHours / item.totalHours) * 100) : 0;
 
   return (
-    <div className={`${styles.qRow} ${item.flags.length ? styles.flag : styles.clean} ${open ? styles.open : ''}`}>
+    <div className={`${styles.qRow} ${readOnly ? styles.returned : item.flags.length ? styles.flag : styles.clean} ${open ? styles.open : ''}`}>
       <div className={styles.qHd} onClick={() => setOpen((o) => !o)}>
         {/* A real button so keyboard/screen-reader users can expand the row too.
             No onClick of its own: its click (mouse or Enter/Space) bubbles up
@@ -107,13 +109,25 @@ export function ApprovalQueueItem({ item, level2 }: ApprovalQueueItemProps) {
           <div className={`${styles.mt} num`}>{pctBillable}% billable</div>
         </div>
         <div style={{ flex: 1 }} />
-        <button className={`${controls.btn} ${controls.ok} ${controls.sm}`} disabled={isBusy} onClick={(e) => { e.stopPropagation(); handleApprove(); }}>
-          Approve
-        </button>
-        <button className={`${controls.btn} ${controls.dgr} ${controls.sm}`} disabled={isBusy} onClick={(e) => { e.stopPropagation(); handleReject(); }} style={{ marginLeft: 6 }}>
-          Return
-        </button>
+        {readOnly ? (
+          <span className={styles.returnedTag}>Waiting for employee</span>
+        ) : (
+          <>
+            <button className={`${controls.btn} ${controls.ok} ${controls.sm}`} disabled={isBusy} onClick={(e) => { e.stopPropagation(); handleApprove(); }}>
+              Approve
+            </button>
+            <button className={`${controls.btn} ${controls.dgr} ${controls.sm}`} disabled={isBusy} onClick={(e) => { e.stopPropagation(); handleReject(); }} style={{ marginLeft: 6 }}>
+              Return
+            </button>
+          </>
+        )}
       </div>
+
+      {readOnly && (
+        <div className={styles.returnedRow}>
+          <b>Returned by {item.returnedByName ?? 'Level 2'}:</b> {item.returnReason ?? 'No reason given'}
+        </div>
+      )}
 
       {item.flags.length > 0 && (
         <div className={styles.flagRow}>
