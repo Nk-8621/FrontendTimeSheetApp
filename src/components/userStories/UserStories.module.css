@@ -325,6 +325,17 @@
   flex-wrap: wrap;
 }
 
+/* + Add task: blue outline, same blue as the edit and delete icons.
+   ".cardActions" in front makes it win over the plain grey button style. */
+.cardActions .addTaskBtn {
+  color: var(--oxide);
+  border-color: var(--oxideMid);
+}
+.cardActions .addTaskBtn:hover:not(:disabled) {
+  background: var(--oxideTint);
+  border-color: var(--oxide);
+}
+
 /* Delete story: right end of the card's action row. */
 .deleteBtn {
   margin-left: auto;

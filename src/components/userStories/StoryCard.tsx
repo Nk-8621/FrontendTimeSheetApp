@@ -100,7 +100,7 @@ export function StoryCard({ story, tasks, runsThisWeek, expanded, editable, onTo
           <div className={`${styles.cardFoot} ${styles.cardActions}`}>
             <button
               type="button"
-              className={`${controls.btn} ${controls.sm}`}
+              className={`${controls.btn} ${controls.sm} ${styles.addTaskBtn}`}
               onClick={onAddTask}
               disabled={!editable || !story.isActive || !runsThisWeek}
               title={!editable ? 'This week has been submitted' : !runsThisWeek ? "This week is outside the story's dates" : undefined}
