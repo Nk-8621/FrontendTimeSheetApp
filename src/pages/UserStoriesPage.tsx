@@ -10,7 +10,8 @@ import { StoryTaskDrawer } from '../components/userStories/StoryTaskDrawer';
 import { useUI } from '../components/ui/UIProvider';
 import { useSession } from '../session/SessionContext';
 import { useWeek } from '../hooks/api/useTimesheet';
-import { useUserStories } from '../hooks/api/useUserStories';
+import { useDeleteUserStory, useUserStories } from '../hooks/api/useUserStories';
+import { ApiError } from '../api/httpClient';
 import { mondayOf, addDays, toISO, rangesOverlap } from '../lib/dates';
 import type { UserStoryDto, TimeEntryDto } from '../api/types';
 import controls from '../styles/controls.module.css';
@@ -46,6 +47,7 @@ export function UserStoriesPage() {
 
   const { data: stories, isError: storiesError } = useUserStories(employeeCode);
   const { data: week, isError: weekError } = useWeek(employeeCode, weekStart);
+  const deleteStory = useDeleteUserStory(employeeCode);
 
   const editable = week ? week.week.status === 'Draft' || week.week.status === 'Rejected' : false;
   const visibleStories = storiesForWeek(stories ?? [], week?.entries ?? [], weekStart);
@@ -73,6 +75,14 @@ export function UserStoriesPage() {
           }}
         />
       ),
+    });
+  }
+
+  function handleDeleteStory(story: UserStoryDto) {
+    if (!window.confirm(`Delete user story "${story.name}"? This can't be undone.`)) return;
+    deleteStory.mutate(story.id, {
+      onSuccess: () => toast('User story deleted', 'ok'),
+      onError: (err) => toast(err instanceof ApiError ? err.message : 'Could not delete the user story', 'bad'),
     });
   }
 
@@ -130,6 +140,7 @@ export function UserStoriesPage() {
               onAddTask={() => openAddTask(story.id, story.name)}
               onEditTask={openEditTask}
               onEditStory={() => openStoryDrawer(story)}
+              onDeleteStory={() => handleDeleteStory(story)}
             />
           ))}
         </div>

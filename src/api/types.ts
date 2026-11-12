@@ -375,6 +375,8 @@ export interface UserStoryDto {
   endDate: string;
   isActive: boolean;
   createdAt: string;
+  /** Tasks logged under the story in any week. The story can be deleted only when this is 0. */
+  taskCount: number;
 }
 
 export interface CreateUserStoryRequest {

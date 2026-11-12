@@ -9,4 +9,8 @@ export const userStoriesApi = {
 
   update: (employeeCode: string, userStoryId: number, body: UpdateUserStoryRequest) =>
     http.put<UserStoryDto>(`/api/user-stories/${employeeCode}/${userStoryId}`, body),
+
+  // Only works for a story with no tasks in any week.
+  remove: (employeeCode: string, userStoryId: number) =>
+    http.delete<void>(`/api/user-stories/${employeeCode}/${userStoryId}`),
 };
