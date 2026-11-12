@@ -71,6 +71,34 @@
   background: var(--oxideTint);
 }
 
+/* Text-link action (icon + label) for secondary actions in tight header rows. */
+.lnk {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--oxide);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.lnk:hover:not(:disabled) {
+  text-decoration: underline;
+}
+.lnk:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+.lnk svg {
+  width: 13px;
+  height: 13px;
+  flex: none;
+}
+
 .sm {
   padding: 3px 8px;
   font-size: 11px;

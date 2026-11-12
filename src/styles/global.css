@@ -44,7 +44,7 @@ input, select, textarea {
 
 .app-shell {
   display: grid;
-  grid-template-columns: 212px 1fr;
+  grid-template-columns: 76px 1fr;
   grid-template-rows: 100vh;
   height: 100vh;
   width: 100%;

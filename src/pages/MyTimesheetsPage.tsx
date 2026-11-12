@@ -13,7 +13,7 @@ export function MyTimesheetsPage() {
 
   return (
     <>
-      <PageHeader crumb="My Work" title="All Timesheets" />
+      <PageHeader title="All Timesheets" />
       <div className="page-content">
         {isError && <Banner kind="reject">Couldn't load your history — check that the backend API is reachable.</Banner>}
 

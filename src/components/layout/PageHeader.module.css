@@ -10,13 +10,6 @@
   top: 0;
   z-index: 30;
 }
-.crumb {
-  font-size: 9.5px;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
-  color: var(--slate2);
-  font-weight: 600;
-}
 .topbar h2 {
   margin: 0;
   font-size: var(--fsPageTitle);
@@ -26,12 +19,80 @@
 .spacer {
   flex: 1;
 }
+/* Profile button (avatar + name) - opens the small menu below it. */
+.whoWrap {
+  position: relative;
+}
 .who {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding-left: 14px;
+  padding: 5px 8px 5px 14px;
+  border: 0;
   border-left: 1px solid var(--rule);
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.who:hover,
+.who.open {
+  background: var(--canvas);
+}
+.caret {
+  font-size: 9px;
+  color: var(--slate);
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--rLg);
+  box-shadow: var(--sh2);
+  white-space: nowrap;
+  z-index: 40;
+}
+.menuInfo {
+  padding: 9px 12px 8px;
+}
+.menuDesig {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.menuId {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--slate);
+  margin-top: 1px;
+}
+.menuFoot {
+  padding: 7px 12px 9px;
+  border-top: 1px solid var(--rule);
+}
+.signOut {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border: 1px solid var(--clayLine);
+  border-radius: var(--r);
+  background: var(--paper);
+  color: var(--clay);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.signOut:hover {
+  background: var(--clayTint);
+}
+.signOut svg {
+  width: 13px;
+  height: 13px;
 }
 .avatar {
   width: 27px;
@@ -49,10 +110,5 @@
 .nm {
   font-size: 12px;
   font-weight: 600;
-  line-height: 1.25;
-}
-.rl {
-  font-size: 10px;
-  color: var(--slate);
   line-height: 1.25;
 }

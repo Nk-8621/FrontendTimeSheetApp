@@ -20,7 +20,7 @@ export function RequestsPage() {
 
   function handleNewRequest() {
     openDrawer({
-      title: 'Request WFH, On Duty, Leave or Comp-Off',
+      title: 'New request',
       body: (
         <NewRequestDrawer
           onCancel={closeDrawer}
@@ -37,7 +37,7 @@ export function RequestsPage() {
 
   return (
     <>
-      <PageHeader crumb="My Work" title="Requests" />
+      <PageHeader title="Requests" />
 
       <div className="page-content">
         {isError && <Banner kind="reject">Couldn't load your requests — check that the backend API is reachable.</Banner>}

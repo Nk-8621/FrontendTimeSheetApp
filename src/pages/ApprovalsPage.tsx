@@ -72,7 +72,7 @@ export function ApprovalsPage({ level2, title }: ApprovalsPageProps) {
 
   return (
     <>
-      <PageHeader crumb="Approvals" title={title}>
+      <PageHeader title={title}>
         {!showReturned && <WeekNav weekStart={selectedWeek} onShift={shiftWeek} />}
         {!showReturned && clean.length > 0 && (
           <button className={`${controls.btn} ${controls.ok} ${controls.sm}`} onClick={handleBulkApprove}>

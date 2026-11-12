@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import type { DayTypeRequestType } from '../../api/types';
-import { DAY_TYPE_REQUEST_LABELS } from '../../types/meridian';
 import { toISO, parseISO } from '../../lib/dates';
 import controls from '../../styles/controls.module.css';
 import styles from '../timesheet/EntryDrawer.module.css';
@@ -10,17 +9,45 @@ interface NewRequestDrawerProps {
   onCancel: () => void;
 }
 
-const TYPES: DayTypeRequestType[] = ['WFH', 'OnDuty', 'LeaveFirstHalf', 'LeaveSecondHalf', 'LeaveFull', 'CompOffFirstHalf', 'CompOffSecondHalf', 'CompOffFull'];
+/** What the Request type dropdown offers. The three leave kinds then ask for
+ * a Duration (Full day / Custom -> which half) to pick the actual request type. */
+type RequestKind = 'WFH' | 'OnDuty' | 'PaidLeave' | 'UnpaidLeave' | 'CompOff';
+type Duration = 'Full' | 'Custom';
+type Half = 'First' | 'Second';
+
+const KINDS: { value: RequestKind; label: string }[] = [
+  { value: 'WFH', label: 'WFH' },
+  { value: 'OnDuty', label: 'On Duty' },
+  { value: 'PaidLeave', label: 'Paid Leave' },
+  { value: 'UnpaidLeave', label: 'Unpaid Leave' },
+  { value: 'CompOff', label: 'Comp-Off' },
+];
+
+/** Request-type prefix of each leave kind - each has <prefix>Full / FirstHalf / SecondHalf. */
+const LEAVE_PREFIX: Partial<Record<RequestKind, 'Leave' | 'Unpaid' | 'CompOff'>> = {
+  PaidLeave: 'Leave',
+  UnpaidLeave: 'Unpaid',
+  CompOff: 'CompOff',
+};
+
+function toRequestType(kind: RequestKind, duration: Duration, half: Half): DayTypeRequestType {
+  const prefix = LEAVE_PREFIX[kind];
+  if (!prefix) return kind as 'WFH' | 'OnDuty';
+  return duration === 'Full' ? `${prefix}Full` : `${prefix}${half}Half`;
+}
 
 const TYPE_HINTS: Record<DayTypeRequestType, string> = {
   WFH: 'The day stays a full 8h working day, just marked WFH.',
   OnDuty: 'The day stays a full 8h working day, marked On Duty (e.g. client site, official travel).',
-  LeaveFirstHalf: 'First half of the day is leave (4h); the second half is still worked and logged as usual.',
-  LeaveSecondHalf: 'Second half of the day is leave (4h); the first half is still worked and logged as usual.',
-  LeaveFull: 'The whole day counts as leave — no task hours needed.',
+  LeaveFirstHalf: 'First half of the day is paid leave (4h); the second half is still worked and logged as usual.',
+  LeaveSecondHalf: 'Second half of the day is paid leave (4h); the first half is still worked and logged as usual.',
+  LeaveFull: 'The whole day counts as paid leave (8h) — no task hours needed.',
+  UnpaidFirstHalf: 'First half of the day is unpaid leave (4h); the second half is still worked and logged as usual.',
+  UnpaidSecondHalf: 'Second half of the day is unpaid leave (4h); the first half is still worked and logged as usual.',
+  UnpaidFull: 'The whole day counts as unpaid leave (8h) — no task hours needed.',
   CompOffFirstHalf: 'First half of the day is a comp-off (4h); the second half is still worked and logged as usual.',
   CompOffSecondHalf: 'Second half of the day is a comp-off (4h); the first half is still worked and logged as usual.',
-  CompOffFull: 'A full compensatory day off — shown as leave, no task hours needed.',
+  CompOffFull: 'A full compensatory day off (8h) — shown as leave, no task hours needed.',
 };
 
 // Mirrors DayTypeRequestService.SubmitAsync's earliest-allowed-date check on
@@ -38,7 +65,11 @@ export function NewRequestDrawer({ onSave, onCancel }: NewRequestDrawerProps) {
   const today = toISO(new Date());
   const earliestDate = oneMonthAgo(today);
   const [date, setDate] = useState(today);
-  const [requestType, setRequestType] = useState<DayTypeRequestType>('WFH');
+  const [kind, setKind] = useState<RequestKind>('WFH');
+  const [duration, setDuration] = useState<Duration>('Full');
+  const [half, setHalf] = useState<Half>('First');
+  const isLeave = LEAVE_PREFIX[kind] !== undefined;
+  const requestType = toRequestType(kind, duration, half);
   const [note, setNote] = useState('');
   const [showDateError, setShowDateError] = useState(false);
   const [showNoteError, setShowNoteError] = useState(false);
@@ -73,14 +104,46 @@ export function NewRequestDrawer({ onSave, onCancel }: NewRequestDrawerProps) {
         <label>Request type <span className={controls.req}>*</span></label>
         <select
           className={controls.select}
-          value={requestType}
-          onChange={(e) => setRequestType(e.target.value as DayTypeRequestType)}
+          value={kind}
+          onChange={(e) => {
+            // Every leave kind starts at Full day; Custom starts at First half.
+            setKind(e.target.value as RequestKind);
+            setDuration('Full');
+            setHalf('First');
+          }}
         >
-          {TYPES.map((t) => (
-            <option key={t} value={t}>{DAY_TYPE_REQUEST_LABELS[t]}</option>
+          {KINDS.map((k) => (
+            <option key={k.value} value={k.value}>{k.label}</option>
           ))}
         </select>
-        <div className={controls.hint}>{TYPE_HINTS[requestType]}</div>
+      </div>
+
+      {isLeave && (
+        <div className={controls.field}>
+          <label>Duration <span className={controls.req}>*</span></label>
+          <div className={styles.segBill}>
+            <button type="button" className={duration === 'Full' ? styles.on : ''} onClick={() => setDuration('Full')}>
+              Full day (8h)
+            </button>
+            <button type="button" className={duration === 'Custom' ? styles.on : ''} onClick={() => setDuration('Custom')}>
+              Custom
+            </button>
+          </div>
+        </div>
+      )}
+
+      {isLeave && duration === 'Custom' && (
+        <div className={controls.field}>
+          <label>Which half <span className={controls.req}>*</span></label>
+          <select className={controls.select} value={half} onChange={(e) => setHalf(e.target.value as Half)}>
+            <option value="First">First half</option>
+            <option value="Second">Second half</option>
+          </select>
+        </div>
+      )}
+
+      <div className={controls.hint} style={{ marginTop: -4, marginBottom: 12 }}>
+        {TYPE_HINTS[requestType]}
       </div>
 
       <div className={controls.field}>

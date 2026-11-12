@@ -114,7 +114,7 @@ export function UserStoriesPage() {
 
   return (
     <>
-      <PageHeader crumb="My Work" title="User Stories" />
+      <PageHeader title="User Stories" />
 
       <div className="page-content">
         {(storiesError || weekError) && (
