@@ -37,7 +37,7 @@ function storiesForWeek(stories: UserStoryDto[], weekEntries: TimeEntryDto[], we
  */
 export function UserStoriesPage() {
   const { employeeCode } = useSession();
-  const { openDrawer, closeDrawer, toast } = useUI();
+  const { openDrawer, closeDrawer, toast, confirm } = useUI();
   const [searchParams] = useSearchParams();
   const [weekStart, setWeekStart] = useState(() => {
     const requested = searchParams.get('week');
@@ -78,13 +78,19 @@ export function UserStoriesPage() {
     });
   }
 
-  function handleDeleteStory(story: UserStoryDto) {
+  async function handleDeleteStory(story: UserStoryDto) {
     // Always clickable (a grey button looks broken); a story with tasks just explains why it can't go.
     if (story.taskCount > 0) {
       toast(`"${story.name}" has tasks logged under it - remove its tasks first, then delete the story.`, 'bad');
       return;
     }
-    if (!window.confirm(`Delete user story "${story.name}"? This can't be undone.`)) return;
+    const ok = await confirm({
+      title: 'Delete user story?',
+      message: `"${story.name}" will be deleted. This can't be undone.`,
+      confirmLabel: 'Delete',
+      danger: true,
+    });
+    if (!ok) return;
     deleteStory.mutate(story.id, {
       onSuccess: () => toast('User story deleted', 'ok'),
       onError: (err) => toast(err instanceof ApiError ? err.message : 'Could not delete the user story', 'bad'),

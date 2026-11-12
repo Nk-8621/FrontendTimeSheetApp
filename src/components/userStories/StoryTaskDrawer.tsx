@@ -184,6 +184,8 @@ export function StoryTaskDrawer({ employeeCode, weekStart, defaultStoryId, entry
             const outside = isOutside(selectedStory, i);
             const closed = dt.capacityHours === 0;
             const left = maxFor(i);
+            // Shown under the box: what's still free after the hours typed here.
+            const leftAfterTyping = Math.round(Math.max(0, left - hours[i]) * 100) / 100;
             const full = !closed && !outside && left === 0 && hours[i] === 0;
             const locked = (closed || outside || full) && hours[i] === 0;
             return (
@@ -199,7 +201,7 @@ export function StoryTaskDrawer({ employeeCode, weekStart, defaultStoryId, entry
                   disabled={locked}
                   onChange={(e) => setDayHours(i, e.target.value)}
                 />
-                <div className={styles.left}>{outside ? 'outside' : closed ? 'off' : full ? 'full' : `${left}h left`}</div>
+                <div className={styles.left}>{outside ? 'outside' : closed ? 'off' : full ? 'full' : `${leftAfterTyping}h left`}</div>
               </div>
             );
           })}
