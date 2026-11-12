@@ -79,6 +79,11 @@ export function UserStoriesPage() {
   }
 
   function handleDeleteStory(story: UserStoryDto) {
+    // Always clickable (a grey button looks broken); a story with tasks just explains why it can't go.
+    if (story.taskCount > 0) {
+      toast(`"${story.name}" has tasks logged under it - remove its tasks first, then delete the story.`, 'bad');
+      return;
+    }
     if (!window.confirm(`Delete user story "${story.name}"? This can't be undone.`)) return;
     deleteStory.mutate(story.id, {
       onSuccess: () => toast('User story deleted', 'ok'),

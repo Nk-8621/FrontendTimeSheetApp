@@ -332,15 +332,12 @@
   background: none;
   border: 1px solid transparent;
   border-radius: var(--r);
-  color: var(--clay);
-  font-size: 14px;
+  color: var(--oxide);
+  display: inline-flex;
+  align-items: center;
   cursor: pointer;
 }
-.deleteBtn:hover:not(:disabled) {
-  background: var(--clayTint, #FBE9E7);
-  border-color: var(--clay);
-}
-.deleteBtn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
+.deleteBtn:hover {
+  background: var(--oxideTint);
+  border-color: var(--oxideMid);
 }

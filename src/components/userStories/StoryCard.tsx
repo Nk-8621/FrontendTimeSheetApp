@@ -19,6 +19,19 @@ interface StoryCardProps {
   onDeleteStory: () => void;
 }
 
+/** Outline bin icon for Delete story (drawn in the button's text colour). */
+function TrashIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3 6h18" />
+      <path d="M8 6V4h8v2" />
+      <path d="M19 6l-1 14H6L5 6" />
+      <path d="M10 11v6" />
+      <path d="M14 11v6" />
+    </svg>
+  );
+}
+
 const fmtH = (n: number) => String(Math.round(n * 100) / 100);
 const sum = (values: number[]) => values.reduce((a, b) => a + b, 0);
 
@@ -98,11 +111,10 @@ export function StoryCard({ story, tasks, runsThisWeek, expanded, editable, onTo
               type="button"
               className={styles.deleteBtn}
               onClick={onDeleteStory}
-              disabled={story.taskCount > 0}
-              title={story.taskCount > 0 ? 'Remove its tasks first - only a story with no tasks can be deleted' : 'Delete story'}
+              title="Delete story"
               aria-label={`Delete story ${story.name}`}
             >
-              🗑
+              <TrashIcon />
             </button>
           </div>
         </div>
