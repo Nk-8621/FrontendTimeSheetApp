@@ -375,11 +375,15 @@ export interface UserStoryDto {
   endDate: string;
   isActive: boolean;
   createdAt: string;
+  /** Tasks logged under the story in any week. The story can be deleted only when this is 0. */
+  taskCount: number;
 }
 
 export interface CreateUserStoryRequest {
   name: string;
-  projectId: number;
+  /** null = no project (only for employees with no allocated projects) - the
+   * story then goes to their department's "Internal Work" project. */
+  projectId: number | null;
   startDate: string;
   endDate: string;
 }
@@ -535,6 +539,9 @@ export interface ApprovalQueueItemDto {
   flags: string[];
   lines: ApprovalQueueLineDto[];
   dayTypes: DayTypeDto[];
+  /** Only set in the "Returned by Level 2" list: who returned the week and why. */
+  returnedByName?: string | null;
+  returnReason?: string | null;
 }
 
 /** One row in any of the Reports screen's five rollup tabs. */

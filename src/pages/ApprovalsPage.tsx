@@ -4,7 +4,7 @@ import { PageHeader } from '../components/layout/PageHeader';
 import { Banner } from '../components/timesheet/Banner';
 import { WeekNav } from '../components/timesheet/WeekNav';
 import { ApprovalQueueItem } from '../components/approvals/ApprovalQueueItem';
-import { useApprovalQueue } from '../hooks/api/useApprovals';
+import { useApprovalQueue, useReturnedByLevel2 } from '../hooks/api/useApprovals';
 import { useUI } from '../components/ui/UIProvider';
 import { approvalsApi } from '../api/approvals';
 import { dayMonth, addDays, mondayOf, toISO } from '../lib/dates';
@@ -19,6 +19,10 @@ interface ApprovalsPageProps {
 
 export function ApprovalsPage({ level2, title }: ApprovalsPageProps) {
   const { data: queue, isError } = useApprovalQueue(level2);
+  // Level 1 only: weeks you approved that Level 2 sent back to the employee.
+  const { data: returned, isError: returnedError } = useReturnedByLevel2(!level2);
+  const [tab, setTab] = useState<'pending' | 'returned'>('pending');
+  const showReturned = !level2 && tab === 'returned';
   const { toast } = useUI();
   const queryClient = useQueryClient();
 
@@ -69,8 +73,8 @@ export function ApprovalsPage({ level2, title }: ApprovalsPageProps) {
   return (
     <>
       <PageHeader crumb="Approvals" title={title}>
-        <WeekNav weekStart={selectedWeek} onShift={shiftWeek} />
-        {clean.length > 0 && (
+        {!showReturned && <WeekNav weekStart={selectedWeek} onShift={shiftWeek} />}
+        {!showReturned && clean.length > 0 && (
           <button className={`${controls.btn} ${controls.ok} ${controls.sm}`} onClick={handleBulkApprove}>
             Approve {clean.length} with no flags
           </button>
@@ -79,7 +83,39 @@ export function ApprovalsPage({ level2, title }: ApprovalsPageProps) {
       <div className="page-content">
         {isError && <Banner kind="reject">Couldn't load the approval queue — check that the backend API is reachable.</Banner>}
 
-        {queue && (
+        {!level2 && (
+          <div className={styles.tabs}>
+            <button className={tab === 'pending' ? styles.tabOn : ''} onClick={() => setTab('pending')}>
+              Pending
+            </button>
+            <button className={tab === 'returned' ? styles.tabOn : ''} onClick={() => setTab('returned')}>
+              Returned by Level 2{returned && returned.length > 0 ? ` (${returned.length})` : ''}
+            </button>
+          </div>
+        )}
+
+        {showReturned && (
+          <>
+            {returnedError && <Banner kind="reject">Couldn't load the returned timesheets — check that the backend API is reachable.</Banner>}
+            <p style={{ fontSize: 12, color: 'var(--slate)', margin: '0 0 10px' }}>
+              Timesheets you approved that Level 2 sent back to the employee. Once the employee fixes and resubmits, they move back to Pending.
+            </p>
+            {returned && returned.length === 0 && (
+              <div className={styles.table}>
+                <div className={styles.empty}>Nothing has been returned by Level 2.</div>
+              </div>
+            )}
+            {returned && returned.length > 0 && (
+              <div className={styles.queue}>
+                {returned.map((item) => (
+                  <ApprovalQueueItem key={`${item.employeeCode}-${item.weekStartDate}`} item={item} level2={false} readOnly />
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {!showReturned && queue && (
           <>
             <div className={kpiStyles.kpis}>
               <div className={`${kpiStyles.kpi} ${kpiStyles.w}`}>

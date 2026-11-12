@@ -16,6 +16,20 @@ interface StoryCardProps {
   onAddTask: () => void;
   onEditTask: (entryId: number) => void;
   onEditStory: () => void;
+  onDeleteStory: () => void;
+}
+
+/** Outline bin icon for Delete story (drawn in the button's text colour). */
+function TrashIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3 6h18" />
+      <path d="M8 6V4h8v2" />
+      <path d="M19 6l-1 14H6L5 6" />
+      <path d="M10 11v6" />
+      <path d="M14 11v6" />
+    </svg>
+  );
 }
 
 const fmtH = (n: number) => String(Math.round(n * 100) / 100);
@@ -30,15 +44,35 @@ function daysText(hoursByDay: number[]) {
 }
 
 /** One user story with this week's tasks under it. */
-export function StoryCard({ story, tasks, runsThisWeek, expanded, editable, onToggle, onAddTask, onEditTask, onEditStory }: StoryCardProps) {
+export function StoryCard({ story, tasks, runsThisWeek, expanded, editable, onToggle, onAddTask, onEditTask, onEditStory, onDeleteStory }: StoryCardProps) {
   const storyHours = sum(tasks.map((t) => sum(t.hoursByDay)));
 
   return (
     <div className={`${styles.card} ${expanded ? styles.open : ''}`}>
-      <button type="button" className={styles.cardHead} onClick={onToggle} aria-expanded={expanded}>
-        <span className={styles.chev}>▶</span>
+      {/* The whole head opens/closes the card. The ✎ next to the name opens Edit
+          story instead (stopPropagation keeps it from also toggling the card). */}
+      <div className={styles.cardHead} onClick={onToggle}>
+        <button
+          type="button"
+          className={styles.chev}
+          aria-expanded={expanded}
+          aria-label={`${expanded ? 'Hide' : 'Show'} tasks for ${story.name}`}
+        >
+          ▶
+        </button>
         <span>
-          <span className={styles.name}>{story.name}</span>
+          <span className={styles.nameRow}>
+            <span className={styles.name}>{story.name}</span>
+            <button
+              type="button"
+              className={styles.editBtn}
+              title="Edit story"
+              aria-label={`Edit story ${story.name}`}
+              onClick={(e) => { e.stopPropagation(); onEditStory(); }}
+            >
+              ✎
+            </button>
+          </span>
           <span className={styles.meta}>
             <span className={styles.project}>{story.projectName}</span>
             <span className={styles.range}>{rangeLabel(story.startDate, story.endDate)}</span>
@@ -46,7 +80,7 @@ export function StoryCard({ story, tasks, runsThisWeek, expanded, editable, onTo
           </span>
         </span>
         <span className={styles.hoursBig}><b>{fmtH(storyHours)}</b>h this week</span>
-      </button>
+      </div>
 
       {expanded && (
         <div className={styles.tasks}>
@@ -66,15 +100,21 @@ export function StoryCard({ story, tasks, runsThisWeek, expanded, editable, onTo
           <div className={`${styles.cardFoot} ${styles.cardActions}`}>
             <button
               type="button"
-              className={`${controls.btn} ${controls.sm}`}
+              className={`${controls.btn} ${controls.sm} ${styles.addTaskBtn}`}
               onClick={onAddTask}
               disabled={!editable || !story.isActive || !runsThisWeek}
               title={!editable ? 'This week has been submitted' : !runsThisWeek ? "This week is outside the story's dates" : undefined}
             >
               + Add task
             </button>
-            <button type="button" className={`${controls.btn} ${controls.sm}`} onClick={onEditStory}>
-              ✎ Edit story
+            <button
+              type="button"
+              className={styles.deleteBtn}
+              onClick={onDeleteStory}
+              title="Delete story"
+              aria-label={`Delete story ${story.name}`}
+            >
+              <TrashIcon />
             </button>
           </div>
         </div>

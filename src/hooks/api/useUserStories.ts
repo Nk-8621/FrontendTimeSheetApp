@@ -32,3 +32,11 @@ export function useUpdateUserStory(employeeCode: string | undefined) {
     },
   });
 }
+
+export function useDeleteUserStory(employeeCode: string | undefined) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => userStoriesApi.remove(employeeCode!, id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: storiesKey(employeeCode ?? '') }),
+  });
+}

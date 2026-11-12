@@ -24,7 +24,11 @@ export function useTimesheetHistory(employeeCode: string | undefined) {
  * they all need to invalidate the same query on success. */
 export function useTimesheetMutations(employeeCode: string | undefined, weekStart: string) {
   const queryClient = useQueryClient();
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: weekKey(employeeCode ?? '', weekStart) });
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: weekKey(employeeCode ?? '', weekStart) });
+    // Each story shows how many tasks it has (it can be deleted only at 0), so refresh stories too.
+    queryClient.invalidateQueries({ queryKey: ['user-stories'] });
+  };
 
   const addEntry = useMutation({
     mutationFn: (body: CreateTimeEntryRequest) => timesheetApi.addEntry(employeeCode!, weekStart, body),

@@ -10,7 +10,8 @@ import { StoryTaskDrawer } from '../components/userStories/StoryTaskDrawer';
 import { useUI } from '../components/ui/UIProvider';
 import { useSession } from '../session/SessionContext';
 import { useWeek } from '../hooks/api/useTimesheet';
-import { useUserStories } from '../hooks/api/useUserStories';
+import { useDeleteUserStory, useUserStories } from '../hooks/api/useUserStories';
+import { ApiError } from '../api/httpClient';
 import { mondayOf, addDays, toISO, rangesOverlap } from '../lib/dates';
 import type { UserStoryDto, TimeEntryDto } from '../api/types';
 import controls from '../styles/controls.module.css';
@@ -36,7 +37,7 @@ function storiesForWeek(stories: UserStoryDto[], weekEntries: TimeEntryDto[], we
  */
 export function UserStoriesPage() {
   const { employeeCode } = useSession();
-  const { openDrawer, closeDrawer, toast } = useUI();
+  const { openDrawer, closeDrawer, toast, confirm } = useUI();
   const [searchParams] = useSearchParams();
   const [weekStart, setWeekStart] = useState(() => {
     const requested = searchParams.get('week');
@@ -46,6 +47,7 @@ export function UserStoriesPage() {
 
   const { data: stories, isError: storiesError } = useUserStories(employeeCode);
   const { data: week, isError: weekError } = useWeek(employeeCode, weekStart);
+  const deleteStory = useDeleteUserStory(employeeCode);
 
   const editable = week ? week.week.status === 'Draft' || week.week.status === 'Rejected' : false;
   const visibleStories = storiesForWeek(stories ?? [], week?.entries ?? [], weekStart);
@@ -76,6 +78,25 @@ export function UserStoriesPage() {
     });
   }
 
+  async function handleDeleteStory(story: UserStoryDto) {
+    // Always clickable (a grey button looks broken); a story with tasks just explains why it can't go.
+    if (story.taskCount > 0) {
+      toast(`"${story.name}" has tasks logged under it - remove its tasks first, then delete the story.`, 'bad');
+      return;
+    }
+    const ok = await confirm({
+      title: 'Delete user story?',
+      message: `"${story.name}" will be deleted. This can't be undone.`,
+      confirmLabel: 'Delete',
+      danger: true,
+    });
+    if (!ok) return;
+    deleteStory.mutate(story.id, {
+      onSuccess: () => toast('User story deleted', 'ok'),
+      onError: (err) => toast(err instanceof ApiError ? err.message : 'Could not delete the user story', 'bad'),
+    });
+  }
+
   function openAddTask(storyId: number, storyName: string) {
     openDrawer({
       title: 'Add task',
@@ -93,21 +114,19 @@ export function UserStoriesPage() {
 
   return (
     <>
-      <PageHeader crumb="My Work" title="User Stories">
-        <WeekNav weekStart={weekStart} onShift={(d) => setWeekStart((w) => addDays(w, d * 7))} />
-        {week && <StatusPill status={week.week.status} />}
-        <button className={`${controls.btn} ${controls.pri}`} onClick={() => openStoryDrawer()}>+ New user story</button>
-      </PageHeader>
+      <PageHeader crumb="My Work" title="User Stories" />
 
       <div className="page-content">
         {(storiesError || weekError) && (
           <Banner kind="reject">Couldn't load your user stories - check that the backend API is running and reachable.</Banner>
         )}
 
-        <p className={styles.intro}>
-          <span>Open a story and add the tasks you worked on, with hours for each day. They appear in My Timesheet for this week.</span>
-          <Link to={`/?week=${weekStart}`}>View in My Timesheet →</Link>
-        </p>
+        {/* Week, its status and New user story sit at the top right of the page. */}
+        <div className={styles.toolbar}>
+          <WeekNav weekStart={weekStart} onShift={(d) => setWeekStart((w) => addDays(w, d * 7))} />
+          {week && <StatusPill status={week.week.status} />}
+          <button className={`${controls.btn} ${controls.pri}`} onClick={() => openStoryDrawer()}>+ New user story</button>
+        </div>
 
         {week && !editable && (
           <div className={styles.locked}>This week has been submitted, so tasks can't be added or changed. Recall it from My Timesheet to edit.</div>
@@ -115,17 +134,7 @@ export function UserStoriesPage() {
 
         {stories && week && visibleStories.length === 0 && (
           <div className={styles.empty}>
-            {stories.length === 0 ? (
-              <>
-                <div className={styles.big}>No user stories yet</div>
-                Create your first user story, then add the tasks you work on under it.
-              </>
-            ) : (
-              <>
-                <div className={styles.big}>No user stories in this week</div>
-                A story shows only in the weeks between its start and end dates. Use the arrows to go to another week, or create a new story.
-              </>
-            )}
+            <div className={styles.big}>No user story found</div>
           </div>
         )}
 
@@ -142,9 +151,16 @@ export function UserStoriesPage() {
               onAddTask={() => openAddTask(story.id, story.name)}
               onEditTask={openEditTask}
               onEditStory={() => openStoryDrawer(story)}
+              onDeleteStory={() => handleDeleteStory(story)}
             />
           ))}
         </div>
+
+        {visibleStories.length > 0 && (
+          <div className={styles.viewTimesheet}>
+            <Link to={`/?week=${weekStart}`}>View Timesheet →</Link>
+          </div>
+        )}
       </div>
     </>
   );

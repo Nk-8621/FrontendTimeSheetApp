@@ -44,6 +44,10 @@ export function UserStoryDrawer({ employeeCode, existing, onSaved, onCancel }: U
 
   // Same projects Add Task Line offers: the ones you're allocated to that are still active.
   const projects = (allocations ?? []).filter((a) => projById(a.projectId)?.isActive !== false);
+  // No allocated projects (e.g. HR, Sales): the project is optional and the
+  // story goes to the department's "Internal Work" project on the server.
+  const allocationsLoaded = allocations !== undefined;
+  const projectOptional = !isEdit && allocationsLoaded && projects.length === 0;
   // When editing, the story's own project is shown even if it has since dropped off that list.
   const showSelectedProject = isEdit && projects.every((p) => p.projectId !== selected.projectId);
 
@@ -73,7 +77,8 @@ export function UserStoryDrawer({ employeeCode, existing, onSaved, onCancel }: U
   }
 
   function handleSave() {
-    if (!name.trim() || projectId === '' || !startDate || !endDate || endBeforeStart) {
+    const projectMissing = projectId === '' && !projectOptional;
+    if (!name.trim() || projectMissing || !startDate || !endDate || endBeforeStart) {
       setShowErrors(true);
       return;
     }
@@ -87,7 +92,7 @@ export function UserStoryDrawer({ employeeCode, existing, onSaved, onCancel }: U
       );
     } else {
       createStory.mutate(
-        { name: name.trim(), projectId, startDate, endDate },
+        { name: name.trim(), projectId: projectId === '' ? null : projectId, startDate, endDate },
         { onSuccess: (story) => onSaved(story, false), onError },
       );
     }
@@ -138,25 +143,27 @@ export function UserStoryDrawer({ employeeCode, existing, onSaved, onCancel }: U
       </div>
 
       <div className={controls.field}>
-        <label htmlFor="storyProject">Project <span className={controls.req}>*</span></label>
+        <label htmlFor="storyProject">Project {!projectOptional && <span className={controls.req}>*</span>}</label>
         <select
           id="storyProject"
           className={controls.select}
           value={projectId}
-          disabled={isEdit}
+          disabled={isEdit || projectOptional}
           onChange={(e) => { setProjectId(e.target.value ? Number(e.target.value) : ''); setServerError(''); }}
         >
-          <option value="">Select project</option>
+          <option value="">{projectOptional ? 'No project – internal work' : 'Select project'}</option>
           {selected && showSelectedProject && <option value={selected.projectId}>{selected.projectName}</option>}
           {projects.map((p) => (
             <option key={p.projectId} value={p.projectId}>{p.projectName}</option>
           ))}
         </select>
-        {showErrors && projectId === '' && <div className={styles.errMsg}>Select the project this story belongs to.</div>}
+        {showErrors && projectId === '' && !projectOptional && <div className={styles.errMsg}>Select the project this story belongs to.</div>}
         <div className={controls.hint}>
           {isEdit
             ? "The project can't be changed - this story's tasks are already logged against it."
-            : projects.length === 0 ? "You aren't allocated to any projects yet - ask your admin." : 'Only projects you are allocated to.'}
+            : projectOptional
+              ? "You aren't allocated to any projects, so leave this empty - your time is logged as your department's internal work (non-billable)."
+              : 'Only projects you are allocated to.'}
         </div>
       </div>
 
