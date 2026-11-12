@@ -178,22 +178,28 @@ export function MyTimesheetPage() {
 
   return (
     <>
-      <PageHeader crumb="My Work" title="My Timesheet">
-        <WeekNav weekStart={weekStart} onShift={shiftWeek} />
-        {weekStart !== thisWeek && (
-          <button className={`${controls.btn} ${controls.sm}`} onClick={() => setWeekStart(thisWeek)}>This week</button>
-        )}
-        {week && <StatusPill status={week.week.status} />}
-        {week && week.dayTypeRequests
-          .filter((r) => r.status === 'Pending')
-          .map((r) => (
-            <span key={r.id} title={`${r.requestType} requested for ${r.requestDate}`}>
-              <StatusPill status={r.status} labels={DAY_TYPE_REQUEST_STATUS_LABELS} />
-            </span>
-          ))}
-    </PageHeader>
+      <PageHeader title="My Timesheet" />
 
       <div className="page-content">
+        {/* The selected week drives everything below (cards, grid, trail, day
+            types), so its picker sits above all of them - and outside the
+            `week &&` check, so another week can still be picked if this one
+            fails to load. */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
+          <WeekNav weekStart={weekStart} onShift={shiftWeek} />
+          {weekStart !== thisWeek && (
+            <button className={`${controls.btn} ${controls.sm}`} onClick={() => setWeekStart(thisWeek)}>This week</button>
+          )}
+          {week && <StatusPill status={week.week.status} />}
+          {week && week.dayTypeRequests
+            .filter((r) => r.status === 'Pending')
+            .map((r) => (
+              <span key={r.id} title={`${r.requestType} requested for ${r.requestDate}`}>
+                <StatusPill status={r.status} labels={DAY_TYPE_REQUEST_STATUS_LABELS} />
+              </span>
+            ))}
+        </div>
+
         {isError && <Banner kind="reject">Couldn't load this week — check that the backend API is running and reachable.</Banner>}
 
         {week && (

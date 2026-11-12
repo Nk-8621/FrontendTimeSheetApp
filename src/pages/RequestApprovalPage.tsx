@@ -44,7 +44,7 @@ export function RequestApprovalPage() {
 
   return (
     <>
-      <PageHeader crumb="Approvals" title="Request Approval" />
+      <PageHeader title="Request Approval" />
 
       <div className="page-content">
         {isError && <Banner kind="reject">Couldn't load the request queue — check that the backend API is reachable.</Banner>}

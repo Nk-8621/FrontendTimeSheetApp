@@ -396,7 +396,7 @@ export function MasterDataPage() {
 
   return (
     <>
-      <PageHeader crumb="Setup" title="Master Data">
+      <PageHeader title="Master Data">
         {addHandlers[tab] && (
           <button className={`${controls.btn} ${controls.pri} ${controls.sm}`} onClick={addHandlers[tab]!}>+ New record</button>
         )}

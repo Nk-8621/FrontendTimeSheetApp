@@ -8,7 +8,7 @@ export function NotificationsPage() {
 
   return (
     <>
-      <PageHeader crumb="Setup" title="Notifications" />
+      <PageHeader title="Notifications" />
       <div className="page-content">
         {isError && <Banner kind="reject">Couldn't load notifications — check that the backend API is reachable.</Banner>}
 

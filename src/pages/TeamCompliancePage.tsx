@@ -38,7 +38,8 @@ function cellContent(hours: number, dayType: string, leaveHalf: string | null) {
   if (dayType === 'LH' && leaveHalf) {
     const leaf = <span key="leaf" className={styles.leaf}>L</span>;
     const rest = <span key="rest" className={styles.rest}>{hours ? hours.toFixed(1).replace(/\.0$/, '') : '–'}</span>;
-    return leaveHalf === 'LeaveSecondHalf' || leaveHalf === 'CompOffSecondHalf' ? <>{rest}{leaf}</> : <>{leaf}{rest}</>;
+    // Any *SecondHalf request (paid, unpaid or comp-off) puts the "L" on the right.
+    return leaveHalf.endsWith('SecondHalf') ? <>{rest}{leaf}</> : <>{leaf}{rest}</>;
   }
   if (dayType === 'L') return 'L';
   if (dayType === 'H') return 'H';
@@ -170,7 +171,7 @@ export function TeamCompliancePage() {
 
   return (
     <>
-      <PageHeader crumb="Oversight" title="Team Compliance">
+      <PageHeader title="Team Compliance">
         <WeekNav weekStart={weekStart} onShift={shiftWeek} />
       </PageHeader>
       <div className="page-content">

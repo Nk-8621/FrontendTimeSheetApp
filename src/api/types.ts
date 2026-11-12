@@ -430,7 +430,7 @@ export interface WeekRecordDto {
   trail: ApprovalEventDto[];
 }
 
-export type DayTypeRequestType = 'WFH' | 'LeaveFirstHalf' | 'LeaveSecondHalf' | 'LeaveFull' | 'OnDuty' | 'CompOffFirstHalf' | 'CompOffSecondHalf' | 'CompOffFull';
+export type DayTypeRequestType = 'WFH' | 'LeaveFirstHalf' | 'LeaveSecondHalf' | 'LeaveFull' | 'OnDuty' | 'CompOffFirstHalf' | 'CompOffSecondHalf' | 'CompOffFull' | 'UnpaidFirstHalf' | 'UnpaidSecondHalf' | 'UnpaidFull';
 export type DayTypeRequestStatus = 'Pending' | 'Approved' | 'Rejected';
 
 export interface DayTypeRequestDto {

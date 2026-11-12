@@ -15,7 +15,7 @@ export const NAV_GROUPS: Record<string, { group: string; icon: string; title: st
   team: { group: 'Oversight', icon: '▦', title: 'Team Compliance' },
   rep: { group: 'Oversight', icon: '◫', title: 'Reports' },
   mast: { group: 'Setup', icon: '⚙', title: 'Master Data' },
-  notif: { group: 'Setup', icon: '◔', title: 'Notifications' },
+  notif: { group: 'Notifications', icon: '◔', title: 'Notifications' },
 };
 
 export const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
@@ -51,13 +51,16 @@ export const DAY_TYPE_LABELS: Record<string, { css: string; label: string }> = {
 
 export const DAY_TYPE_REQUEST_LABELS: Record<string, string> = {
   WFH: 'WFH',
-  LeaveFirstHalf: 'Leave - First Half',
-  LeaveSecondHalf: 'Leave - Second Half',
-  LeaveFull: 'Full-day Leave',
+  LeaveFirstHalf: 'Paid Leave - First Half',
+  LeaveSecondHalf: 'Paid Leave - Second Half',
+  LeaveFull: 'Paid Leave - Full Day',
   OnDuty: 'On Duty',
   CompOffFirstHalf: 'Comp-Off - First Half',
   CompOffSecondHalf: 'Comp-Off - Second Half',
   CompOffFull: 'Comp-Off - Full Day',
+  UnpaidFirstHalf: 'Unpaid Leave - First Half',
+  UnpaidSecondHalf: 'Unpaid Leave - Second Half',
+  UnpaidFull: 'Unpaid Leave - Full Day',
 };
 
 export const DAY_TYPE_REQUEST_STATUS_LABELS: Record<string, { css: string; label: string }> = {

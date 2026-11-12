@@ -68,7 +68,7 @@ export function ReportsPage() {
 
   return (
     <>
-      <PageHeader crumb="Oversight" title="Reports" />
+      <PageHeader title="Reports" />
       <div className="page-content">
         <div className={styles.filters}>
           <div className={styles.f}>

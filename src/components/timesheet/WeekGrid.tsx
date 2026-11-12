@@ -80,6 +80,7 @@ export function WeekGrid({
         {editable && (
           <>
             <ImportExcelButton employeeCode={employeeCode} weekStart={weekStart} />
+            <span style={{ width: 1, height: 14, background: 'var(--rule)' }} aria-hidden="true" />
             <DownloadTemplateButton />
           </>
         )}
