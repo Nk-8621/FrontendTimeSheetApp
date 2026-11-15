@@ -165,7 +165,7 @@ export function ProjectTypeTemplateDrawer({ projectTypeId, typeName, onClose }: 
                 onChange={(e) => setNewTaskName((cur) => ({ ...cur, [mod.id]: e.target.value }))}
                 onKeyDown={(e) => { if (e.key === 'Enter') handleAddTask(mod.id, mod.tasks); }}
               />
-              <button className={`${controls.btn} ${controls.sm}`} onClick={() => handleAddTask(mod.id, mod.tasks)}>+ Add task</button>
+              <button className={`${controls.btn} ${controls.sm}`} onClick={() => handleAddTask(mod.id, mod.tasks)}>Add Task</button>
             </li>
           </ul>
         </div>
@@ -182,7 +182,7 @@ export function ProjectTypeTemplateDrawer({ projectTypeId, typeName, onClose }: 
             onChange={(e) => setNewModuleName(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') handleAddModule(); }}
           />
-          <button className={`${controls.btn} ${controls.pri} ${controls.sm}`} onClick={handleAddModule}>+ Add module</button>
+          <button className={`${controls.btn} ${controls.pri} ${controls.sm}`} onClick={handleAddModule}>Add Module</button>
         </div>
       </div>
 

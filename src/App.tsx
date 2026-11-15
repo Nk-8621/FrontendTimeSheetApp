@@ -27,7 +27,11 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
-      refetchOnWindowFocus: false,
+      // Reload the open page's data when the user comes back to this window or
+      // tab, so changes made by someone else (e.g. Level 2 returning a week)
+      // show up without clicking around. Master data keeps its own staleTime,
+      // so it isn't reloaded on every switch.
+      refetchOnWindowFocus: true,
     },
   },
 });

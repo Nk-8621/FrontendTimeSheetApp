@@ -199,7 +199,7 @@ export function MasterDataPage() {
     });
   }
 
-  /** "+ New record" on the Projects tab — the guided flow (Customer →
+  /** "New Record" on the Projects tab — the guided flow (Customer →
    * Project → Modules → Task Types → Review, all in one panel) is now the
    * default for creating a single project. The old multi-department form
    * (ProjectDrawer's create mode) still creates one Project per checked
@@ -398,7 +398,7 @@ export function MasterDataPage() {
     <>
       <PageHeader title="Master Data">
         {addHandlers[tab] && (
-          <button className={`${controls.btn} ${controls.pri} ${controls.sm}`} onClick={addHandlers[tab]!}>+ New record</button>
+          <button className={`${controls.btn} ${controls.pri} ${controls.sm}`} onClick={addHandlers[tab]!}>New Record</button>
         )}
       </PageHeader>
       <div className="page-content">

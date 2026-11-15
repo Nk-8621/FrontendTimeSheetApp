@@ -20,7 +20,7 @@ export function RequestsPage() {
 
   function handleNewRequest() {
     openDrawer({
-      title: 'New request',
+      title: 'New Request',
       body: (
         <NewRequestDrawer
           onCancel={closeDrawer}
@@ -47,12 +47,12 @@ export function RequestsPage() {
           noPad
           headerRight={
             <button className={`${controls.btn} ${controls.pri} ${controls.sm}`} onClick={handleNewRequest}>
-              + New request
+              New Request
             </button>
           }
         >
           {requests && (requests.length === 0 ? (
-              <div className={styles.empty}>No requests yet — use "+ New request" above to ask for WFH or Leave.</div>
+              <div className={styles.empty}>No requests yet — use "New Request" above to ask for WFH or Leave.</div>
             ) : (
               <table className={styles.table}>
                 <thead>

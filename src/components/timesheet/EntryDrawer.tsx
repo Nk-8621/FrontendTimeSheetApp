@@ -5,6 +5,7 @@ import { useMasterDataLookup } from '../../hooks/api/useMasterDataLookup';
 import { useQuickAddMutations } from '../../hooks/api/useMasterData';
 import { useEmployeeProjectAllocations } from '../../hooks/api/useEmployees';
 import { ApiError } from '../../api/httpClient';
+import { useUI } from '../ui/UIProvider';
 import controls from '../../styles/controls.module.css';
 import styles from './EntryDrawer.module.css';
 
@@ -42,6 +43,7 @@ const dayMonth = (iso: string) => {
 
 export function EntryDrawer({ employeeCode, dayTypes, weekEntries, existing, duplicateFrom, onSave, onDelete, onCancel }: EntryDrawerProps) {
   const { modules, tasks, projById, modById, taskById } = useMasterDataLookup();
+  const { confirm } = useUI();
   const { data: myAllocations } = useEmployeeProjectAllocations(employeeCode);
   const allocations = myAllocations ?? [];
 
@@ -506,8 +508,14 @@ export function EntryDrawer({ employeeCode, dayTypes, weekEntries, existing, dup
             <div style={{ flex: 1 }} />
             <button
               className={`${controls.btn} ${controls.dgr}`}
-              onClick={() => {
-                if (window.confirm('Remove this task line and its hours from the week? This can\'t be undone.')) onDelete?.();
+              onClick={async () => {
+                const ok = await confirm({
+                  title: 'Remove task line?',
+                  message: "This task line and its hours will be removed from this week. This can't be undone.",
+                  confirmLabel: 'Remove',
+                  danger: true,
+                });
+                if (ok) onDelete?.();
               }}
             >
               Remove line

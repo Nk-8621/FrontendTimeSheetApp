@@ -30,7 +30,7 @@ export function StoryTaskDrawer({ employeeCode, weekStart, defaultStoryId, entry
   const { data: week } = useWeek(employeeCode, weekStart);
   const { data: stories } = useUserStories(employeeCode);
   const mutations = useTimesheetMutations(employeeCode, weekStart);
-  const { toast } = useUI();
+  const { toast, confirm } = useUI();
 
   const existing = entryId !== undefined ? week?.entries.find((e) => e.id === entryId) : undefined;
 
@@ -134,9 +134,15 @@ export function StoryTaskDrawer({ employeeCode, weekStart, defaultStoryId, entry
     );
   }
 
-  function handleRemove() {
+  async function handleRemove() {
     if (!existing) return;
-    if (!window.confirm('Remove this task and its hours from the week? This can\'t be undone.')) return;
+    const ok = await confirm({
+      title: 'Remove task?',
+      message: `"${existing.note ?? 'This task'}" and its hours will be removed from this week. This can't be undone.`,
+      confirmLabel: 'Remove',
+      danger: true,
+    });
+    if (!ok) return;
     mutations.removeEntry.mutate(existing.id, {
       onSuccess: () => { onDone(); toast('Task removed'); },
       onError: (err) => showError(err, 'Could not remove the task'),

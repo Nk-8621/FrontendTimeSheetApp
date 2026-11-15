@@ -8,7 +8,7 @@ import { KpiStrip } from '../components/timesheet/KpiStrip';
 import { Banner } from '../components/timesheet/Banner';
 import { WeekGrid } from '../components/timesheet/WeekGrid';
 import { ApprovalTrail } from '../components/timesheet/ApprovalTrail';
-import { DayTypesCard } from '../components/timesheet/DayTypesCard';
+import { RecentTimesheetsCard } from '../components/timesheet/RecentTimesheetsCard';
 import { EntryDrawer } from '../components/timesheet/EntryDrawer';
 import { StoryTaskDrawer } from '../components/userStories/StoryTaskDrawer';
 import { SubmitDrawer } from '../components/timesheet/SubmitDrawer';
@@ -87,7 +87,7 @@ export function MyTimesheetPage() {
     // the User Stories page (story, task name, hours per day).
     if (entry.userStoryId !== null && entry.userStoryId !== undefined) {
       openDrawer({
-        title: 'Edit task',
+        title: 'Edit Task',
         subtitle: entry.userStoryName ?? undefined,
         body: <StoryTaskDrawer employeeCode={employeeCode} weekStart={weekStart} entryId={entryId} onDone={closeDrawer} />,
       });
@@ -237,7 +237,7 @@ export function MyTimesheetPage() {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 14 }}>
               <ApprovalTrail trail={week.week.trail} leadName={leadName} l2Name={l2Name} skipsLevel1={skipsLevel1} />
-              <DayTypesCard dayTypes={week.dayTypes} />
+              <RecentTimesheetsCard employeeCode={employeeCode} selectedWeek={weekStart} onView={setWeekStart} />
             </div>
           </>
         )}

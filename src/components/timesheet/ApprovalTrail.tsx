@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import type { ApprovalEventDto } from '../../api/types';
 import { Card } from '../ui/Card';
 import styles from './ApprovalTrail.module.css';
@@ -14,16 +15,25 @@ interface ApprovalTrailProps {
 const STATUS_CSS: Record<string, string> = { Ok: 'ok', Pending: 'pd', Rejected: 'rj' };
 
 export function ApprovalTrail({ trail, leadName, l2Name, skipsLevel1 = false }: ApprovalTrailProps) {
+  // The trail grows with every return/recall, so it scrolls inside its own box.
+  // The newest event is at the bottom - keep it in view when the trail changes.
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  }, [trail.length]);
+
   return (
     <Card title="Approval trail" sub="2 levels">
       {trail.length > 0 ? (
-        <div className={styles.trail}>
-          {trail.map((ev, i) => (
-            <div key={i} className={`${styles.ev} ${ev.status ? styles[STATUS_CSS[ev.status]] : ''}`}>
-              <div className={styles.t}>{ev.text}</div>
-              <div className={styles.m}>{ev.meta}</div>
-            </div>
-          ))}
+        <div ref={scrollRef} className={styles.scroll}>
+          <div className={styles.trail}>
+            {trail.map((ev, i) => (
+              <div key={i} className={`${styles.ev} ${ev.status ? styles[STATUS_CSS[ev.status]] : ''}`}>
+                <div className={styles.t}>{ev.text}</div>
+                <div className={styles.m}>{ev.meta}</div>
+              </div>
+            ))}
+          </div>
         </div>
       ) : (
         <div className={styles.empty}>

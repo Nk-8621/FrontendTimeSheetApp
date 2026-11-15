@@ -36,7 +36,7 @@ interface ProjectSetupFlowProps {
  * this loops the same single-record create/update calls the rest of the
  * app already uses), so closing the panel partway through never loses
  * already-entered work: the Customer and/or Project simply exist already,
- * and reopening "+ New record" mid-project is out of scope for this pass
+ * and reopening "New Record" mid-project is out of scope for this pass
  * (use the Projects tab's row to keep going instead).
  *
  * Reads its reference data via hooks directly, not as props — a prop frozen
@@ -271,11 +271,11 @@ export function ProjectSetupFlow({ onDone, onSwitchToClassicForm }: ProjectSetup
                 disabled={departmentId === ''}
                 onClick={() => { setAccountCreating(true); setAccountError(''); }}
               >
-                + Create new
+                Create New
               </button>
             </div>
             {departmentId !== '' && accountsForDept.length === 0 && (
-              <div className={controls.hint}>No account exists under this department yet — use "+ Create new" above.</div>
+              <div className={controls.hint}>No account exists under this department yet — use "Create New" above.</div>
             )}
           </div>
         )}

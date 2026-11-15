@@ -15,6 +15,8 @@ export function useApprovalMutations(employeeCode: string | undefined, weekStart
     queryClient.invalidateQueries({ queryKey: ['week', employeeCode, weekStart] });
     queryClient.invalidateQueries({ queryKey: ['pending-approvals'] });
     queryClient.invalidateQueries({ queryKey: ['approval-queue'] });
+    // My Timesheet's "All Timesheets" card shows each week's status.
+    queryClient.invalidateQueries({ queryKey: ['timesheet-history'] });
   };
 
   const submit = useMutation({

@@ -340,7 +340,7 @@ export function ModuleTaskTree({
                 disabled={addingTaskToModuleId === mod.id}
                 onClick={() => handleAddTaskToModule(mod.id)}
               >
-                + Add task
+                Add Task
               </button>
             </li>
           </ul>

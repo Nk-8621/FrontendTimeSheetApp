@@ -105,7 +105,7 @@ export function StoryCard({ story, tasks, runsThisWeek, expanded, editable, onTo
               disabled={!editable || !story.isActive || !runsThisWeek}
               title={!editable ? 'This week has been submitted' : !runsThisWeek ? "This week is outside the story's dates" : undefined}
             >
-              + Add task
+              Add Task
             </button>
             <button
               type="button"

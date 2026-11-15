@@ -62,7 +62,7 @@ export function UserStoriesPage() {
 
   function openStoryDrawer(existing?: UserStoryDto) {
     openDrawer({
-      title: existing ? 'Edit user story' : 'New user story',
+      title: existing ? 'Edit User Story' : 'New User Story',
       body: (
         <UserStoryDrawer
           employeeCode={employeeCode}
@@ -99,7 +99,7 @@ export function UserStoriesPage() {
 
   function openAddTask(storyId: number, storyName: string) {
     openDrawer({
-      title: 'Add task',
+      title: 'Add Task',
       subtitle: storyName,
       body: <StoryTaskDrawer employeeCode={employeeCode} weekStart={weekStart} defaultStoryId={storyId} onDone={closeDrawer} />,
     });
@@ -107,7 +107,7 @@ export function UserStoriesPage() {
 
   function openEditTask(entryId: number) {
     openDrawer({
-      title: 'Edit task',
+      title: 'Edit Task',
       body: <StoryTaskDrawer employeeCode={employeeCode} weekStart={weekStart} entryId={entryId} onDone={closeDrawer} />,
     });
   }
@@ -125,7 +125,7 @@ export function UserStoriesPage() {
         <div className={styles.toolbar}>
           <WeekNav weekStart={weekStart} onShift={(d) => setWeekStart((w) => addDays(w, d * 7))} />
           {week && <StatusPill status={week.week.status} />}
-          <button className={`${controls.btn} ${controls.pri}`} onClick={() => openStoryDrawer()}>+ New user story</button>
+          <button className={`${controls.btn} ${controls.pri}`} onClick={() => openStoryDrawer()}>New User Story</button>
         </div>
 
         {week && !editable && (

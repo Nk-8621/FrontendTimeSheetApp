@@ -1,3 +1,9 @@
+.scroll {
+  /* Scrolls inside the card once the trail is longer than this; short trails take only the space they need. */
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
 .trail {
   border-left: 2px solid var(--rule);
   margin-left: 6px;
