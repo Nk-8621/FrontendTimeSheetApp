@@ -144,6 +144,7 @@ export function Sidebar() {
     <aside className={styles.rail} ref={railRef}>
       <div className={styles.brand}>
         <img src="/apple-touch-icon.png" alt="Carbynetech" />
+        <span className={styles.brandName}>TIMESHEET</span>
       </div>
 
       <nav className={styles.railNav}>
