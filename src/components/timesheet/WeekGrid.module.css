@@ -23,6 +23,20 @@
 }
 .gridScroll {
   overflow-x: auto;
+  /* About 5 task rows; more rows scroll inside the grid so the page stays the
+     same height. The day header and the totals stay visible (sticky). */
+  overflow-y: auto;
+  max-height: 520px;
+}
+.wk thead {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
+.wk tfoot {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
 }
 
 .wk {

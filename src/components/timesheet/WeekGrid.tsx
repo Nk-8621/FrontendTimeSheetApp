@@ -250,7 +250,9 @@ export function WeekGrid({
                 </Fragment>
               );
             })}
-
+          </tbody>
+          {/* Totals stay pinned at the bottom while the task rows scroll. */}
+          <tfoot>
             <tr className={styles.totRow}>
               <td>Daily total</td>
               <td />
@@ -273,7 +275,7 @@ export function WeekGrid({
               <td className={styles.gt} style={{ fontSize: 13 }}>{fmtH(capTotal)}</td>
               <td />
             </tr>
-          </tbody>
+          </tfoot>
         </table>
       </div>
 
