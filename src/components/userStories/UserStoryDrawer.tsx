@@ -201,7 +201,7 @@ export function UserStoryDrawer({ employeeCode, existing, onSaved, onCancel }: U
 
       <div className={styles.footer}>
         <button className={`${controls.btn} ${controls.pri}`} onClick={handleSave} disabled={isPending}>
-          {isPending ? 'Saving…' : isEdit ? 'Save changes' : 'Create user story'}
+          {isPending ? 'Saving…' : isEdit ? 'Save Changes' : 'Create User Story'}
         </button>
         <button className={controls.btn} onClick={onCancel}>Cancel</button>
       </div>

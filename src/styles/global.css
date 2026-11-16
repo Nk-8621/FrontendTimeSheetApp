@@ -92,3 +92,27 @@ input, select, textarea {
   border: 1px solid var(--glass-border-dark);
   box-shadow: inset 0 1px 0 var(--glass-highlight-dark), var(--glass-shadow-deep);
 }
+
+/* Thin scrollbars everywhere (about half the browser default). */
+::-webkit-scrollbar {                                 /* Chrome, Edge */
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--ruleStrong);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--slate2);
+}
+/* Firefox has no ::-webkit-scrollbar - it gets its own thin setting.
+   (Kept separate: in Chrome/Edge, scrollbar-width would override the 8px above.) */
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--ruleStrong) transparent;
+  }
+}

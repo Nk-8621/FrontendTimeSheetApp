@@ -24,7 +24,7 @@ const EMPTY_HOURS = [0, 0, 0, 0, 0, 0, 0];
 /**
  * Add or edit one task under a user story: the story, the task name and the
  * hours for each day. Reads the week itself (not from props) so the hours
- * left per day stay correct after "Add & next task".
+ * left per day stay correct after "Add & Next Task".
  */
 export function StoryTaskDrawer({ employeeCode, weekStart, defaultStoryId, entryId, onDone }: StoryTaskDrawerProps) {
   const { data: week } = useWeek(employeeCode, weekStart);
@@ -222,16 +222,16 @@ export function StoryTaskDrawer({ employeeCode, weekStart, defaultStoryId, entry
 
       <div className={styles.footer}>
         <button className={`${controls.btn} ${controls.pri}`} onClick={() => handleSave(false)} disabled={isPending}>
-          {existing ? 'Save changes' : 'Add task'}
+          {existing ? 'Save Changes' : 'Add Task'}
         </button>
         {!existing && (
-          <button className={controls.btn} onClick={() => handleSave(true)} disabled={isPending}>Add &amp; next task</button>
+          <button className={controls.btn} onClick={() => handleSave(true)} disabled={isPending}>Add &amp; Next Task</button>
         )}
         <button className={controls.btn} onClick={onDone}>Cancel</button>
         {existing && (
           <>
             <div style={{ flex: 1 }} />
-            <button className={`${controls.btn} ${controls.dgr}`} onClick={handleRemove} disabled={isPending}>Remove task</button>
+            <button className={`${controls.btn} ${controls.dgr}`} onClick={handleRemove} disabled={isPending}>Remove Task</button>
           </>
         )}
       </div>
