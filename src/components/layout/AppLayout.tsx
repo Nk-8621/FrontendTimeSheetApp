@@ -1,9 +1,19 @@
-import { Outlet } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { useSession } from '../../session/SessionContext';
+import { useUI } from '../ui/UIProvider';
 
 export function AppLayout() {
   const { employeeCode } = useSession();
+  const { closeDrawer } = useUI();
+  const { pathname } = useLocation();
+
+  // A drawer belongs to the page that opened it - close it when the user
+  // goes to another page (changing the week on the same page keeps it open).
+  useEffect(() => {
+    closeDrawer();
+  }, [pathname, closeDrawer]);
 
   return (
     <div className="app-shell">
