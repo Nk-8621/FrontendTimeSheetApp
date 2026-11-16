@@ -1,9 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { PageHeader } from '../components/layout/PageHeader';
 import { Banner } from '../components/timesheet/Banner';
 import { useReportsSummary } from '../hooks/api/useReports';
 import { useDepartments } from '../hooks/api/useMasterData';
-import { mondayOf, addDays, toISO, weekLabel } from '../lib/dates';
+import { toISO } from '../lib/dates';
 import { downloadCsv } from '../lib/csv';
 import type { ReportApprovalStatus, ReportRollupRowDto } from '../api/types';
 import controls from '../styles/controls.module.css';
@@ -19,29 +19,20 @@ const TABS: [Tab, string, string][] = [
   ['task', 'Module & Task', 'Lowest level of the hierarchy'],
 ];
 
-function weekOptions(count: number, endingAt: string) {
-  const options: string[] = [];
-  let w = endingAt;
-  for (let i = 0; i < count; i++) {
-    options.unshift(w);
-    w = addDays(w, -7);
-  }
-  return options;
-}
-
 export function ReportsPage() {
-  const currentWeek = mondayOf(toISO(new Date()));
-  const [weekFrom, setWeekFrom] = useState(() => addDays(currentWeek, -21));
-  const [weekTo, setWeekTo] = useState(currentWeek);
+  // DATE RANGE (Nov 2026): From/To dates replace the Week from / Week to
+  // drop-downs. Default: 1st of this month to today. To revert this page,
+  // restore it from git (the week version used weekOptions + weekLabel).
+  const today = toISO(new Date());
+  const [fromDate, setFromDate] = useState(() => today.slice(0, 8) + '01');
+  const [toDate, setToDate] = useState(today);
+  const datesInvalid = !fromDate || !toDate || toDate < fromDate;
   const [departmentId, setDepartmentId] = useState<number | ''>('');
   const [approvalStatus, setApprovalStatus] = useState<ReportApprovalStatus>('all');
   const [tab, setTab] = useState<Tab>('dept');
 
   const departments = useDepartments();
-  const { data, isError } = useReportsSummary(weekFrom, weekTo, departmentId || undefined, approvalStatus);
-
-  const fromOptions = useMemo(() => weekOptions(26, currentWeek), [currentWeek]);
-  const toOptions = fromOptions;
+  const { data, isError } = useReportsSummary(fromDate, toDate, departmentId || undefined, approvalStatus);
 
   const rowsForTab: Record<Tab, ReportRollupRowDto[]> = {
     dept: data?.departmentWise ?? [],
@@ -57,7 +48,7 @@ export function ReportsPage() {
   function handleExport() {
     if (!activeRows.length) return;
     downloadCsv(
-      `report-${activeTabMeta[1].toLowerCase().replace(/[^a-z]+/g, '-')}-${weekFrom}-to-${weekTo}.csv`,
+      `report-${activeTabMeta[1].toLowerCase().replace(/[^a-z]+/g, '-')}-${fromDate}-to-${toDate}.csv`,
       ['Name', 'Detail', 'Total Hours', 'Billable', 'Partial billable', 'Non-billable', 'Bill %', 'Resources'],
       activeRows.map((r) => [
         r.key, r.subLabel, r.totalHours, r.billableHours, r.partialBillableHours, r.nonBillableHours,
@@ -79,29 +70,26 @@ export function ReportsPage() {
             </select>
           </div>
           <div className={styles.f}>
-            <label>Week from</label>
-            <select className={controls.select} value={weekFrom} onChange={(e) => setWeekFrom(e.target.value)}>
-              {fromOptions.map((w) => <option key={w} value={w}>{weekLabel(w)}</option>)}
-            </select>
+            <label htmlFor="repFrom">From date</label>
+            <input id="repFrom" type="date" className={controls.textInput} value={fromDate} max={toDate || undefined} onChange={(e) => setFromDate(e.target.value)} />
           </div>
           <div className={styles.f}>
-            <label>Week to</label>
-            <select className={controls.select} value={weekTo} onChange={(e) => setWeekTo(e.target.value)}>
-              {toOptions.map((w) => <option key={w} value={w}>{weekLabel(w)}</option>)}
-            </select>
+            <label htmlFor="repTo">To date</label>
+            <input id="repTo" type="date" className={controls.textInput} value={toDate} min={fromDate || undefined} onChange={(e) => setToDate(e.target.value)} />
           </div>
           <div className={styles.f}>
             <label>Approval status</label>
             <select className={controls.select} value={approvalStatus} onChange={(e) => setApprovalStatus(e.target.value as ReportApprovalStatus)}>
-              <option value="all">All timesheets</option>
-              <option value="sub">Submitted or beyond</option>
-              <option value="ok">Fully approved only</option>
+              <option value="all">All Timesheets</option>
+              <option value="sub">Submitted</option>
+              <option value="ok">Approved</option>
             </select>
           </div>
           <div style={{ flex: 1 }} />
           <button className={controls.btn} onClick={handleExport} disabled={!activeRows.length}>Export CSV</button>
         </div>
 
+        {datesInvalid && <Banner kind="warn">The To date can't be before the From date.</Banner>}
         {isError && <Banner kind="reject">Couldn't load the report — check that the backend API is reachable.</Banner>}
 
         {data && (
