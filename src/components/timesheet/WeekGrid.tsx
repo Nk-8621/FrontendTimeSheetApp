@@ -1,4 +1,4 @@
-import { Fragment } from 'react';
+import { Fragment, useLayoutEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { TimeEntryDto, DayTypeDto } from '../../api/types';
 import { CLASSIFICATION_SHORT_LABELS, DAY_NAMES, DAY_TYPE_LABELS, MAX_HOURS_PER_LINE } from '../../types/meridian';
@@ -35,6 +35,9 @@ const sum = (arr: number[]) => arr.reduce((a, b) => a + (b || 0), 0);
 const fmtH = (n: number) => (n ? (Math.round(n * 100) / 100).toString() : '—');
 const today = () => new Date().toISOString().slice(0, 10);
 
+/** Task lines shown before the grid starts scrolling. */
+const VISIBLE_TASK_LINES = 4;
+
 export function WeekGrid({
   employeeCode,
   weekStart,
@@ -66,6 +69,25 @@ export function WeekGrid({
   const grandTotal = sum(dayTotals);
   const todayIso = today();
 
+  // More than 4 task lines: show the first 4 and scroll the rest inside the
+  // grid (day header and totals stay fixed). The height is measured from the
+  // real rows, so it fits exactly 4 lines whatever their content.
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [maxGridHeight, setMaxGridHeight] = useState<number | undefined>(undefined);
+  useLayoutEffect(() => {
+    const box = scrollRef.current;
+    if (!box) return;
+    const taskRows = box.querySelectorAll<HTMLTableRowElement>('tr[data-task-row]');
+    if (taskRows.length <= VISIBLE_TASK_LINES) {
+      setMaxGridHeight(undefined);
+      return;
+    }
+    const firstHidden = taskRows[VISIBLE_TASK_LINES];
+    const footer = box.querySelector('tfoot');
+    const horizontalScrollbar = box.offsetHeight - box.clientHeight; // when the grid also scrolls sideways
+    setMaxGridHeight(firstHidden.offsetTop + (footer?.offsetHeight ?? 0) + horizontalScrollbar);
+  }, [rows]);
+
   const groups: Record<number, TimeEntryDto[]> = {};
   rows.forEach((r) => {
     (groups[r.projectId] = groups[r.projectId] ?? []).push(r);
@@ -84,7 +106,7 @@ export function WeekGrid({
           </>
         )}
       </div>
-      <div className={styles.gridScroll}>
+      <div ref={scrollRef} className={styles.gridScroll} style={{ maxHeight: maxGridHeight }}>
         <table className={styles.wk}>
           <thead>
             <tr>
@@ -150,7 +172,7 @@ export function WeekGrid({
                     </td>
                   </tr>
                   {groups[pid].map((r) => (
-                    <tr key={r.id}>
+                    <tr key={r.id} data-task-row>
                       <td className={styles.hier}>
                         {r.userStoryId !== null && r.userStoryId !== undefined ? (
                           // Task added under a user story: story on top, task name below.
@@ -264,7 +286,7 @@ export function WeekGrid({
               <td className={styles.gt}>{fmtH(grandTotal)}</td>
               <td />
             </tr>
-            <tr className={styles.totRow} style={{ opacity: 0.85 }}>
+            <tr className={`${styles.totRow} ${styles.capRow}`}>
               <td style={{ fontWeight: 500, fontSize: 11 }}>Available capacity (after leave / holiday / weekly off)</td>
               <td />
               {cap.map((c, i) => (

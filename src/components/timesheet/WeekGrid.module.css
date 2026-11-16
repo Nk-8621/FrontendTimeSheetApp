@@ -23,10 +23,9 @@
 }
 .gridScroll {
   overflow-x: auto;
-  /* About 5 task rows; more rows scroll inside the grid so the page stays the
-     same height. The day header and the totals stay visible (sticky). */
+  /* Scrolls up and down once there are more than 4 task lines (max-height is
+     set in WeekGrid.tsx). The day header and the totals stay visible (sticky). */
   overflow-y: auto;
-  max-height: 520px;
 }
 .wk thead {
   position: sticky;
@@ -213,6 +212,10 @@
 .totRow td.dt.short { color: #F0C078; }
 .totRow td.dt.over { color: #FF9B9B; }
 .totRow td.gt { font-family: var(--mono); font-size: 15px; text-align: center; background: var(--oxide) !important; border-left: 1px solid rgba(255, 255, 255, 0.2); }
+/* Capacity row: a lighter shade of the total row. Solid colours (not opacity),
+   so task rows scrolling underneath don't show through. */
+.capRow td { background: #314C61 !important; color: rgba(255, 255, 255, 0.9); }
+.capRow td.gt { background: #3A6181 !important; }
 
 .subRow td {
   background: #EDF1F5;
