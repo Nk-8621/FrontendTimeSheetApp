@@ -1,8 +1,9 @@
 :root {
   --ink: #151A21;
-  --ink2: #39424E;
-  --slate: #616B77;
-  --slate2: #748092;
+  /* Text greys - darkened for readability (were #39424E / #616B77 / #748092). */
+  --ink2: #1F2933;
+  --slate: #4A5563;
+  --slate2: #5B6676;
   --rule: #E2E7ED;
   --ruleStrong: #C8D1DA;
   --canvas: #F1F4F8;
