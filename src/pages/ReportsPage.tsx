@@ -143,7 +143,6 @@ export function ReportsPage() {
             <div className={styles.card}>
               <div className={styles.cardHd}>
                 <h3 style={{ display: 'inline' }}>{activeTabMeta[1]} actual hours</h3>
-                <span className={styles.sub}>{activeTabMeta[2]}</span>
               </div>
               {activeRows.length === 0 ? (
                 <div style={{ padding: 40, textAlign: 'center', color: 'var(--slate)' }}>No hours match the current filters.</div>

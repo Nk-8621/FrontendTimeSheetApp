@@ -93,6 +93,10 @@
   opacity: 0.55;
   cursor: progress;
 }
+/* A link button shown as not available yet - still clickable so it can explain why. */
+.lnkOff {
+  opacity: 0.5;
+}
 .lnk svg {
   width: 13px;
   height: 13px;

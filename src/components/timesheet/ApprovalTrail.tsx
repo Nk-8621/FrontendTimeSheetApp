@@ -23,7 +23,7 @@ export function ApprovalTrail({ trail, leadName, l2Name, skipsLevel1 = false }: 
   }, [trail.length]);
 
   return (
-    <Card title="Approval trail" sub="2 levels">
+    <Card title="Approval trail">
       {trail.length > 0 ? (
         <div ref={scrollRef} className={styles.scroll}>
           <div className={styles.trail}>

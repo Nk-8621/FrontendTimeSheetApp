@@ -2,15 +2,22 @@ import { useState } from 'react';
 import { timesheetImportApi } from '../../api/timesheetImport';
 import { useUI } from '../ui/UIProvider';
 import { ApiError } from '../../api/httpClient';
+import { useSession } from '../../session/SessionContext';
+import { EXCEL_UNDER_DEVELOPMENT } from './excelAccess';
 import controls from '../../styles/controls.module.css';
 
 /** Downloads the blank .xlsx template — the file ImportExcelButton then
  * expects back, filled in — as a real file save, not a new tab. */
 export function DownloadTemplateButton() {
-  const { toast } = useUI();
+  const { toast, confirm } = useUI();
+  const { isAdmin } = useSession();
   const [isDownloading, setIsDownloading] = useState(false);
 
   async function handleClick() {
+    if (!isAdmin) {
+      await confirm(EXCEL_UNDER_DEVELOPMENT);
+      return;
+    }
     setIsDownloading(true);
     try {
       const blob = await timesheetImportApi.downloadTemplate();
@@ -28,7 +35,7 @@ export function DownloadTemplateButton() {
   }
 
   return (
-    <button type="button" className={controls.lnk} disabled={isDownloading} onClick={handleClick}>
+    <button type="button" className={`${controls.lnk} ${isAdmin ? '' : controls.lnkOff}`} disabled={isDownloading} onClick={handleClick}>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
         <polyline points="7 10 12 15 17 10" />

@@ -10,6 +10,8 @@ export function NotificationsPage() {
     <>
       <PageHeader title="Notifications" />
       <div className="page-content">
+        <Banner kind="warn"><b>Under development:</b> notifications aren't sent yet. This page will show them once the feature is ready.</Banner>
+
         {isError && <Banner kind="reject">Couldn't load notifications — check that the backend API is reachable.</Banner>}
 
         {notifications?.map((n) => <NotificationCard key={n.id} notification={n} />)}

@@ -75,7 +75,6 @@ export function WeekGrid({
     <div className={styles.gridWrap}>
       <div className={styles.cardHd}>
         <h3>Week grid</h3>
-        <span className={styles.sub}>Department › Customer/Internal › Project › User story › Task</span>
         <div style={{ flex: 1 }} />
         {editable && (
           <>

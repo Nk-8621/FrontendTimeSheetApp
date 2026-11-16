@@ -8,6 +8,8 @@ export interface ConfirmOptions {
   confirmLabel?: string;
   /** Red confirm button - for actions that remove something. */
   danger?: boolean;
+  /** Information only: shows just the confirm button (e.g. "OK"), no Cancel. */
+  hideCancel?: boolean;
 }
 
 interface ConfirmDialogProps extends ConfirmOptions {
@@ -20,7 +22,7 @@ interface ConfirmDialogProps extends ConfirmOptions {
  * instead of the browser's window.confirm. Open it through useUI().confirm.
  * Esc or a click outside the box cancels.
  */
-export function ConfirmDialog({ title, message, confirmLabel = 'OK', danger = false, onConfirm, onCancel }: ConfirmDialogProps) {
+export function ConfirmDialog({ title, message, confirmLabel = 'OK', danger = false, hideCancel = false, onConfirm, onCancel }: ConfirmDialogProps) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onCancel(); };
     window.addEventListener('keydown', onKey);
@@ -52,8 +54,13 @@ export function ConfirmDialog({ title, message, confirmLabel = 'OK', danger = fa
         </div>
         <div className={styles.buttons}>
           {/* Cancel gets the focus, so pressing Enter by accident doesn't delete anything. */}
-          <button type="button" className={styles.btn} onClick={onCancel} autoFocus>Cancel</button>
-          <button type="button" className={`${styles.btn} ${danger ? styles.danger : styles.primary}`} onClick={onConfirm}>
+          {!hideCancel && <button type="button" className={styles.btn} onClick={onCancel} autoFocus>Cancel</button>}
+          <button
+            type="button"
+            className={`${styles.btn} ${danger ? styles.danger : styles.primary}`}
+            onClick={onConfirm}
+            autoFocus={hideCancel}
+          >
             {confirmLabel}
           </button>
         </div>
