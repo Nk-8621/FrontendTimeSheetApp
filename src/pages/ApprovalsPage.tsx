@@ -79,12 +79,13 @@ export function ApprovalsPage({ level2, title }: ApprovalsPageProps) {
 
   return (
     <>
-      <PageHeader title={title}>
-        {!showReturned && <WeekNav weekStart={selectedWeek} onShift={shiftWeek} />}
-      </PageHeader>
+      <PageHeader title={title} />
       <div className="page-content">
         {isError && <Banner kind="reject">Couldn't load the approval queue — check that the backend API is reachable.</Banner>}
 
+        {/* Week picker sits below the header, same as User Stories. On Level 1
+            it shares the line with the tabs (tabs left, week right); Level 2
+            has no tabs, so it gets its own right-aligned row. */}
         {!level2 && (
           <div className={styles.tabs}>
             <button className={tab === 'pending' ? styles.tabOn : ''} onClick={() => setTab('pending')}>
@@ -93,6 +94,16 @@ export function ApprovalsPage({ level2, title }: ApprovalsPageProps) {
             <button className={tab === 'returned' ? styles.tabOn : ''} onClick={() => setTab('returned')}>
               Returned by Level 2{returned && returned.length > 0 ? ` (${returned.length})` : ''}
             </button>
+            {!showReturned && (
+              <div style={{ marginLeft: 'auto', alignSelf: 'center', paddingBottom: 6 }}>
+                <WeekNav weekStart={selectedWeek} onShift={shiftWeek} />
+              </div>
+            )}
+          </div>
+        )}
+        {level2 && (
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+            <WeekNav weekStart={selectedWeek} onShift={shiftWeek} />
           </div>
         )}
 

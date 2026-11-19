@@ -20,6 +20,7 @@ import { useApprovalMutations } from '../hooks/api/useApprovals';
 import { ApiError } from '../api/httpClient';
 import type { TimeEntryDto } from '../api/types';
 import { mondayOf, addDays, toISO, dayMonth } from '../lib/dates';
+import { splitReturnReason } from '../lib/returnReason';
 import controls from '../styles/controls.module.css';
 
 export function MyTimesheetPage() {
@@ -169,6 +170,7 @@ export function MyTimesheetPage() {
         .filter(({ dt, total }) => dt.capacityHours !== 0 && Math.abs(total - dt.capacityHours) > 0.001)
     : [];
   const canSubmit = Boolean(week) && unbalancedDays.length === 0;
+  const returnInfo = splitReturnReason(week?.week.rejectionReason);
   const submitBlockedReason = unbalancedDays.length
     ? `${unbalancedDays.length} working day${unbalancedDays.length > 1 ? 's' : ''} not complete`
     : undefined;
@@ -205,7 +207,12 @@ export function MyTimesheetPage() {
         {week && (
           <>
             {week.week.status === 'Rejected' && (
-              <Banner kind="reject"><b>Returned by {week.week.rejectedByName ?? ''}:</b> {week.week.rejectionReason} — correct the entries and submit again.</Banner>
+              <Banner kind="reject">
+                <div><b>Returned by {week.week.rejectedByName ?? 'your approver'}</b></div>
+                <div><b>Reason:</b> {returnInfo.reason || 'No reason given'}</div>
+                {returnInfo.comments && <div><b>Comments:</b> {returnInfo.comments}</div>}
+                <div style={{ marginTop: 4 }}>Please correct the entries and submit again.</div>
+              </Banner>
             )}
 
             <KpiStrip

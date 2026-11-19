@@ -9,6 +9,7 @@ import { RejectDrawer } from './RejectDrawer';
 import controls from '../../styles/controls.module.css';
 import styles from './ApprovalQueue.module.css';
 import { WeekDetailTable } from '../timesheet/WeekDetailTable';
+import { splitReturnReason } from '../../lib/returnReason';
 
 
 function initialsOf(name: string) {
@@ -37,7 +38,6 @@ export function ApprovalQueueItem({ item, level2, readOnly = false }: ApprovalQu
       title: 'Approve timesheet',
       body: (
         <ApproveDrawer
-          flags={item.flags}
           onCancel={closeDrawer}
           onConfirm={(comment) => {
             const mutation = level2 ? mutations.approveLevel2 : mutations.approveLevel1;
@@ -53,7 +53,7 @@ export function ApprovalQueueItem({ item, level2, readOnly = false }: ApprovalQu
 
   function handleReject() {
     openDrawer({
-      title: 'Return for correction',
+      title: 'Return Timesheet',
       body: (
         <RejectDrawer
           employeeName={item.fullName}
@@ -69,6 +69,7 @@ export function ApprovalQueueItem({ item, level2, readOnly = false }: ApprovalQu
     });
   }
 
+  const returned = splitReturnReason(item.returnReason);
   const isBusy = mutations.approveLevel1.isPending || mutations.approveLevel2.isPending || mutations.reject.isPending;
   const pctBillable = item.totalHours ? Math.round((item.billableHours / item.totalHours) * 100) : 0;
 
@@ -125,7 +126,9 @@ export function ApprovalQueueItem({ item, level2, readOnly = false }: ApprovalQu
 
       {readOnly && (
         <div className={styles.returnedRow}>
-          <b>Returned by {item.returnedByName ?? 'Level 2'}:</b> {item.returnReason ?? 'No reason given'}
+          <div><b>Returned by {item.returnedByName ?? 'Level 2'}</b></div>
+          <div><b>Reason:</b> {returned.reason || 'No reason given'}</div>
+          {returned.comments && <div><b>Comments:</b> {returned.comments}</div>}
         </div>
       )}
 

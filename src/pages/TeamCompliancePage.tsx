@@ -135,11 +135,20 @@ function TeamComplianceRow({ row, weekStart }: TeamComplianceRowProps) {
 export function TeamCompliancePage() {
   const [weekStart, setWeekStart] = useState(() => mondayOf(toISO(new Date())));
   const { data: rows, isError } = useTeamCompliance(weekStart);
+  const [search, setSearch] = useState('');
   const today = toISO(new Date());
 
   const shiftWeek = (direction: -1 | 1) => setWeekStart((w) => addDays(w, direction * 7));
   const days = weekDays(weekStart);
   const zeroLogged = rows?.filter((r) => !r.hasLogged) ?? [];
+
+  // SEARCH (Nov 2026): filters only the table below. The KPI cards and the
+  // CSV download stay on the whole team.
+  const searchText = search.trim().toLowerCase();
+  const visibleRows = (rows ?? []).filter((r) =>
+    !searchText ||
+    [r.fullName, r.employeeCode, r.designation, r.departmentName]
+      .some((v) => v?.toLowerCase().includes(searchText)));
 
   const totalHours = rows?.reduce((sum, r) => sum + r.totalHours, 0) ?? 0;
   const totalCapacity = rows?.reduce((sum, r) => sum + r.capacityHours, 0) ?? 0;
@@ -171,10 +180,13 @@ export function TeamCompliancePage() {
 
   return (
     <>
-      <PageHeader title="Team Compliance">
-        <WeekNav weekStart={weekStart} onShift={shiftWeek} />
-      </PageHeader>
+      <PageHeader title="Team Compliance" />
       <div className="page-content">
+        {/* Week picker sits below the header, same as User Stories. */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+          <WeekNav weekStart={weekStart} onShift={shiftWeek} />
+        </div>
+
         {isError && <Banner kind="reject">Couldn't load compliance data — check that the backend API is reachable.</Banner>}
 
         {rows && (
@@ -207,8 +219,18 @@ export function TeamCompliancePage() {
               </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
-              <button className={controls.btn} onClick={handleExportSummary} disabled={rows.length === 0}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+              <div style={{ flex: 1, maxWidth: 360 }}>
+                <input
+                  className={controls.textInput}
+                  type="search"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search by name, code, designation, department…"
+                  aria-label="Search team members"
+                />
+              </div>
+              <button style={{ marginLeft: 'auto' }} className={controls.btn} onClick={handleExportSummary} disabled={rows.length === 0}>
                 Download weekly summary (CSV)
               </button>
             </div>
@@ -235,9 +257,13 @@ export function TeamCompliancePage() {
                   {rows.length === 0 ? (
                     <tr><td colSpan={COLUMN_COUNT}><div className={queueStyles.empty}>No direct reports found.</div></td></tr>
                   ) : (
-                    rows.map((row) => (
-                      <TeamComplianceRow key={row.employeeCode} row={row} weekStart={weekStart} />
-                    ))
+                    visibleRows.length === 0 ? (
+                      <tr><td colSpan={COLUMN_COUNT}><div className={queueStyles.empty}>No team members match "{search.trim()}".</div></td></tr>
+                    ) : (
+                      visibleRows.map((row) => (
+                        <TeamComplianceRow key={row.employeeCode} row={row} weekStart={weekStart} />
+                      ))
+                    )
                   )}
                 </tbody>
               </table>
