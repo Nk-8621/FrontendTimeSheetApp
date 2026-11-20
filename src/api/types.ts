@@ -610,24 +610,46 @@ export interface AccessProfileDto {
 /** Short day names used for week offs, Monday first. */
 export const WEEK_DAY_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
 
+/** An employee assigned to a client's week offs. */
 export interface EmployeeWeekOffDto {
   id: number;
   employeeCode: string;
   employeeName: string;
   accountId: number;
-  clientName: string;
-  /** e.g. ['Fri', 'Sat'] */
-  weekOffDays: string[];
   effectiveFrom: string;
   /** null = no end date */
   effectiveTo: string | null;
   createdByName: string | null;
 }
 
-export interface SaveEmployeeWeekOffRequest {
-  employeeCode: string;
+/** One row of the Week Offs list: a client's week-off days for a period,
+ * with the employees assigned to that client during it. */
+export interface ClientWeekOffDto {
+  id: number;
+  accountId: number;
+  clientName: string;
+  /** e.g. ['Fri', 'Sat'] */
+  weekOffDays: string[];
+  effectiveFrom: string;
+  effectiveTo: string | null;
+  employees: EmployeeWeekOffDto[];
+}
+
+export interface SaveClientWeekOffRequest {
   accountId: number;
   weekOffDays: string[];
+  effectiveFrom: string;
+  effectiveTo: string | null;
+}
+
+export interface AssignEmployeesRequest {
+  accountId: number;
+  employeeCodes: string[];
+  effectiveFrom: string;
+  effectiveTo: string | null;
+}
+
+export interface UpdateEmployeeWeekOffRequest {
   effectiveFrom: string;
   effectiveTo: string | null;
 }

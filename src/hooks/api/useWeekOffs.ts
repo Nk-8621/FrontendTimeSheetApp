@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { weekOffsApi } from '../../api/weekOffs';
-import type { SaveEmployeeWeekOffRequest } from '../../api/types';
+import type { AssignEmployeesRequest, SaveClientWeekOffRequest, UpdateEmployeeWeekOffRequest } from '../../api/types';
 
 // WEEK OFFS (Nov 2026): Master Data -> Week Offs.
 
@@ -17,16 +17,28 @@ export function useWeekOffMutations() {
   // Week offs change which days are W-OFF, so timesheet screens refresh too.
   const invalidate = () => queryClient.invalidateQueries();
 
-  const create = useMutation({
-    mutationFn: (body: SaveEmployeeWeekOffRequest) => weekOffsApi.create(body),
+  const createClient = useMutation({
+    mutationFn: (body: SaveClientWeekOffRequest) => weekOffsApi.createClient(body),
     onSuccess: invalidate,
   });
-  const update = useMutation({
-    mutationFn: ({ id, body }: { id: number; body: SaveEmployeeWeekOffRequest }) => weekOffsApi.update(id, body),
+  const updateClient = useMutation({
+    mutationFn: ({ id, body }: { id: number; body: SaveClientWeekOffRequest }) => weekOffsApi.updateClient(id, body),
     onSuccess: invalidate,
   });
-  const remove = useMutation({
-    mutationFn: (id: number) => weekOffsApi.remove(id),
+  const removeClient = useMutation({
+    mutationFn: (id: number) => weekOffsApi.removeClient(id),
+    onSuccess: invalidate,
+  });
+  const assignEmployees = useMutation({
+    mutationFn: (body: AssignEmployeesRequest) => weekOffsApi.assignEmployees(body),
+    onSuccess: invalidate,
+  });
+  const updateEmployee = useMutation({
+    mutationFn: ({ id, body }: { id: number; body: UpdateEmployeeWeekOffRequest }) => weekOffsApi.updateEmployee(id, body),
+    onSuccess: invalidate,
+  });
+  const removeEmployee = useMutation({
+    mutationFn: (id: number) => weekOffsApi.removeEmployee(id),
     onSuccess: invalidate,
   });
   const importFile = useMutation({
@@ -34,5 +46,5 @@ export function useWeekOffMutations() {
     onSuccess: (result) => { if (result.imported > 0) invalidate(); },
   });
 
-  return { create, update, remove, importFile };
+  return { createClient, updateClient, removeClient, assignEmployees, updateEmployee, removeEmployee, importFile };
 }

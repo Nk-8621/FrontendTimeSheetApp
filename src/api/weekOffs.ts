@@ -1,21 +1,28 @@
 import { http, ApiError } from './httpClient';
 import { getAuthHeaders } from './authBridge';
 import type {
-  EmployeeWeekOffDto, SaveEmployeeWeekOffRequest, WeekOffImportResultDto, WeekOffOptionsDto,
+  AssignEmployeesRequest, ClientWeekOffDto, SaveClientWeekOffRequest, UpdateEmployeeWeekOffRequest,
+  WeekOffImportResultDto, WeekOffOptionsDto,
 } from './types';
 
-// WEEK OFFS (Nov 2026): Master Data -> Week Offs (Admin and HR only).
+// WEEK OFFS (Nov 2026): Master Data -> Week Offs (Admin only).
+// Client week offs first, then employees assigned to the client.
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '';
 
 export const weekOffsApi = {
-  getAll: () => http.get<EmployeeWeekOffDto[]>('/api/week-offs'),
+  getAll: () => http.get<ClientWeekOffDto[]>('/api/week-offs'),
   getOptions: () => http.get<WeekOffOptionsDto>('/api/week-offs/options'),
-  create: (body: SaveEmployeeWeekOffRequest) => http.post<EmployeeWeekOffDto>('/api/week-offs', body),
-  update: (id: number, body: SaveEmployeeWeekOffRequest) => http.put<EmployeeWeekOffDto>(`/api/week-offs/${id}`, body),
-  remove: (id: number) => http.delete<void>(`/api/week-offs/${id}`),
 
-  /** The blank Excel template, as a Blob for the browser to save. */
+  createClient: (body: SaveClientWeekOffRequest) => http.post<void>('/api/week-offs/clients', body),
+  updateClient: (id: number, body: SaveClientWeekOffRequest) => http.put<void>(`/api/week-offs/clients/${id}`, body),
+  removeClient: (id: number) => http.delete<void>(`/api/week-offs/clients/${id}`),
+
+  assignEmployees: (body: AssignEmployeesRequest) => http.post<void>('/api/week-offs/employees', body),
+  updateEmployee: (id: number, body: UpdateEmployeeWeekOffRequest) => http.put<void>(`/api/week-offs/employees/${id}`, body),
+  removeEmployee: (id: number) => http.delete<void>(`/api/week-offs/employees/${id}`),
+
+  /** The blank Excel template (employee assignments), as a Blob. */
   async downloadTemplate(): Promise<Blob> {
     const authHeaders = await getAuthHeaders();
     const response = await fetch(`${API_BASE_URL}/api/week-offs/template`, { method: 'GET', headers: { ...authHeaders } });
@@ -26,7 +33,7 @@ export const weekOffsApi = {
     return response.blob();
   },
 
-  /** Bulk upload. Uses fetch directly - a file needs a multipart body. */
+  /** Bulk employee assignment. Uses fetch directly - a file needs a multipart body. */
   async importFile(file: File): Promise<WeekOffImportResultDto> {
     const formData = new FormData();
     formData.append('file', file);
