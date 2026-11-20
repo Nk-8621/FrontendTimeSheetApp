@@ -1,5 +1,5 @@
 import type { ApprovalQueueItemDto } from '../../api/types';
-import { CLASSIFICATION_SHORT_LABELS } from '../../types/meridian';
+import { CLASSIFICATION_SHORT_LABELS, DAY_TYPE_LABELS } from '../../types/meridian';
 import styles from '../approvals/ApprovalQueue.module.css';
 
 const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -23,7 +23,7 @@ export function WeekDetailTable({ item }: { item: ApprovalQueueItemDto }) {
           {DAY_NAMES.map((d, i) => (
             <th key={d} style={{ width: 52 }}>
               {d}
-              <div style={{ fontWeight: 400, fontSize: 9, color: 'var(--slate2)' }}>{item.dayTypes[i]?.dayType.slice(0, 3)}</div>
+              <div style={{ fontWeight: 400, fontSize: 9, color: 'var(--slate2)' }}>{DAY_TYPE_LABELS[item.dayTypes[i]?.dayType ?? '']?.label ?? item.dayTypes[i]?.dayType}</div>
             </th>
           ))}
           <th style={{ textAlign: 'right' }}>Total</th>

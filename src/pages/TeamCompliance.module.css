@@ -88,3 +88,6 @@
   background: var(--rule);
   min-width: 80px;
 }
+
+/* W-OFF is 5 letters - a smaller font keeps it inside the day box. */
+.hc.wo { font-size: 9px; letter-spacing: 0; }

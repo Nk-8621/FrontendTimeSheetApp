@@ -4,7 +4,7 @@ import { useUserStories } from '../../hooks/api/useUserStories';
 import { useUI } from '../ui/UIProvider';
 import { ApiError } from '../../api/httpClient';
 import type { UserStoryDto, WeekHours } from '../../api/types';
-import { DAY_NAMES, MAX_HOURS_PER_LINE } from '../../types/meridian';
+import { DAY_NAMES, DAY_TYPE_LABELS, MAX_HOURS_PER_LINE } from '../../types/meridian';
 import { addDays, dayMonth, isWithin, rangeLabel, rangesOverlap } from '../../lib/dates';
 import controls from '../../styles/controls.module.css';
 import styles from './UserStories.module.css';
@@ -207,7 +207,10 @@ export function StoryTaskDrawer({ employeeCode, weekStart, defaultStoryId, entry
                   disabled={locked}
                   onChange={(e) => setDayHours(i, e.target.value)}
                 />
-                <div className={styles.left}>{outside ? 'outside' : closed ? 'off' : full ? 'full' : `${leftAfterTyping}h left`}</div>
+                {/* A closed day shows its own label (W-OFF / Holiday / Leave) -
+                    checked before "outside" so a weekend after the story ends
+                    still reads W-OFF. */}
+                <div className={styles.left}>{closed ? DAY_TYPE_LABELS[dt.dayType]?.label ?? 'off' : outside ? 'outside' : full ? 'full' : `${leftAfterTyping}h left`}</div>
               </div>
             );
           })}

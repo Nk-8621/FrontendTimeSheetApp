@@ -116,11 +116,10 @@ export function WeekGrid({
                 const t = dayTypes[i].dayType;
                 const pct = cap[i] ? Math.min(100, (dayTotals[i] / cap[i]) * 100) : dayTotals[i] ? 100 : 0;
                 const capClass = cap[i] && dayTotals[i] > cap[i] ? styles.over : cap[i] && dayTotals[i] >= cap[i] ? styles.full : '';
-                const dow = new Date(d).getUTCDay();
                 return (
                   <th
                     key={d}
-                    className={`${styles.dayHd} ${styles.dcol} ${dow === 0 || dow === 6 ? styles.wknd : ''} ${d === todayIso ? styles.today : ''}`}
+                    className={`${styles.dayHd} ${styles.dcol} ${t === 'O' ? styles.wknd : ''} ${d === todayIso ? styles.today : ''}`}
                   >
                     <div className={styles.inner}>
                       <div className={styles.dn}>{DAY_NAMES[i]}</div>
@@ -287,7 +286,7 @@ export function WeekGrid({
               <td />
             </tr>
             <tr className={`${styles.totRow} ${styles.capRow}`}>
-              <td style={{ fontWeight: 500, fontSize: 11 }}>Available capacity (after leave / holiday / weekly off)</td>
+              <td style={{ fontWeight: 500, fontSize: 11 }}>Available capacity (after leave / holiday / W-OFF)</td>
               <td />
               {cap.map((c, i) => (
                 <td key={i} className={styles.dt} style={{ fontSize: 12, fontWeight: 500, opacity: 0.75 }}>
@@ -311,7 +310,7 @@ export function WeekGrid({
           <span><i className={styles.sw} style={{ background: 'repeating-linear-gradient(45deg,#FBE9E7 0 4px,#F5D9D6 4px 8px)' }} /> Leave (Keka or an approved/pending full-day request)</span>
           <span><i className={styles.sw} style={{ background: 'repeating-linear-gradient(45deg,#FBE9E7 0 4px,#FCF7F6 4px 8px)' }} /> Half-day leave (still open for 4h)</span>
           <span><i className={styles.sw} style={{ background: 'repeating-linear-gradient(45deg,#FCF2E1 0 4px,#F6E7CB 4px 8px)' }} /> Holiday</span>
-          <span><i className={styles.sw} style={{ background: 'repeating-linear-gradient(45deg,#F1F3F6 0 4px,#E3E7EC 4px 8px)' }} /> Weekly off</span>
+          <span><i className={styles.sw} style={{ background: 'repeating-linear-gradient(45deg,#F1F3F6 0 4px,#E3E7EC 4px 8px)' }} /> W-OFF</span>
         </div>
         <div style={{ flex: 1 }} />
         {editable ? (

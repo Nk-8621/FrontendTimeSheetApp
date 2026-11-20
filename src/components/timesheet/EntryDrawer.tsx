@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { TimeEntryDto, DayTypeDto, CreateTimeEntryRequest, WeekHours } from '../../api/types';
-import { DAY_NAMES, MAX_HOURS_PER_LINE } from '../../types/meridian';
+import { DAY_NAMES, DAY_TYPE_LABELS, MAX_HOURS_PER_LINE } from '../../types/meridian';
 import { useMasterDataLookup } from '../../hooks/api/useMasterDataLookup';
 import { useQuickAddMutations } from '../../hooks/api/useMasterData';
 import { useEmployeeProjectAllocations } from '../../hooks/api/useEmployees';
@@ -466,7 +466,7 @@ export function EntryDrawer({ employeeCode, dayTypes, weekEntries, existing, dup
                     }}
                   />
                 ) : (
-                  <span className={styles.dayTileDash}>{full ? 'Full' : closed ? '—' : '·'}</span>
+                  <span className={styles.dayTileDash}>{full ? 'Full' : closed ? DAY_TYPE_LABELS[dt.dayType]?.label ?? '—' : '·'}</span>
                 )}
               </label>
             );
@@ -477,7 +477,7 @@ export function EntryDrawer({ employeeCode, dayTypes, weekEntries, existing, dup
           {pickMode
             ? selectedDay !== null
               ? `Up to ${maxHoursFor(selectedDay)} h left on this day. A day can hold at most 8 h in total (4 h on a half-day leave).`
-              : 'Pick one day for this task line. Days that are full, on leave, holidays or weekly off are closed.'
+              : 'Pick one day for this task line. Days that are full, on leave, holidays or W-OFF are closed.'
             : 'A day can hold at most 8 h in total (4 h on a half-day leave). To log this task on another day, type the hours straight into the week grid.'}
         </div>
       </div>

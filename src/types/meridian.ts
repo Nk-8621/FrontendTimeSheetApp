@@ -45,7 +45,7 @@ export const DAY_TYPE_LABELS: Record<string, { css: string; label: string }> = {
   L: { css: 'lv', label: 'Leave' },
   LH: { css: 'lv', label: 'Half-day Leave' },
   H: { css: 'hd', label: 'Holiday' },
-  O: { css: '', label: 'Weekly Off' },
+  O: { css: '', label: 'W-OFF' }, // same label on every screen
   OD: { css: 'od', label: 'On Duty' },
 };
 

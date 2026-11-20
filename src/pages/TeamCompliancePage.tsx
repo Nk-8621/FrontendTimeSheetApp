@@ -47,6 +47,7 @@ function cellContent(hours: number, dayType: string, leaveHalf: string | null) {
   if (dayType === 'LH') return 'L½';
   if (dayType === 'WFH') return 'WFH';
   if (dayType === 'OD') return 'OD';
+  if (dayType === 'O') return 'W-OFF';
   return '·';
 }
 
@@ -93,7 +94,7 @@ function TeamComplianceRow({ row, weekStart }: TeamComplianceRowProps) {
           return (
             <td key={i} style={{ padding: '4px', borderTop: '1px solid var(--rule)', textAlign: 'center' }}>
               <div
-                className={`${styles.hc} ${cellClass(h, row.dailyDayTypes[i], leaveHalf)}`}
+                className={`${styles.hc} ${cellClass(h, row.dailyDayTypes[i], leaveHalf)} ${row.dailyDayTypes[i] === 'O' && !h ? styles.wo : ''}`}
                 title={`${DAY_NAMES[i]} — ${row.dailyDayTypes[i]}${leaveHalf ? ` (${leaveHalf})` : ''}`}
               >
                 {cellContent(h, row.dailyDayTypes[i], leaveHalf)}
