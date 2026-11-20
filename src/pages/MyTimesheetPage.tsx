@@ -240,6 +240,11 @@ export function MyTimesheetPage() {
               submitBlockedReason={submitBlockedReason}
               submitBlockedDetails={submitBlockedDetails}
               onRecall={handleRecall}
+              onDayTypeChange={(date, dayType) =>
+                mutations.setDayType.mutate(
+                  { date, dayType },
+                  { onError: (err) => showError(err, 'Could not change the day status') },
+                )}
             />
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 14 }}>

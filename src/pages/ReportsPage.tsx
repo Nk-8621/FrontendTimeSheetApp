@@ -21,6 +21,30 @@ const TABS: [Tab, string, string][] = [
   ['proj', 'Project-wise', 'Third level'],
 ];
 
+/** Labels of the Approval status drop-down - used in the download prompt and file name. */
+const STATUS_LABELS: Record<ReportApprovalStatus, string> = {
+  all: 'All Timesheets',
+  sub: 'Submitted',
+  ok: 'Approved',
+};
+
+/** "2026-11-01" -> "011126" (for the file name). */
+function ddmmyy(isoDate: string) {
+  const [year, month, day] = isoDate.split('-');
+  return `${day}${month}${year.slice(2)}`;
+}
+
+/** "2026-11-01" -> "01/11/2026" (for the prompt). */
+function ddmmyyyy(isoDate: string) {
+  const [year, month, day] = isoDate.split('-');
+  return `${day}/${month}/${year}`;
+}
+
+/** "All Timesheets" -> "AllTimesheets" - keeps the file name free of spaces and odd characters. */
+function fileSafe(text: string) {
+  return text.replace(/[^A-Za-z0-9]+/g, '');
+}
+
 /** "108.0 (68%)" - hours with their share of the row's total, or a dash. */
 function hoursWithPct(hours: number, total: number) {
   if (hours.toFixed(1) === '0.0') return '—';
@@ -64,17 +88,28 @@ export function ReportsPage() {
 
   // REPORTS DOWNLOAD (Nov 2026): one Excel file with all three views
   // (plus a Summary sheet), built by the backend with the current filters.
-  const { toast } = useUI();
+  const { toast, confirm } = useUI();
   const [isDownloading, setIsDownloading] = useState(false);
 
   async function handleDownload() {
+    // Tell the user exactly what they're downloading before it starts.
+    const departmentName = departments.data?.find((d) => d.id === departmentId)?.name ?? 'All departments';
+    const statusName = STATUS_LABELS[approvalStatus];
+    const ok = await confirm({
+      title: 'Download Report',
+      message: `You are downloading ${departmentName}, ${statusName} (${ddmmyyyy(fromDate)} to ${ddmmyyyy(toDate)}).`,
+      confirmLabel: 'OK',
+    });
+    if (!ok) return;
+
     setIsDownloading(true);
     try {
       const blob = await reportsApi.downloadSummaryExcel(fromDate, toDate, departmentId || undefined, approvalStatus);
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `Hours-Report-${fromDate}-to-${toDate}.xlsx`;
+      // Report_<Department>_<ApprovalStatus>_<fromDate DDMMYY>_<toDate DDMMYY>.xlsx
+      link.download = `Report_${fileSafe(departmentName)}_${fileSafe(statusName)}_${ddmmyy(fromDate)}_${ddmmyy(toDate)}.xlsx`;
       link.click();
       URL.revokeObjectURL(url);
     } catch (err) {
@@ -114,7 +149,7 @@ export function ReportsPage() {
           </div>
           <div style={{ flex: 1 }} />
           <button className={controls.btn} onClick={handleDownload} disabled={datesInvalid || !data || data.actualHours === 0 || isDownloading}>
-            {isDownloading ? 'Downloading…' : 'Download Report (Excel)'}
+            {isDownloading ? 'Downloading…' : 'Download Report'}
           </button>
         </div>
 
@@ -223,11 +258,6 @@ export function ReportsPage() {
               )}
             </div>
 
-            <div className={styles.legend}>
-              <span>▶ Click a row to see the employees who worked on it</span>
-              <span>% in brackets = share of that row's total hours</span>
-              <span style={{ color: 'var(--slate2)' }}>Billing rates are maintained outside Meridian — this reports hours only.</span>
-            </div>
           </>
         )}
       </div>

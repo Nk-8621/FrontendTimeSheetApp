@@ -29,7 +29,16 @@ interface WeekGridProps {
   /** Day-by-day list shown when hovering over that note. */
   submitBlockedDetails?: string;
   onRecall: () => void;
+  /** Day status (Nov 2026): called when the employee picks Working / Leave / WFH for a day. */
+  onDayTypeChange?: (date: string, dayType: string) => void;
 }
+
+/** The choices in the day status drop-down. */
+const DAY_STATUS_OPTIONS: [string, string][] = [
+  ['W', 'Working'],
+  ['L', 'Leave'],
+  ['WFH', 'WFH'],
+];
 
 const sum = (arr: number[]) => arr.reduce((a, b) => a + (b || 0), 0);
 const fmtH = (n: number) => (n ? (Math.round(n * 100) / 100).toString() : '—');
@@ -53,6 +62,7 @@ export function WeekGrid({
   submitBlockedReason,
   submitBlockedDetails,
   onRecall,
+  onDayTypeChange,
 }: WeekGridProps) {
   const { deptName, accById, projById, projAccountId, projDeptId, modName, taskName } = useMasterDataLookup();
   const { data: myAllocations } = useEmployeeProjectAllocations(employeeCode);
@@ -125,9 +135,24 @@ export function WeekGrid({
                       <div className={styles.dn}>{DAY_NAMES[i]}</div>
                       <div className={styles.dd}>{new Date(d).getUTCDate()}</div>
                     </div>
-                    <span className={`${styles.dtBtn} ${styles[DAY_TYPE_LABELS[t].css] ?? ''}`}>
-                      {DAY_TYPE_LABELS[t].label}
-                    </span>
+                    {/* Day status: a drop-down on days the employee can change,
+                        a fixed label on W-OFF, holidays and KEKA / requested leave. */}
+                    {editable && dayTypes[i].canChange && onDayTypeChange ? (
+                      <select
+                        className={`${styles.dtBtn} ${styles.dtSelect} ${styles[DAY_TYPE_LABELS[t].css] ?? ''}`}
+                        value={t}
+                        aria-label={`${DAY_NAMES[i]} status`}
+                        onChange={(e) => onDayTypeChange(d, e.target.value)}
+                      >
+                        {DAY_STATUS_OPTIONS.map(([value, label]) => (
+                          <option key={value} value={value}>{label}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span className={`${styles.dtBtn} ${styles[DAY_TYPE_LABELS[t].css] ?? ''}`}>
+                        {DAY_TYPE_LABELS[t].label}
+                      </span>
+                    )}
                     <div className={`${styles.capBar} ${capClass}`}>
                       <i style={{ width: `${pct}%` }} />
                     </div>

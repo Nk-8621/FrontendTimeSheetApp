@@ -409,6 +409,8 @@ export interface DayTypeDto {
   capacityHours: number;
   /** Only set when dayType is 'LH' - which half-day leave request drove it. */
   requestType?: DayTypeRequestType | null;
+  /** Day status (Nov 2026): true when the employee can switch this day between Working / Leave / WFH. */
+  canChange?: boolean;
 }
 
 export type WeekStatusDto = 'Draft' | 'PendingL1' | 'PendingL2' | 'Approved' | 'Rejected';
