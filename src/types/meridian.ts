@@ -86,3 +86,13 @@ export const WEEK_STATUS_LABELS: Record<string, { css: string; label: string }> 
   Approved: { css: 'p-ok', label: 'Approved & Locked' },
   Rejected: { css: 'p-rej', label: 'Returned for Correction' },
 };
+
+/** WEEK OFFS (Nov 2026): a W-OFF day needs no hours, but up to this many can
+ * be logged there as extra work (the backend allows the same). */
+export const W_OFF_EXTRA_HOURS = 8;
+
+/** Most hours a day can hold across all lines: its capacity, or the extra
+ * allowance on a W-OFF day. */
+export function dayEntryLimit(day: { dayType: string; capacityHours: number }) {
+  return day.dayType === 'O' ? W_OFF_EXTRA_HOURS : day.capacityHours;
+}

@@ -27,15 +27,17 @@ import { ProjectTypeDrawer } from '../components/masterdata/ProjectTypeDrawer';
 import { ProjectTypeTemplateDrawer } from '../components/masterdata/ProjectTypeTemplateDrawer';
 import { EmployeeAllocationsDrawer } from '../components/masterdata/EmployeeAllocationsDrawer';
 import { EmployeeEditDrawer } from '../components/masterdata/EmployeeEditDrawer';
+import { WeekOffsPanel } from '../components/masterdata/WeekOffsPanel';
 import controls from '../styles/controls.module.css';
 import drawerStyles from '../components/timesheet/EntryDrawer.module.css';
 import styles from './MasterData.module.css';
 
-type Tab = 'dept' | 'acc' | 'proj' | 'modtask' | 'ptype' | 'res' | 'palloc' | 'hol';
+type Tab = 'dept' | 'acc' | 'proj' | 'modtask' | 'ptype' | 'res' | 'palloc' | 'hol' | 'woff';
 const TABS: [Tab, string][] = [
   ['dept', 'Departments'], ['acc', 'Customers & Internal'], ['ptype', 'Project Templates'],
   ['proj', 'Project List'], ['modtask', 'Modules & Task Types'],
   ['res', 'Resources'], ['palloc', 'Resource Allocation'], ['hol', 'Holiday calendar'],
+  ['woff', 'Week Offs'], // WEEK OFFS (Nov 2026)
 ];
 
 /** A tab's table content, wrapped in the wireframe's card + record-count
@@ -392,6 +394,7 @@ export function MasterDataPage() {
     res: () => handleAddEmployee(),
     palloc: null,
     hol: () => handleAddOrEditHoliday(),
+    woff: null, // the Week Offs tab has its own Add Week Off button
   };
 
   return (
@@ -565,6 +568,8 @@ export function MasterDataPage() {
             )}
 
             {tab === 'palloc' && <ResourceAllocationsPanel />}
+
+            {tab === 'woff' && <WeekOffsPanel />}
 
             {tab === 'hol' && (
               <RecordsCard count={holidays.data?.length ?? 0}>

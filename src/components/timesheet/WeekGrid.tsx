@@ -1,7 +1,7 @@
 import { Fragment, useLayoutEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { TimeEntryDto, DayTypeDto } from '../../api/types';
-import { CLASSIFICATION_SHORT_LABELS, DAY_NAMES, DAY_TYPE_LABELS, MAX_HOURS_PER_LINE } from '../../types/meridian';
+import { CLASSIFICATION_SHORT_LABELS, DAY_NAMES, DAY_TYPE_LABELS, MAX_HOURS_PER_LINE, dayEntryLimit } from '../../types/meridian';
 import { useMasterDataLookup } from '../../hooks/api/useMasterDataLookup';
 import { useEmployeeProjectAllocations } from '../../hooks/api/useEmployees';
 import { isWithin, rangeLabel } from '../../lib/dates';
@@ -239,22 +239,21 @@ export function WeekGrid({
                         const blocked = t === 'L' || t === 'H';
                         // Any working day can be typed into directly - the same task on
                         // another day (e.g. Tuesday) needs no new line or description.
-                        // Days with no available hours (weekly off) stay locked, unless
-                        // the line already has hours there so they can be cleared.
+                        // Days with no available hours stay locked, unless the line
+                        // already has hours there so they can be cleared.
                         const claimed = r.hoursByDay[i] > 0;
                         // A user story task can't get hours outside the story's dates
                         // (hours already there can still be reduced or cleared).
                         const outsideStory = Boolean(r.userStoryStartDate && r.userStoryEndDate)
                           && !isWithin(days[i], r.userStoryStartDate!, r.userStoryEndDate!);
-                        const open = (cap[i] > 0 && !outsideStory) || claimed;
-                        // A weekly off is closed to entry just like a holiday, so it gets
-                        // the same hatched look - unless hours are already there to clear.
-                        const weeklyOff = t === 'O' && !claimed;
+                        // WEEK OFFS (Nov 2026): a W-OFF day stays open for extra hours
+                        // (up to 8 h); it just isn't required for Submit.
+                        const open = (dayEntryLimit(dayTypes[i]) > 0 && !outsideStory) || claimed;
                         const cls = [
                           styles.hr,
                           blocked ? (t === 'L' ? styles.blocked : styles.blockedH) : '',
-                          weeklyOff ? styles.blockedO : t === 'O' ? styles.wknd : '',
-                          !editable || (!blocked && !weeklyOff && !open) ? styles.locked : '',
+                          t === 'O' ? styles.wknd : '',
+                          !editable || (!blocked && !open) ? styles.locked : '',
                         ].join(' ');
                         return (
                           <td key={i} className={cls}>
@@ -264,7 +263,7 @@ export function WeekGrid({
                               value={fmtH(r.hoursByDay[i]) === '—' ? '' : fmtH(r.hoursByDay[i])}
                               placeholder="·"
                               readOnly={!editable || blocked || !open}
-                              tabIndex={blocked || weeklyOff ? -1 : undefined}
+                              tabIndex={blocked ? -1 : undefined}
                               title={editable && !blocked && !open ? (outsideStory ? "Outside the user story's dates" : 'No working hours on this day') : undefined}
                               aria-label={`${DAY_NAMES[i]} hours`}
                               onChange={(e) => {
@@ -272,7 +271,7 @@ export function WeekGrid({
                                 if (Number.isNaN(v) || v < 0) v = 0;
                                 // A line holds at most 8 h, and the whole day can't go
                                 // over its available hours (8 h, or 4 h on a half-day leave).
-                                const leftInDay = Math.max(0, cap[i] - (dayTotals[i] - r.hoursByDay[i]));
+                                const leftInDay = Math.max(0, dayEntryLimit(dayTypes[i]) - (dayTotals[i] - r.hoursByDay[i]));
                                 v = Math.min(v, MAX_HOURS_PER_LINE, leftInDay);
                                 if (outsideStory) v = Math.min(v, r.hoursByDay[i]);
                                 onHourChange(r.id, i, v);

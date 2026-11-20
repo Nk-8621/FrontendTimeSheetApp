@@ -604,3 +604,46 @@ export interface AccessProfileDto {
   isLevel2ApproverForSomeone: boolean;
   navKeys: string[];
 }
+
+// ---- Week Offs (Nov 2026): Master Data -> Week Offs ----
+
+/** Short day names used for week offs, Monday first. */
+export const WEEK_DAY_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
+
+export interface EmployeeWeekOffDto {
+  id: number;
+  employeeCode: string;
+  employeeName: string;
+  accountId: number;
+  clientName: string;
+  /** e.g. ['Fri', 'Sat'] */
+  weekOffDays: string[];
+  effectiveFrom: string;
+  /** null = no end date */
+  effectiveTo: string | null;
+  createdByName: string | null;
+}
+
+export interface SaveEmployeeWeekOffRequest {
+  employeeCode: string;
+  accountId: number;
+  weekOffDays: string[];
+  effectiveFrom: string;
+  effectiveTo: string | null;
+}
+
+export interface WeekOffOptionDto {
+  value: string;
+  label: string;
+}
+
+export interface WeekOffOptionsDto {
+  employees: WeekOffOptionDto[];
+  clients: WeekOffOptionDto[];
+}
+
+/** Excel upload result - nothing was saved when errors is not empty. */
+export interface WeekOffImportResultDto {
+  imported: number;
+  errors: string[];
+}

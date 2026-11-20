@@ -4,7 +4,7 @@ import { useUserStories } from '../../hooks/api/useUserStories';
 import { useUI } from '../ui/UIProvider';
 import { ApiError } from '../../api/httpClient';
 import type { UserStoryDto, WeekHours } from '../../api/types';
-import { DAY_NAMES, DAY_TYPE_LABELS, MAX_HOURS_PER_LINE } from '../../types/meridian';
+import { DAY_NAMES, DAY_TYPE_LABELS, MAX_HOURS_PER_LINE, dayEntryLimit } from '../../types/meridian';
 import { addDays, dayMonth, isWithin, rangeLabel, rangesOverlap } from '../../lib/dates';
 import controls from '../../styles/controls.module.css';
 import styles from './UserStories.module.css';
@@ -63,7 +63,8 @@ export function StoryTaskDrawer({ employeeCode, weekStart, defaultStoryId, entry
   // Outside the story's dates, hours already saved there can only be reduced.
   const maxFor = (i: number) => {
     if (isOutside(selectedStory, i)) return existing?.hoursByDay[i] ?? 0;
-    return Math.max(0, Math.min(MAX_HOURS_PER_LINE, week.dayTypes[i].capacityHours - usedByOthers[i]));
+    // WEEK OFFS (Nov 2026): a W-OFF day takes up to 8 h as extra work.
+    return Math.max(0, Math.min(MAX_HOURS_PER_LINE, dayEntryLimit(week.dayTypes[i]) - usedByOthers[i]));
   };
 
   function changeStory(newStoryId: number | '') {
@@ -188,7 +189,8 @@ export function StoryTaskDrawer({ employeeCode, weekStart, defaultStoryId, entry
         <div className={styles.days}>
           {week.dayTypes.map((dt, i) => {
             const outside = isOutside(selectedStory, i);
-            const closed = dt.capacityHours === 0;
+            const isWeekOff = dt.dayType === 'O';
+            const closed = dt.capacityHours === 0 && !isWeekOff; // W-OFF stays open for extra hours
             const left = maxFor(i);
             // Shown under the box: what's still free after the hours typed here.
             const leftAfterTyping = Math.round(Math.max(0, left - hours[i]) * 100) / 100;
@@ -210,7 +212,7 @@ export function StoryTaskDrawer({ employeeCode, weekStart, defaultStoryId, entry
                 {/* A closed day shows its own label (W-OFF / Holiday / Leave) -
                     checked before "outside" so a weekend after the story ends
                     still reads W-OFF. */}
-                <div className={styles.left}>{closed ? DAY_TYPE_LABELS[dt.dayType]?.label ?? 'off' : outside ? 'outside' : full ? 'full' : `${leftAfterTyping}h left`}</div>
+                <div className={styles.left}>{closed || isWeekOff ? DAY_TYPE_LABELS[dt.dayType]?.label ?? 'off' : outside ? 'outside' : full ? 'full' : `${leftAfterTyping}h left`}</div>
               </div>
             );
           })}

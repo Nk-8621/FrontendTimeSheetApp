@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { TimeEntryDto, DayTypeDto, CreateTimeEntryRequest, WeekHours } from '../../api/types';
-import { DAY_NAMES, DAY_TYPE_LABELS, MAX_HOURS_PER_LINE } from '../../types/meridian';
+import { DAY_NAMES, DAY_TYPE_LABELS, MAX_HOURS_PER_LINE, dayEntryLimit } from '../../types/meridian';
 import { useMasterDataLookup } from '../../hooks/api/useMasterDataLookup';
 import { useQuickAddMutations } from '../../hooks/api/useMasterData';
 import { useEmployeeProjectAllocations } from '../../hooks/api/useEmployees';
@@ -171,7 +171,8 @@ export function EntryDrawer({ employeeCode, dayTypes, weekEntries, existing, dup
     const t = dayTypes[i]?.dayType;
     // LH (half-day leave) still has 4h available to work - only full leave,
     // holiday and weekly off are actually closed to entry.
-    return !(t === 'W' || t === 'WFH' || t === 'OD' || t === 'LH');
+    // WEEK OFFS (Nov 2026): a W-OFF day ('O') stays open for extra hours.
+    return !(t === 'W' || t === 'WFH' || t === 'OD' || t === 'LH' || t === 'O');
   }
 
   // Hours already logged on each day by the OTHER lines of this week.
@@ -184,7 +185,7 @@ export function EntryDrawer({ employeeCode, dayTypes, weekEntries, existing, dup
   // Most this line can hold on a day: 8 h per line, and the whole day can't
   // go over its available hours (8 h, or 4 h on a half-day leave).
   function maxHoursFor(i: number) {
-    const leftInDay = dayTypes[i].capacityHours - usedByOtherLines[i];
+    const leftInDay = dayEntryLimit(dayTypes[i]) - usedByOtherLines[i];
     return Math.max(0, Math.min(MAX_HOURS_PER_LINE, leftInDay));
   }
 
