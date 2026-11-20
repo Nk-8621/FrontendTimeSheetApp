@@ -1,23 +1,37 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { PageHeader } from '../components/layout/PageHeader';
 import { Banner } from '../components/timesheet/Banner';
 import { useReportsSummary } from '../hooks/api/useReports';
 import { useDepartments } from '../hooks/api/useMasterData';
 import { toISO } from '../lib/dates';
-import { downloadCsv } from '../lib/csv';
+import { reportsApi } from '../api/reports';
+import { ApiError } from '../api/httpClient';
+import { useUI } from '../components/ui/UIProvider';
 import type { ReportApprovalStatus, ReportRollupRowDto } from '../api/types';
 import controls from '../styles/controls.module.css';
 import kpiStyles from '../components/timesheet/KpiStrip.module.css';
 import styles from './Reports.module.css';
 
-type Tab = 'dept' | 'acc' | 'proj' | 'res' | 'task';
+// RESOURCE EXPANSION (Nov 2026): Resource-wise and Module & Task tabs removed -
+// each row below can now be expanded to show the employees behind it.
+type Tab = 'dept' | 'acc' | 'proj';
 const TABS: [Tab, string, string][] = [
   ['dept', 'Department-wise', 'Top of the hierarchy'],
   ['acc', 'Customer / Internal', 'Second level'],
   ['proj', 'Project-wise', 'Third level'],
-  ['res', 'Resource-wise', 'Who spent the time'],
-  ['task', 'Module & Task', 'Lowest level of the hierarchy'],
 ];
+
+/** "108.0 (68%)" - hours with their share of the row's total, or a dash. */
+function hoursWithPct(hours: number, total: number) {
+  if (hours.toFixed(1) === '0.0') return '—';
+  const pct = total ? Math.round((hours / total) * 100) : 0;
+  return (
+    <>
+      {hours.toFixed(1)}
+      <span style={{ color: 'var(--slate2)', fontSize: 11, marginLeft: 4 }}>({pct}%)</span>
+    </>
+  );
+}
 
 export function ReportsPage() {
   // DATE RANGE (Nov 2026): From/To dates replace the Week from / Week to
@@ -30,6 +44,12 @@ export function ReportsPage() {
   const [departmentId, setDepartmentId] = useState<number | ''>('');
   const [approvalStatus, setApprovalStatus] = useState<ReportApprovalStatus>('all');
   const [tab, setTab] = useState<Tab>('dept');
+  // Which rows are expanded (by key + sub label). Cleared when the tab changes.
+  const [openRows, setOpenRows] = useState<string[]>([]);
+
+  function toggleRow(rowId: string) {
+    setOpenRows((rows) => (rows.includes(rowId) ? rows.filter((r) => r !== rowId) : [...rows, rowId]));
+  }
 
   const departments = useDepartments();
   const { data, isError } = useReportsSummary(fromDate, toDate, departmentId || undefined, approvalStatus);
@@ -38,23 +58,30 @@ export function ReportsPage() {
     dept: data?.departmentWise ?? [],
     acc: data?.accountWise ?? [],
     proj: data?.projectWise ?? [],
-    res: data?.resourceWise ?? [],
-    task: data?.taskWise ?? [],
   };
   const activeRows = rowsForTab[tab];
-  const maxTotal = activeRows.length ? activeRows[0].totalHours : 0;
   const activeTabMeta = TABS.find(([key]) => key === tab)!;
 
-  function handleExport() {
-    if (!activeRows.length) return;
-    downloadCsv(
-      `report-${activeTabMeta[1].toLowerCase().replace(/[^a-z]+/g, '-')}-${fromDate}-to-${toDate}.csv`,
-      ['Name', 'Detail', 'Total Hours', 'Billable', 'Partial billable', 'Non-billable', 'Bill %', 'Resources'],
-      activeRows.map((r) => [
-        r.key, r.subLabel, r.totalHours, r.billableHours, r.partialBillableHours, r.nonBillableHours,
-        r.totalHours ? Math.round((r.billableHours / r.totalHours) * 100) : 0, r.resourceCount,
-      ]),
-    );
+  // REPORTS DOWNLOAD (Nov 2026): one Excel file with all three views
+  // (plus a Summary sheet), built by the backend with the current filters.
+  const { toast } = useUI();
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  async function handleDownload() {
+    setIsDownloading(true);
+    try {
+      const blob = await reportsApi.downloadSummaryExcel(fromDate, toDate, departmentId || undefined, approvalStatus);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Hours-Report-${fromDate}-to-${toDate}.xlsx`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      toast(err instanceof ApiError ? err.message : 'Could not download the report', 'bad');
+    } finally {
+      setIsDownloading(false);
+    }
   }
 
   return (
@@ -86,7 +113,9 @@ export function ReportsPage() {
             </select>
           </div>
           <div style={{ flex: 1 }} />
-          <button className={controls.btn} onClick={handleExport} disabled={!activeRows.length}>Export CSV</button>
+          <button className={controls.btn} onClick={handleDownload} disabled={datesInvalid || !data || data.actualHours === 0 || isDownloading}>
+            {isDownloading ? 'Downloading…' : 'Download Report (Excel)'}
+          </button>
         </div>
 
         {datesInvalid && <Banner kind="warn">The To date can't be before the From date.</Banner>}
@@ -124,7 +153,7 @@ export function ReportsPage() {
 
             <div className={styles.tabs}>
               {TABS.map(([key, label]) => (
-                <button key={key} className={tab === key ? 'on' : ''} onClick={() => setTab(key)}>{label}</button>
+                <button key={key} className={tab === key ? 'on' : ''} onClick={() => { setTab(key); setOpenRows([]); }}>{label}</button>
               ))}
             </div>
 
@@ -138,42 +167,55 @@ export function ReportsPage() {
                 <table className={styles.plainTable}>
                   <thead>
                     <tr>
-                      <th>{activeTabMeta[1].replace(/-wise.*/, '').replace(' / Task', '').replace('Module & ', '')}</th>
+                      <th>{activeTabMeta[1].replace(/-wise.*/, '')}</th>
                       <th style={{ textAlign: 'right' }}>Total h</th>
                       <th style={{ textAlign: 'right' }}>Billable</th>
                       <th style={{ textAlign: 'right' }}>Partial</th>
                       <th style={{ textAlign: 'right' }}>Non-bill</th>
-                      <th style={{ textAlign: 'right' }}>Bill %</th>
-                      <th>Share</th>
                       <th style={{ textAlign: 'right' }}>Resources</th>
                     </tr>
                   </thead>
                   <tbody>
                     {activeRows.map((r) => {
-                      const billPct = r.totalHours ? Math.round((r.billableHours / r.totalHours) * 100) : 0;
-                      const shareWidth = maxTotal ? Math.max(6, (r.totalHours / maxTotal) * 100) : 0;
+                      const rowId = r.key + r.subLabel;
+                      const isOpen = openRows.includes(rowId);
+                      const canOpen = (r.resources?.length ?? 0) > 0;
                       return (
-                        <tr key={r.key + r.subLabel}>
-                          <td>
-                            <div style={{ fontWeight: 600 }}>{r.key}</div>
-                            {r.subLabel && <div style={{ fontSize: 10.5, color: 'var(--slate)' }}>{r.subLabel}</div>}
-                          </td>
-                          <td className="num" style={{ textAlign: 'right', fontWeight: 600 }}>{r.totalHours.toFixed(1)}</td>
-                          <td className="num" style={{ textAlign: 'right' }}>{r.billableHours.toFixed(1) === '0.0' ? '—' : r.billableHours.toFixed(1)}</td>
-                          <td className="num" style={{ textAlign: 'right' }}>{r.partialBillableHours.toFixed(1) === '0.0' ? '—' : r.partialBillableHours.toFixed(1)}</td>
-                          <td className="num" style={{ textAlign: 'right' }}>{r.nonBillableHours.toFixed(1) === '0.0' ? '—' : r.nonBillableHours.toFixed(1)}</td>
-                          <td className="num" style={{ textAlign: 'right', fontWeight: 600, color: billPct >= 70 ? 'var(--verd)' : billPct < 40 ? 'var(--amber)' : 'var(--ink2)' }}>
-                            {billPct}%
-                          </td>
-                          <td style={{ width: 170 }}>
-                            <div className={styles.shareBar} style={{ width: `${shareWidth}%` }}>
-                              <i style={{ width: `${r.totalHours ? (r.billableHours / r.totalHours) * 100 : 0}%`, background: 'var(--oxide)' }} />
-                              <i style={{ width: `${r.totalHours ? (r.partialBillableHours / r.totalHours) * 100 : 0}%`, background: 'var(--violet)' }} />
-                              <i style={{ width: `${r.totalHours ? (r.nonBillableHours / r.totalHours) * 100 : 0}%`, background: 'var(--slate2, #C7CEDA)' }} />
-                            </div>
-                          </td>
-                          <td className="num" style={{ textAlign: 'right', color: 'var(--slate)' }}>{r.resourceCount}</td>
-                        </tr>
+                        <Fragment key={rowId}>
+                          <tr
+                            onClick={() => canOpen && toggleRow(rowId)}
+                            style={{ cursor: canOpen ? 'pointer' : undefined }}
+                            title={canOpen ? (isOpen ? 'Hide employees' : 'Show employees') : undefined}
+                          >
+                            <td>
+                              <div style={{ display: 'flex', gap: 6 }}>
+                                <span style={{ width: 12, fontSize: 10, color: 'var(--slate)', paddingTop: 2 }}>{canOpen ? (isOpen ? '▼' : '▶') : ''}</span>
+                                <div>
+                                  <div style={{ fontWeight: 600 }}>{r.key}</div>
+                                  {r.subLabel && <div style={{ fontSize: 10.5, color: 'var(--slate)' }}>{r.subLabel}</div>}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="num" style={{ textAlign: 'right', fontWeight: 600 }}>{r.totalHours.toFixed(1)}</td>
+                            <td className="num" style={{ textAlign: 'right' }}>{hoursWithPct(r.billableHours, r.totalHours)}</td>
+                            <td className="num" style={{ textAlign: 'right' }}>{hoursWithPct(r.partialBillableHours, r.totalHours)}</td>
+                            <td className="num" style={{ textAlign: 'right' }}>{hoursWithPct(r.nonBillableHours, r.totalHours)}</td>
+                            <td className="num" style={{ textAlign: 'right', fontWeight: 600, color: 'var(--oxide)' }}>{r.resourceCount}</td>
+                          </tr>
+                          {isOpen && r.resources?.map((e) => (
+                            <tr key={rowId + e.key + e.subLabel} style={{ background: '#F7F9FC' }}>
+                              <td style={{ paddingLeft: 46 }}>
+                                <div style={{ fontWeight: 500 }}>{e.key}</div>
+                                {e.subLabel && <div style={{ fontSize: 10.5, color: 'var(--slate)' }}>{e.subLabel}</div>}
+                              </td>
+                              <td className="num" style={{ textAlign: 'right' }}>{e.totalHours.toFixed(1)}</td>
+                              <td className="num" style={{ textAlign: 'right' }}>{hoursWithPct(e.billableHours, e.totalHours)}</td>
+                              <td className="num" style={{ textAlign: 'right' }}>{hoursWithPct(e.partialBillableHours, e.totalHours)}</td>
+                              <td className="num" style={{ textAlign: 'right' }}>{hoursWithPct(e.nonBillableHours, e.totalHours)}</td>
+                              <td />
+                            </tr>
+                          ))}
+                        </Fragment>
                       );
                     })}
                   </tbody>
@@ -182,9 +224,8 @@ export function ReportsPage() {
             </div>
 
             <div className={styles.legend}>
-              <span><i className={styles.sw} style={{ background: 'var(--oxide)' }} /> Billable</span>
-              <span><i className={styles.sw} style={{ background: 'var(--violet)' }} /> Partial billable</span>
-              <span><i className={styles.sw} style={{ background: 'var(--slate2, #C7CEDA)' }} /> Non-billable</span>
+              <span>▶ Click a row to see the employees who worked on it</span>
+              <span>% in brackets = share of that row's total hours</span>
               <span style={{ color: 'var(--slate2)' }}>Billing rates are maintained outside Meridian — this reports hours only.</span>
             </div>
           </>

@@ -553,6 +553,8 @@ export interface ReportRollupRowDto {
   partialBillableHours: number;
   nonBillableHours: number;
   resourceCount: number;
+  /** The employees behind this row (Department / Customer / Project tabs). */
+  resources?: ReportRollupRowDto[] | null;
 }
 
 export type ReportApprovalStatus = 'all' | 'sub' | 'ok';
