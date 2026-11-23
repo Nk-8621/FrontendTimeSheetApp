@@ -242,7 +242,7 @@ export function WeekGrid({
                               placeholder="·"
                               readOnly={!editable || blocked || !open}
                               tabIndex={blocked || weeklyOff ? -1 : undefined}
-                              title={editable && !blocked && !open ? (outsideStory ? "Outside the user story's dates" : 'No working hours on this day') : undefined}
+                              title={editable && !blocked && !open ? (outsideStory ? 'No story added for this day' : 'No working hours on this day') : undefined}
                               aria-label={`${DAY_NAMES[i]} hours`}
                               onChange={(e) => {
                                 let v = parseFloat(e.target.value);

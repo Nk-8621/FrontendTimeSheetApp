@@ -222,7 +222,7 @@ export function StoryTaskDrawer({ employeeCode, weekStart, defaultStoryId, entry
                 {/* A closed day shows its own label (W-OFF / Holiday / Leave) -
                     checked before "outside" so a weekend after the story ends
                     still reads W-OFF. */}
-                <div className={styles.left}>{closed || isWeekOff ? DAY_TYPE_LABELS[dt.dayType]?.label ?? 'off' : outside ? 'outside' : full ? 'full' : `${leftAfterTyping}h left`}</div>
+                <div className={styles.left}>{closed || isWeekOff ? DAY_TYPE_LABELS[dt.dayType]?.label ?? 'off' : outside ? 'No story added' : full ? 'full' : `${leftAfterTyping}h left`}</div>
                 {/* DAY STATUS (Nov 2026): only on days the employee can change
                     (not W-OFF, holidays or KEKA / requested leave). */}
                 {editable && dt.canChange && (
@@ -243,7 +243,7 @@ export function StoryTaskDrawer({ employeeCode, weekStart, defaultStoryId, entry
           })}
         </div>
         <div className={controls.hint}>
-          {selectedStory && <>Story runs {rangeLabel(selectedStory.startDate, selectedStory.endDate)} - days outside it are closed. </>}
+          {selectedStory && <>Story runs {rangeLabel(selectedStory.startDate, selectedStory.endDate)} - working days outside it show "No story added" and are closed. </>}
           Fill in each day you worked on this task. A day holds at most 8 h (4 h on a half-day leave).
         </div>
       </div>
