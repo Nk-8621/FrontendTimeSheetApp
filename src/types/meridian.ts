@@ -87,19 +87,17 @@ export const WEEK_STATUS_LABELS: Record<string, { css: string; label: string }> 
   Rejected: { css: 'p-rej', label: 'Returned for Correction' },
 };
 
-/** WEEK OFFS (Nov 2026): a W-OFF day needs no hours, but up to this many can
- * be logged there as extra work (the backend allows the same). */
-export const W_OFF_EXTRA_HOURS = 8;
-
-/** Most hours a day can hold across all lines: its capacity, or the extra
- * allowance on a W-OFF day. */
+/** Most hours a day can hold across all lines: its capacity. A W-OFF day has
+ * 0 h, so no hours can be entered on it (extra hours on a week off are not
+ * supported for now - Nov 2026 decision). */
 export function dayEntryLimit(day: { dayType: string; capacityHours: number }) {
-  return day.dayType === 'O' ? W_OFF_EXTRA_HOURS : day.capacityHours;
+  return day.capacityHours;
 }
 
 /** DAY STATUS (Nov 2026): the choices for a day's status, picked in the Add Task drawer. */
 export const DAY_STATUS_OPTIONS: [string, string][] = [
   ['W', 'Working'],
   ['L', 'Leave'],
+  ['LH', 'Half Day Leave'], // 4 h instead of 8
   ['WFH', 'WFH'],
 ];

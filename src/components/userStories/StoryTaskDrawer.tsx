@@ -56,6 +56,7 @@ export function StoryTaskDrawer({ employeeCode, weekStart, defaultStoryId, entry
   // away (it applies to the day, not just this task) and shown on My Timesheet.
   function changeDayStatus(dayIndex: number, date: string, dayType: string) {
     if (dayType === 'L') setHours((h) => h.map((x, idx) => (idx === dayIndex ? 0 : x))); // a leave day holds no hours
+    if (dayType === 'LH') setHours((h) => h.map((x, idx) => (idx === dayIndex ? Math.min(x, 4) : x))); // half day: 4 h at most
     mutations.setDayType.mutate(
       { date, dayType },
       { onError: (err) => toast(err instanceof ApiError ? err.message : 'Could not change the day status', 'bad') },
@@ -73,7 +74,6 @@ export function StoryTaskDrawer({ employeeCode, weekStart, defaultStoryId, entry
   // Outside the story's dates, hours already saved there can only be reduced.
   const maxFor = (i: number) => {
     if (isOutside(selectedStory, i)) return existing?.hoursByDay[i] ?? 0;
-    // WEEK OFFS (Nov 2026): a W-OFF day takes up to 8 h as extra work.
     return Math.max(0, Math.min(MAX_HOURS_PER_LINE, dayEntryLimit(week.dayTypes[i]) - usedByOthers[i]));
   };
 
@@ -200,7 +200,7 @@ export function StoryTaskDrawer({ employeeCode, weekStart, defaultStoryId, entry
           {week.dayTypes.map((dt, i) => {
             const outside = isOutside(selectedStory, i);
             const isWeekOff = dt.dayType === 'O';
-            const closed = dt.capacityHours === 0 && !isWeekOff; // W-OFF stays open for extra hours
+            const closed = dt.capacityHours === 0; // W-OFF, holiday and leave days take no hours
             const left = maxFor(i);
             // Shown under the box: what's still free after the hours typed here.
             const leftAfterTyping = Math.round(Math.max(0, left - hours[i]) * 100) / 100;
@@ -227,7 +227,7 @@ export function StoryTaskDrawer({ employeeCode, weekStart, defaultStoryId, entry
                     (not W-OFF, holidays or KEKA / requested leave). */}
                 {editable && dt.canChange && (
                   <select
-                    className={`${styles.dayStatus} ${dt.dayType === 'L' ? styles.dayStatusLv : dt.dayType === 'WFH' ? styles.dayStatusWfh : ''}`}
+                    className={`${styles.dayStatus} ${dt.dayType === 'L' || dt.dayType === 'LH' ? styles.dayStatusLv : dt.dayType === 'WFH' ? styles.dayStatusWfh : ''}`}
                     value={dt.dayType}
                     aria-label={`${DAY_NAMES[i]} status`}
                     disabled={mutations.setDayType.isPending}

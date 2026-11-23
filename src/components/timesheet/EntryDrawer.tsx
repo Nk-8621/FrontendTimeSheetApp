@@ -171,8 +171,7 @@ export function EntryDrawer({ employeeCode, dayTypes, weekEntries, existing, dup
     const t = dayTypes[i]?.dayType;
     // LH (half-day leave) still has 4h available to work - only full leave,
     // holiday and weekly off are actually closed to entry.
-    // WEEK OFFS (Nov 2026): a W-OFF day ('O') stays open for extra hours.
-    return !(t === 'W' || t === 'WFH' || t === 'OD' || t === 'LH' || t === 'O');
+    return !(t === 'W' || t === 'WFH' || t === 'OD' || t === 'LH');
   }
 
   // Hours already logged on each day by the OTHER lines of this week.

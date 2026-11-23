@@ -223,13 +223,14 @@ export function WeekGrid({
                         // (hours already there can still be reduced or cleared).
                         const outsideStory = Boolean(r.userStoryStartDate && r.userStoryEndDate)
                           && !isWithin(days[i], r.userStoryStartDate!, r.userStoryEndDate!);
-                        // WEEK OFFS (Nov 2026): a W-OFF day stays open for extra hours
-                        // (up to 8 h); it just isn't required for Submit.
                         const open = (dayEntryLimit(dayTypes[i]) > 0 && !outsideStory) || claimed;
+                        // A W-OFF day is closed to entry like a holiday, with the same
+                        // hatched look - unless hours are already there to clear.
+                        const weeklyOff = t === 'O' && !claimed;
                         const cls = [
                           styles.hr,
                           blocked ? (t === 'L' ? styles.blocked : styles.blockedH) : '',
-                          t === 'O' ? styles.wknd : '',
+                          weeklyOff ? styles.blockedO : t === 'O' ? styles.wknd : '',
                           !editable || (!blocked && !open) ? styles.locked : '',
                         ].join(' ');
                         return (
@@ -240,7 +241,7 @@ export function WeekGrid({
                               value={fmtH(r.hoursByDay[i]) === '—' ? '' : fmtH(r.hoursByDay[i])}
                               placeholder="·"
                               readOnly={!editable || blocked || !open}
-                              tabIndex={blocked ? -1 : undefined}
+                              tabIndex={blocked || weeklyOff ? -1 : undefined}
                               title={editable && !blocked && !open ? (outsideStory ? "Outside the user story's dates" : 'No working hours on this day') : undefined}
                               aria-label={`${DAY_NAMES[i]} hours`}
                               onChange={(e) => {
