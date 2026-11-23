@@ -8,8 +8,10 @@ interface DrawerOptions {
   body: ReactNode;
   /** 'wide' is for a guided, multi-section flow that needs room for a live
    * summary alongside its fields (e.g. the guided project setup flow) —
-   * every other drawer keeps the normal fixed width. */
-  size?: 'normal' | 'wide';
+   * every other drawer keeps the normal fixed width.
+   * 'center' (Nov 2026) opens it as a box in the middle of the screen
+   * instead of sliding in from the right - used for Add / Edit Task. */
+  size?: 'normal' | 'wide' | 'center';
 }
 
 interface UIValue {
@@ -31,7 +33,13 @@ export function UIProvider({ children }: { children: ReactNode }) {
   // Answers the promise returned by confirm() once the user clicks a button.
   const confirmResolve = useRef<((ok: boolean) => void) | null>(null);
 
-  const openDrawer = useCallback((opts: DrawerOptions) => setDrawer(opts), []);
+  // Remembers the last size so a centered box fades out in place when closed
+  // (instead of switching to the right-hand drawer while it closes).
+  const lastSize = useRef<DrawerOptions['size']>('normal');
+  const openDrawer = useCallback((opts: DrawerOptions) => {
+    lastSize.current = opts.size ?? 'normal';
+    setDrawer(opts);
+  }, []);
   const closeDrawer = useCallback(() => setDrawer(null), []);
 
   const toast = useCallback((message: string, kind?: 'ok' | 'bad') => {
@@ -57,7 +65,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
       {children}
 
       <div className={`${styles.scrim} ${drawer ? styles.on : ''}`} onClick={closeDrawer} />
-      <aside className={`${styles.drawer} ${drawer?.size === 'wide' ? styles.wide : ''} ${drawer ? styles.on : ''}`}>
+      <aside className={`${styles.drawer} ${lastSize.current === 'wide' ? styles.wide : ''} ${lastSize.current === 'center' ? styles.center : ''} ${drawer ? styles.on : ''}`}>
         {drawer && (
           <>
             <div className={styles.head}>

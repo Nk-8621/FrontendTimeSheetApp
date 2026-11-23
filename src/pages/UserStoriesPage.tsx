@@ -101,6 +101,7 @@ export function UserStoriesPage() {
     openDrawer({
       title: 'Add Task',
       subtitle: storyName,
+      size: 'center',
       body: <StoryTaskDrawer employeeCode={employeeCode} weekStart={weekStart} defaultStoryId={storyId} onDone={closeDrawer} />,
     });
   }
@@ -108,6 +109,7 @@ export function UserStoriesPage() {
   function openEditTask(entryId: number) {
     openDrawer({
       title: 'Edit Task',
+      size: 'center',
       body: <StoryTaskDrawer employeeCode={employeeCode} weekStart={weekStart} entryId={entryId} onDone={closeDrawer} />,
     });
   }

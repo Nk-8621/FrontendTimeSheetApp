@@ -96,3 +96,10 @@ export const W_OFF_EXTRA_HOURS = 8;
 export function dayEntryLimit(day: { dayType: string; capacityHours: number }) {
   return day.dayType === 'O' ? W_OFF_EXTRA_HOURS : day.capacityHours;
 }
+
+/** DAY STATUS (Nov 2026): the choices for a day's status, picked in the Add Task drawer. */
+export const DAY_STATUS_OPTIONS: [string, string][] = [
+  ['W', 'Working'],
+  ['L', 'Leave'],
+  ['WFH', 'WFH'],
+];

@@ -4,7 +4,7 @@ import { useUserStories } from '../../hooks/api/useUserStories';
 import { useUI } from '../ui/UIProvider';
 import { ApiError } from '../../api/httpClient';
 import type { UserStoryDto, WeekHours } from '../../api/types';
-import { DAY_NAMES, DAY_TYPE_LABELS, MAX_HOURS_PER_LINE, dayEntryLimit } from '../../types/meridian';
+import { DAY_NAMES, DAY_STATUS_OPTIONS, DAY_TYPE_LABELS, MAX_HOURS_PER_LINE, dayEntryLimit } from '../../types/meridian';
 import { addDays, dayMonth, isWithin, rangeLabel, rangesOverlap } from '../../lib/dates';
 import controls from '../../styles/controls.module.css';
 import styles from './UserStories.module.css';
@@ -52,6 +52,16 @@ export function StoryTaskDrawer({ employeeCode, weekStart, defaultStoryId, entry
   // A day outside the selected story's start-end dates is closed for new hours.
   const isOutside = (story: UserStoryDto | undefined, i: number) =>
     story !== undefined && !isWithin(week.dayTypes[i].date, story.startDate, story.endDate);
+  // DAY STATUS (Nov 2026): Working / Leave / WFH for a whole day. Saved right
+  // away (it applies to the day, not just this task) and shown on My Timesheet.
+  function changeDayStatus(dayIndex: number, date: string, dayType: string) {
+    if (dayType === 'L') setHours((h) => h.map((x, idx) => (idx === dayIndex ? 0 : x))); // a leave day holds no hours
+    mutations.setDayType.mutate(
+      { date, dayType },
+      { onError: (err) => toast(err instanceof ApiError ? err.message : 'Could not change the day status', 'bad') },
+    );
+  }
+
   const isPending = mutations.addStoryTask.isPending || mutations.updateEntry.isPending || mutations.removeEntry.isPending;
 
   // Hours already on each day from the OTHER lines of this week.
@@ -213,6 +223,21 @@ export function StoryTaskDrawer({ employeeCode, weekStart, defaultStoryId, entry
                     checked before "outside" so a weekend after the story ends
                     still reads W-OFF. */}
                 <div className={styles.left}>{closed || isWeekOff ? DAY_TYPE_LABELS[dt.dayType]?.label ?? 'off' : outside ? 'outside' : full ? 'full' : `${leftAfterTyping}h left`}</div>
+                {/* DAY STATUS (Nov 2026): only on days the employee can change
+                    (not W-OFF, holidays or KEKA / requested leave). */}
+                {editable && dt.canChange && (
+                  <select
+                    className={`${styles.dayStatus} ${dt.dayType === 'L' ? styles.dayStatusLv : dt.dayType === 'WFH' ? styles.dayStatusWfh : ''}`}
+                    value={dt.dayType}
+                    aria-label={`${DAY_NAMES[i]} status`}
+                    disabled={mutations.setDayType.isPending}
+                    onChange={(e) => changeDayStatus(i, dt.date, e.target.value)}
+                  >
+                    {DAY_STATUS_OPTIONS.map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                  </select>
+                )}
               </div>
             );
           })}

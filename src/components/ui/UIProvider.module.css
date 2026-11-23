@@ -38,6 +38,28 @@
   width: 760px;
 }
 
+/* Opened in the middle of the screen (Add / Edit Task) instead of sliding in
+   from the right. Fades and grows in slightly. */
+.drawer.center {
+  top: 50%;
+  left: 50%;
+  right: auto;
+  height: auto;
+  max-height: 88vh;
+  width: 760px;
+  max-width: 94vw;
+  border-radius: var(--rLg);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -48%) scale(0.97);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.drawer.center.on {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, -50%);
+}
+
 .head {
   display: flex;
   align-items: flex-start;

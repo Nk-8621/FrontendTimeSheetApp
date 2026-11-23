@@ -352,3 +352,32 @@
   background: var(--oxideTint);
   border-color: var(--oxideMid);
 }
+
+/* DAY STATUS (Nov 2026): Working / Leave / WFH under each day in the Add Task drawer. */
+.dayStatus {
+  width: 100%;
+  margin-top: 4px;
+  padding: 2px 0;
+  border: 1px solid var(--ruleStrong);
+  border-radius: var(--r);
+  background: var(--paper);
+  color: var(--ink2);
+  font-size: 10px;
+  font-weight: 600;
+  text-align-last: center;
+  cursor: pointer;
+}
+.dayStatus.dayStatusLv {
+  background: var(--clayTint);
+  border-color: var(--clayLine);
+  color: var(--clay);
+}
+.dayStatus.dayStatusWfh {
+  background: var(--violetTint);
+  border-color: var(--violetLine);
+  color: var(--violet);
+}
+.dayStatus option {
+  color: var(--ink);
+  background: #fff;
+}

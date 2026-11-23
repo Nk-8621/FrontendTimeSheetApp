@@ -89,6 +89,7 @@ export function MyTimesheetPage() {
     if (entry.userStoryId !== null && entry.userStoryId !== undefined) {
       openDrawer({
         title: 'Edit Task',
+        size: 'center',
         subtitle: entry.userStoryName ?? undefined,
         body: <StoryTaskDrawer employeeCode={employeeCode} weekStart={weekStart} entryId={entryId} onDone={closeDrawer} />,
       });
@@ -240,11 +241,6 @@ export function MyTimesheetPage() {
               submitBlockedReason={submitBlockedReason}
               submitBlockedDetails={submitBlockedDetails}
               onRecall={handleRecall}
-              onDayTypeChange={(date, dayType) =>
-                mutations.setDayType.mutate(
-                  { date, dayType },
-                  { onError: (err) => showError(err, 'Could not change the day status') },
-                )}
             />
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 14 }}>
