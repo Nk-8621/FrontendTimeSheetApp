@@ -63,6 +63,7 @@ export function UserStoriesPage() {
   function openStoryDrawer(existing?: UserStoryDto) {
     openDrawer({
       title: existing ? 'Edit User Story' : 'New User Story',
+      size: 'center',
       body: (
         <UserStoryDrawer
           employeeCode={employeeCode}
