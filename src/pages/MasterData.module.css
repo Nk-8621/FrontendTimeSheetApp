@@ -96,8 +96,17 @@
 }
 
 /* "New Record" sits on the right end of the tabs line (below the header). */
-.tabsAction {
+/* Row between the tabs line and the grid: search left, New Record right. */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.toolbarSearch {
+  flex: 1;
+  max-width: 360px;
+}
+.toolbarAction {
   margin-left: auto;
-  align-self: center;
-  padding-bottom: 4px;
 }

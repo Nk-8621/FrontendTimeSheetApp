@@ -409,24 +409,26 @@ export function MasterDataPage() {
               {TABS.map(([key, label]) => (
                 <button key={key} className={tab === key ? styles.on : ''} onClick={() => { setTab(key); setSearch(''); }}>{label}</button>
               ))}
-              {/* New Record sits below the header, on the right of the tabs - same as other pages' actions. */}
-              {addHandlers[tab] && (
-                <div className={styles.tabsAction}>
-                  <button className={`${controls.btn} ${controls.pri} ${controls.sm}`} onClick={addHandlers[tab]!}>New Record</button>
-                </div>
-              )}
             </div>
 
-            {showSearch && (
-              <div style={{ marginBottom: 10, maxWidth: 360 }}>
-                <input
-                  className={controls.textInput}
-                  type="search"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder={tab === 'res' ? 'Search by name, code, designation, department…' : tab === 'proj' ? 'Search by code, name, customer, type, lead…' : 'Search by name, type, department…'}
-                  aria-label="Search this list"
-                />
+            {/* Row below the tabs line and above the grid: search on the left (long lists only), New Record on the right. */}
+            {(showSearch || addHandlers[tab]) && (
+              <div className={styles.toolbar}>
+                {showSearch && (
+                  <div className={styles.toolbarSearch}>
+                    <input
+                      className={controls.textInput}
+                      type="search"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder={tab === 'res' ? 'Search by name, code, designation, department…' : tab === 'proj' ? 'Search by code, name, customer, type, lead…' : 'Search by name, type, department…'}
+                      aria-label="Search this list"
+                    />
+                  </div>
+                )}
+                {addHandlers[tab] && (
+                  <button className={`${controls.btn} ${controls.pri} ${controls.sm} ${styles.toolbarAction}`} onClick={addHandlers[tab]!}>New Record</button>
+                )}
               </div>
             )}
 
