@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { ConfirmDialog, type ConfirmOptions } from './ConfirmDialog';
 import styles from './UIProvider.module.css';
 
@@ -36,11 +36,45 @@ export function UIProvider({ children }: { children: ReactNode }) {
   // Remembers the last size so a centered box fades out in place when closed
   // (instead of switching to the right-hand drawer while it closes).
   const lastSize = useRef<DrawerOptions['size']>('normal');
+  const drawerRef = useRef<HTMLElement>(null);
+  // 'on' is added one frame after the box is placed, so it can grow from its start point.
+  const [shown, setShown] = useState(false);
+  // What the box shows. Kept for a moment after closing so a centered box
+  // shrinks back with its content, then cleared when the animation ends.
+  const [content, setContent] = useState<DrawerOptions | null>(null);
+
+  // POP-OUT (Nov 2026): where the last click happened - a centered box grows
+  // out of the button that opened it, and shrinks back into it when closed.
+  const lastClick = useRef<{ x: number; y: number } | null>(null);
+  useEffect(() => {
+    const onPointerDown = (e: PointerEvent) => { lastClick.current = { x: e.clientX, y: e.clientY }; };
+    document.addEventListener('pointerdown', onPointerDown, true);
+    return () => document.removeEventListener('pointerdown', onPointerDown, true);
+  }, []);
+
   const openDrawer = useCallback((opts: DrawerOptions) => {
     lastSize.current = opts.size ?? 'normal';
-    setDrawer(opts);
+    const box = drawerRef.current;
+    if (opts.size === 'center' && box) {
+      // Start point = the click (or the middle of the screen if opened by keyboard),
+      // stored as an offset from the screen centre for the CSS to use.
+      const from = lastClick.current ?? { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+      box.style.setProperty('--pop-x', `${from.x - window.innerWidth / 2}px`);
+      box.style.setProperty('--pop-y', `${from.y - window.innerHeight / 2}px`);
+      setShown(false);
+      setDrawer(opts);
+      setContent(opts);
+      requestAnimationFrame(() => requestAnimationFrame(() => setShown(true)));
+    } else {
+      setDrawer(opts);
+      setContent(opts);
+      setShown(true);
+    }
   }, []);
-  const closeDrawer = useCallback(() => setDrawer(null), []);
+  const closeDrawer = useCallback(() => {
+    setDrawer(null);
+    if (lastSize.current !== 'center') setContent(null);
+  }, []);
 
   const toast = useCallback((message: string, kind?: 'ok' | 'bad') => {
     setToastState({ message, kind });
@@ -65,19 +99,23 @@ export function UIProvider({ children }: { children: ReactNode }) {
       {children}
 
       <div className={`${styles.scrim} ${drawer ? styles.on : ''}`} onClick={closeDrawer} />
-      <aside className={`${styles.drawer} ${lastSize.current === 'wide' ? styles.wide : ''} ${lastSize.current === 'center' ? styles.center : ''} ${drawer ? styles.on : ''}`}>
-        {drawer && (
+      <aside
+        ref={drawerRef}
+        className={`${styles.drawer} ${lastSize.current === 'wide' ? styles.wide : ''} ${lastSize.current === 'center' ? `${styles.center} center-box` : ''} ${drawer && shown ? styles.on : ''}`}
+        onTransitionEnd={(e) => { if (e.target === e.currentTarget && !drawer) setContent(null); }}
+      >
+        {content && (
           <>
             <div className={styles.head}>
               <div>
-                <h3>{drawer.title}</h3>
-                {drawer.subtitle && <div className={styles.sub}>{drawer.subtitle}</div>}
+                <h3>{content.title}</h3>
+                {content.subtitle && <div className={styles.sub}>{content.subtitle}</div>}
               </div>
               <button className={styles.closeBtn} onClick={closeDrawer} aria-label="Close">
                 &times;
               </button>
             </div>
-            <div className={styles.body}>{drawer.body}</div>
+            <div className={styles.body}>{content.body}</div>
           </>
         )}
       </aside>

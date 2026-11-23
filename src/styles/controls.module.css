@@ -155,3 +155,21 @@
   color: var(--slate);
   margin-top: 3px;
 }
+
+/* Roomier fields inside the centred boxes (Add / Edit Task, New / Edit User
+   Story - see UIProvider "center" size). Right-hand drawers are unchanged. */
+:global(.center-box) .field {
+  margin-bottom: 22px;
+}
+:global(.center-box) .field label {
+  font-size: 12px;
+  margin-bottom: 7px;
+}
+:global(.center-box) .textInput,
+:global(.center-box) .select {
+  padding: 10px 12px;
+  font-size: 13.5px;
+}
+:global(.center-box) .hint {
+  font-size: 12px;
+}

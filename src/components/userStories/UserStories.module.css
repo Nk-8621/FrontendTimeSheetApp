@@ -381,3 +381,14 @@
   color: var(--ink);
   background: #fff;
 }
+
+/* Inside the centred boxes: buttons on the bottom right, main button last
+   (row-reverse shows the JSX order backwards: Cancel · Add & Next · Add Task). */
+:global(.center-box) .footer {
+  flex-direction: row-reverse;
+  margin-top: auto;
+  padding-top: 18px;
+}
+:global(.center-box) .dateRow {
+  gap: 20px;
+}

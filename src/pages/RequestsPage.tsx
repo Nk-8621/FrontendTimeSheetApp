@@ -1,4 +1,5 @@
 import { PageHeader } from '../components/layout/PageHeader';
+import { KekaSyncNotice, REQUESTS_UNDER_DEVELOPMENT } from '../components/requests/KekaSyncNotice';
 import { Card } from '../components/ui/Card';
 import { Banner } from '../components/timesheet/Banner';
 import { StatusPill } from '../components/ui/StatusPill';
@@ -12,7 +13,13 @@ import { dayMonth } from '../lib/dates';
 import controls from '../styles/controls.module.css';
 import styles from '../components/requests/RequestList.module.css';
 
+// UNDER DEVELOPMENT (Nov 2026): shows the KEKA notice instead of the page.
 export function RequestsPage() {
+  if (REQUESTS_UNDER_DEVELOPMENT) return <KekaSyncNotice title="Requests" />;
+  return <RequestsPageContent />;
+}
+
+function RequestsPageContent() {
   const { employeeCode } = useSession();
   const { openDrawer, closeDrawer, toast } = useUI();
   const { data: requests, isError } = useMyDayTypeRequests(employeeCode);
