@@ -5,7 +5,7 @@ import styles from '../approvals/ApprovalQueue.module.css';
 const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const fmtH = (n: number) => (n ? (Math.round(n * 100) / 100).toString() : '');
 
-/** The day-by-day breakdown table (Department/Account/Project/Module/Task,
+/** The day-by-day breakdown table (Department/Account/Project/Task,
  * hours per day, capacity-mismatch highlighting) — shared between the
  * Approval Queue's expandable rows and Team Compliance's "view what they
  * actually logged" detail, so both stay visually identical and only need
@@ -18,7 +18,7 @@ export function WeekDetailTable({ item }: { item: ApprovalQueueItemDto }) {
       <thead>
         <tr>
           <th>Department › Customer › Project</th>
-          <th>Module › Task</th>
+          <th>Task</th>
           <th>Type</th>
           {DAY_NAMES.map((d, i) => (
             <th key={d} style={{ width: 52 }}>
@@ -39,11 +39,12 @@ export function WeekDetailTable({ item }: { item: ApprovalQueueItemDto }) {
                 <div style={{ fontWeight: 600, fontSize: 11.5 }}>{line.projectName}</div>
               </td>
               <td>
-                <div style={{ fontSize: 10.5, color: 'var(--slate)' }}>{line.moduleName}</div>
-                <div style={{ fontSize: 11.5, fontWeight: 500 }}>{line.taskName}</div>
-                <div style={{ fontSize: 10.5, color: line.note ? 'var(--slate)' : 'var(--clay)', marginTop: 2 }}>
-                  {line.note || 'No description'}
-                </div>
+                {/* Only what the employee worked on. Older lines with no text fall back to the task name. */}
+                {line.note || line.taskName ? (
+                  <div style={{ fontSize: 11.5, fontWeight: 500 }}>{line.note || line.taskName}</div>
+                ) : (
+                  <div style={{ fontSize: 10.5, color: 'var(--clay)' }}>No description</div>
+                )}
               </td>
               <td>
                 <span className={styles.ft}>
