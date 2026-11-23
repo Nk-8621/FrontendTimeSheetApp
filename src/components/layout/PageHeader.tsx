@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useSession } from '../../session/SessionContext';
 import { useEmployee } from '../../hooks/api/useEmployees';
+import { applyTheme, getSavedTheme } from '../../lib/theme';
 import styles from './PageHeader.module.css';
 
 interface PageHeaderProps {
@@ -12,6 +13,14 @@ export function PageHeader({ title, children }: PageHeaderProps) {
   const { employeeCode, roleLabel, logout } = useSession();
   const { data: employee } = useEmployee(employeeCode);
   const [menuOpen, setMenuOpen] = useState(false);
+  // NEW LOOK (Nov 2026): the optional Keka-style look, switched per browser.
+  const [newLook, setNewLook] = useState(() => getSavedTheme() === 'new');
+
+  function toggleNewLook() {
+    const next = !newLook;
+    setNewLook(next);
+    applyTheme(next ? 'new' : 'default');
+  }
   const whoRef = useRef<HTMLDivElement>(null);
 
   // Close the profile menu on a click anywhere outside it, or on Esc.
@@ -53,6 +62,17 @@ export function PageHeader({ title, children }: PageHeaderProps) {
             <div className={styles.menuInfo}>
               <div className={styles.menuDesig}>{employee?.designation ?? roleLabel.split(' — ')[1]}</div>
               <div className={styles.menuId}>{employeeCode}</div>
+            </div>
+            <div className={styles.menuTheme}>
+              <span>New Look</span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={newLook}
+                aria-label="New Look"
+                className={`${styles.switch} ${newLook ? styles.switchOn : ''}`}
+                onClick={toggleNewLook}
+              />
             </div>
             <div className={styles.menuFoot}>
               <button type="button" className={styles.signOut} onClick={logout}>
