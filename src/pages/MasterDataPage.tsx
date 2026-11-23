@@ -399,11 +399,7 @@ export function MasterDataPage() {
 
   return (
     <>
-      <PageHeader title="Master Data">
-        {addHandlers[tab] && (
-          <button className={`${controls.btn} ${controls.pri} ${controls.sm}`} onClick={addHandlers[tab]!}>New Record</button>
-        )}
-      </PageHeader>
+      <PageHeader title="Master Data" />
       <div className="page-content">
         {isError && <Banner kind="reject">Couldn't load master data — check that the backend API is reachable.</Banner>}
 
@@ -413,6 +409,12 @@ export function MasterDataPage() {
               {TABS.map(([key, label]) => (
                 <button key={key} className={tab === key ? styles.on : ''} onClick={() => { setTab(key); setSearch(''); }}>{label}</button>
               ))}
+              {/* New Record sits below the header, on the right of the tabs - same as other pages' actions. */}
+              {addHandlers[tab] && (
+                <div className={styles.tabsAction}>
+                  <button className={`${controls.btn} ${controls.pri} ${controls.sm}`} onClick={addHandlers[tab]!}>New Record</button>
+                </div>
+              )}
             </div>
 
             {showSearch && (

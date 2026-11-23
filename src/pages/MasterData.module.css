@@ -4,7 +4,7 @@
   border-bottom: 1px solid var(--rule);
   margin-bottom: 14px;
 }
-.tabs button {
+.tabs > button {
   border: 0;
   background: none;
   padding: 8px 13px;
@@ -15,10 +15,10 @@
   margin-bottom: -1px;
   cursor: pointer;
 }
-.tabs button:hover {
+.tabs > button:hover {
   color: var(--ink);
 }
-.tabs button.on {
+.tabs > button.on {
   color: var(--oxide);
   border-bottom-color: var(--oxide);
 }
@@ -93,4 +93,11 @@
 }
 .editBtn:hover {
   color: var(--oxide);
+}
+
+/* "New Record" sits on the right end of the tabs line (below the header). */
+.tabsAction {
+  margin-left: auto;
+  align-self: center;
+  padding-bottom: 4px;
 }
