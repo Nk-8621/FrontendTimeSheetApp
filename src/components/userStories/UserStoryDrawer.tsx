@@ -4,7 +4,7 @@ import { useMasterDataLookup } from '../../hooks/api/useMasterDataLookup';
 import { useCreateUserStory, useUpdateUserStory, useUserStories } from '../../hooks/api/useUserStories';
 import { ApiError } from '../../api/httpClient';
 import type { UserStoryDto } from '../../api/types';
-import { addDays, rangeLabel, todayLocalISO } from '../../lib/dates';
+import { addDays, dayMonth, rangeLabel, todayLocalISO } from '../../lib/dates';
 import controls from '../../styles/controls.module.css';
 import styles from './UserStories.module.css';
 
@@ -60,13 +60,27 @@ export function UserStoryDrawer({ employeeCode, existing, weekStart, onSaved, on
   const pastStories = (stories ?? []).filter((s) => s.endDate < today);
 
   const endBeforeStart = startDate !== '' && endDate !== '' && endDate < startDate;
+  // No back dates: a new (or reused) story can't start before the selected
+  // week's Monday. Editing an existing story keeps its own saved dates.
+  const minStart = existing ? undefined : weekStart;
+  const startTooEarly = Boolean(minStart && startDate !== '' && startDate < minStart);
+  const defaultStart = weekStart ?? '';
+  const defaultEnd = weekStart ? addDays(weekStart, 6) : '';
+
+  function changeStartDate(value: string) {
+    setStartDate(value);
+    // Keep the end date on or after the start date.
+    if (value && endDate && endDate < value) setEndDate(value);
+    setServerError('');
+  }
 
   function pickFromHistory(story: UserStoryDto) {
     setSelected(story);
     setName(story.name);
     setProjectId(story.projectId);
-    setStartDate(story.startDate);
-    setEndDate(story.endDate);
+    // Reusing an old story: start from the selected week, not its old (past) dates.
+    setStartDate(defaultStart);
+    setEndDate(defaultEnd);
     setShowHistory(false);
     setServerError('');
   }
@@ -75,14 +89,14 @@ export function UserStoryDrawer({ employeeCode, existing, weekStart, onSaved, on
     setSelected(undefined);
     setName('');
     setProjectId('');
-    setStartDate('');
-    setEndDate('');
+    setStartDate(defaultStart);
+    setEndDate(defaultEnd);
     setServerError('');
   }
 
   function handleSave() {
     const projectMissing = projectId === '' && !projectOptional;
-    if (!name.trim() || projectMissing || !startDate || !endDate || endBeforeStart) {
+    if (!name.trim() || projectMissing || !startDate || !endDate || endBeforeStart || startTooEarly) {
       setShowErrors(true);
       return;
     }
@@ -179,9 +193,11 @@ export function UserStoryDrawer({ employeeCode, existing, weekStart, onSaved, on
             type="date"
             className={controls.textInput}
             value={startDate}
-            onChange={(e) => { setStartDate(e.target.value); setServerError(''); }}
+            min={minStart}
+            onChange={(e) => changeStartDate(e.target.value)}
           />
           {showErrors && !startDate && <div className={styles.errMsg}>Pick a start date.</div>}
+          {startTooEarly && minStart && <div className={styles.errMsg}>The start date can't be before {dayMonth(minStart)} (this week's start).</div>}
         </div>
         <div className={controls.field}>
           <label htmlFor="storyEnd">End Date <span className={controls.req}>*</span></label>
