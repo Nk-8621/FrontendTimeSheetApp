@@ -4,7 +4,7 @@ import { useMasterDataLookup } from '../../hooks/api/useMasterDataLookup';
 import { useCreateUserStory, useUpdateUserStory, useUserStories } from '../../hooks/api/useUserStories';
 import { ApiError } from '../../api/httpClient';
 import type { UserStoryDto } from '../../api/types';
-import { rangeLabel, todayLocalISO } from '../../lib/dates';
+import { addDays, rangeLabel, todayLocalISO } from '../../lib/dates';
 import controls from '../../styles/controls.module.css';
 import styles from './UserStories.module.css';
 
@@ -12,6 +12,9 @@ interface UserStoryDrawerProps {
   employeeCode: string;
   /** Set to edit this story; leave out to create a new one. */
   existing?: UserStoryDto;
+  /** Monday of the week on screen - a new story's dates default to that
+   * week (Monday to Sunday). */
+  weekStart?: string;
   onSaved: (story: UserStoryDto, wasUpdate: boolean) => void;
   onCancel: () => void;
 }
@@ -22,7 +25,7 @@ interface UserStoryDrawerProps {
  * one fills the form, and saving updates THAT story with the new dates
  * (its earlier tasks stay in their weeks) instead of making a duplicate.
  */
-export function UserStoryDrawer({ employeeCode, existing, onSaved, onCancel }: UserStoryDrawerProps) {
+export function UserStoryDrawer({ employeeCode, existing, weekStart, onSaved, onCancel }: UserStoryDrawerProps) {
   const { data: allocations } = useEmployeeProjectAllocations(employeeCode);
   const { data: stories } = useUserStories(employeeCode);
   const { projById } = useMasterDataLookup();
@@ -33,8 +36,9 @@ export function UserStoryDrawer({ employeeCode, existing, onSaved, onCancel }: U
   const [selected, setSelected] = useState<UserStoryDto | undefined>(existing);
   const [name, setName] = useState(existing?.name ?? '');
   const [projectId, setProjectId] = useState<number | ''>(existing?.projectId ?? '');
-  const [startDate, setStartDate] = useState(existing?.startDate ?? '');
-  const [endDate, setEndDate] = useState(existing?.endDate ?? '');
+  // New story: defaults to the selected week, Monday to Sunday (can be changed).
+  const [startDate, setStartDate] = useState(existing?.startDate ?? weekStart ?? '');
+  const [endDate, setEndDate] = useState(existing?.endDate ?? (weekStart ? addDays(weekStart, 6) : ''));
   const [showHistory, setShowHistory] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
   const [serverError, setServerError] = useState('');
@@ -169,7 +173,7 @@ export function UserStoryDrawer({ employeeCode, existing, onSaved, onCancel }: U
 
       <div className={styles.dateRow}>
         <div className={controls.field}>
-          <label htmlFor="storyStart">Start date <span className={controls.req}>*</span></label>
+          <label htmlFor="storyStart">Start Date <span className={controls.req}>*</span></label>
           <input
             id="storyStart"
             type="date"
@@ -180,7 +184,7 @@ export function UserStoryDrawer({ employeeCode, existing, onSaved, onCancel }: U
           {showErrors && !startDate && <div className={styles.errMsg}>Pick a start date.</div>}
         </div>
         <div className={controls.field}>
-          <label htmlFor="storyEnd">End date <span className={controls.req}>*</span></label>
+          <label htmlFor="storyEnd">End Date <span className={controls.req}>*</span></label>
           <input
             id="storyEnd"
             type="date"

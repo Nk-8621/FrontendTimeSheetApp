@@ -68,6 +68,7 @@ export function UserStoriesPage() {
         <UserStoryDrawer
           employeeCode={employeeCode}
           existing={existing}
+          weekStart={weekStart}
           onCancel={closeDrawer}
           onSaved={(story, wasUpdate) => {
             closeDrawer();
