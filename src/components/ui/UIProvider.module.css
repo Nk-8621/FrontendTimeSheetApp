@@ -59,6 +59,11 @@
   transform: translate(calc(-50% + var(--pop-x, 0px)), calc(-50% + var(--pop-y, 0px))) scale(0.05);
   transition: opacity 0.2s ease, transform 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
+/* Short forms (Master Data): same box, narrower, only as tall as the form. */
+.drawer.center.small {
+  width: 720px;
+  min-height: 0;
+}
 .drawer.center.on {
   opacity: 1;
   pointer-events: auto;

@@ -10,9 +10,14 @@ interface DrawerOptions {
    * summary alongside its fields (e.g. the guided project setup flow) —
    * every other drawer keeps the normal fixed width.
    * 'center' (Nov 2026) opens it as a box in the middle of the screen
-   * instead of sliding in from the right - used for Add / Edit Task. */
-  size?: 'normal' | 'wide' | 'center';
+   * instead of sliding in from the right - used for Add / Edit Task.
+   * 'centerSmall' (Nov 2026) is the same centered box, narrower and only as
+   * tall as its form - for short Master Data forms. */
+  size?: 'normal' | 'wide' | 'center' | 'centerSmall';
 }
+
+/** Both centered sizes open, animate and close the same way. */
+const isCentered = (size: DrawerOptions['size']) => size === 'center' || size === 'centerSmall';
 
 interface UIValue {
   openDrawer: (opts: DrawerOptions) => void;
@@ -55,7 +60,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
   const openDrawer = useCallback((opts: DrawerOptions) => {
     lastSize.current = opts.size ?? 'normal';
     const box = drawerRef.current;
-    if (opts.size === 'center' && box) {
+    if (isCentered(opts.size) && box) {
       // Start point = the click (or the middle of the screen if opened by keyboard),
       // stored as an offset from the screen centre for the CSS to use.
       const from = lastClick.current ?? { x: window.innerWidth / 2, y: window.innerHeight / 2 };
@@ -73,7 +78,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
   }, []);
   const closeDrawer = useCallback(() => {
     setDrawer(null);
-    if (lastSize.current !== 'center') setContent(null);
+    if (!isCentered(lastSize.current)) setContent(null);
   }, []);
 
   const toast = useCallback((message: string, kind?: 'ok' | 'bad') => {
@@ -101,7 +106,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
       <div className={`${styles.scrim} ${drawer ? styles.on : ''}`} onClick={closeDrawer} />
       <aside
         ref={drawerRef}
-        className={`${styles.drawer} ${lastSize.current === 'wide' ? styles.wide : ''} ${lastSize.current === 'center' ? `${styles.center} center-box` : ''} ${drawer && shown ? styles.on : ''}`}
+        className={`${styles.drawer} ${lastSize.current === 'wide' ? styles.wide : ''} ${isCentered(lastSize.current) ? `${styles.center} center-box` : ''} ${lastSize.current === 'centerSmall' ? styles.small : ''} ${drawer && shown ? styles.on : ''}`}
         onTransitionEnd={(e) => { if (e.target === e.currentTarget && !drawer) setContent(null); }}
       >
         {content && (

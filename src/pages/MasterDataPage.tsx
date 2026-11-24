@@ -111,6 +111,7 @@ export function MasterDataPage() {
   function handleAddOrEditDepartment(existing?: DepartmentDto) {
     openDrawer({
       title: existing ? 'Edit department' : 'New department',
+      size: 'centerSmall',
       body: (
         <DepartmentDrawer
           existing={existing}
@@ -132,6 +133,7 @@ export function MasterDataPage() {
   function handleAddOrEditAccount(existing?: AccountDto) {
     openDrawer({
       title: existing ? 'Edit account' : 'New customer / internal account',
+      size: 'centerSmall',
       body: (
         <AccountDrawer
           existing={existing}
@@ -153,6 +155,7 @@ export function MasterDataPage() {
   function handleAddOrEditProject(existing?: ProjectDto) {
     openDrawer({
       title: existing ? 'Edit project' : 'New project',
+      size: 'center',
       body: (
         <ProjectDrawer
           existing={existing}
@@ -214,7 +217,7 @@ export function MasterDataPage() {
     openDrawer({
       title: 'Set up project',
       subtitle: 'Customer, project details, modules and task types — all in one place',
-      size: 'wide',
+      size: 'center',
       body: (
         <ProjectSetupFlow
           onDone={closeDrawer}
@@ -239,6 +242,7 @@ export function MasterDataPage() {
   function handleAddOrEditProjectType(existing?: ProjectTypeDto) {
     openDrawer({
       title: existing ? 'Edit Project Type' : 'New Project Type',
+      size: 'centerSmall',
       body: (
         <ProjectTypeDrawer
           existing={existing}
@@ -259,6 +263,7 @@ export function MasterDataPage() {
   function handleManageTemplates(type: ProjectTypeDto) {
     openDrawer({
       title: `${type.name} — modules & tasks`,
+      size: 'center',
       body: <ProjectTypeTemplateDrawer projectTypeId={type.id} typeName={type.name} onClose={closeDrawer} />,
     });
   }
@@ -290,6 +295,7 @@ export function MasterDataPage() {
     const others = (projectTypes.data ?? []).filter((t) => t.id !== type.id);
     openDrawer({
       title: `Reassign projects off "${type.name}"`,
+      size: 'centerSmall',
       body: (
         <ReplacementPicker
           typeName={type.name}
@@ -312,6 +318,7 @@ export function MasterDataPage() {
   function handleAddOrEditHoliday(existing?: HolidayDto) {
     openDrawer({
       title: existing ? 'Edit holiday' : 'New holiday',
+      size: 'centerSmall',
       body: (
         <HolidayDrawer
           existing={existing}
@@ -339,6 +346,7 @@ export function MasterDataPage() {
   function handleAddEmployee() {
     openDrawer({
       title: 'New employee',
+      size: 'center',
       body: (
         <EmployeeDrawer
           departments={departments.data ?? []}
@@ -359,6 +367,7 @@ export function MasterDataPage() {
   function handleEditEmployee(employee: EmployeeDto) {
     openDrawer({
       title: `Edit employee — ${employee.fullName}`,
+      size: 'center',
       body: (
         <EmployeeEditor
           employee={employee}
@@ -374,6 +383,7 @@ export function MasterDataPage() {
   function handleEditAllocations(employee: { employeeCode: string; fullName: string }) {
     openDrawer({
       title: `Projects — ${employee.fullName}`,
+      size: 'center',
       body: (
         <EmployeeAllocationsEditor
           employeeCode={employee.employeeCode}

@@ -126,3 +126,11 @@
   color: var(--clay);
   margin-top: 3px;
 }
+
+/* Inside a centered box (Master Data forms): buttons at the bottom right,
+   main button last - same as Add Task / New User Story. */
+:global(.center-box) .footer {
+  flex-direction: row-reverse;
+  margin-top: auto;
+  padding-top: 18px;
+}

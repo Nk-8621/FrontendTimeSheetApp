@@ -51,6 +51,7 @@ export function WeekOffsPanel() {
     if (!options) return;
     openDrawer({
       title: existing ? 'Edit Custom Week Off' : 'Add Custom Week Off',
+      size: 'centerSmall',
       body: (
         <ClientWeekOffDrawer
           existing={existing}
@@ -89,6 +90,7 @@ export function WeekOffsPanel() {
     if (!options) return;
     openDrawer({
       title: 'Add Employees',
+      size: 'center',
       body: (
         <AssignEmployeesDrawer
           client={client}
@@ -111,6 +113,7 @@ export function WeekOffsPanel() {
   function handleEditEmployee(employee: EmployeeWeekOffDto, clientName: string) {
     openDrawer({
       title: 'Edit Employee Dates',
+      size: 'centerSmall',
       body: (
         <EmployeeWeekOffDrawer
           existing={employee}
