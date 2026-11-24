@@ -12,9 +12,12 @@
 }
 .topbar h2 {
   margin: 0;
-  font-size: var(--fsPageTitle);
+  /* PAGE TITLE (Nov 2026): all caps, light spacing, strong Carbynetech blue. */
+  font-size: 15.5px;
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--oxideDeep);
 }
 .spacer {
   flex: 1;
