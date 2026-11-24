@@ -37,7 +37,7 @@ const TABS: [Tab, string][] = [
   ['dept', 'Departments'], ['acc', 'Customers & Internal'], ['ptype', 'Project Templates'],
   ['proj', 'Project List'], ['modtask', 'Modules & Task Types'],
   ['res', 'Resources'], ['palloc', 'Resource Allocation'], ['hol', 'Holiday calendar'],
-  ['woff', 'Week Offs'], // WEEK OFFS (Nov 2026)
+  ['woff', 'Custom WeekOffs'], // WEEK OFFS (Nov 2026)
 ];
 
 /** A tab's table content, wrapped in the wireframe's card + record-count
@@ -394,7 +394,7 @@ export function MasterDataPage() {
     res: () => handleAddEmployee(),
     palloc: null,
     hol: () => handleAddOrEditHoliday(),
-    woff: null, // the Week Offs tab has its own Add Week Off button
+    woff: null, // the Custom WeekOffs tab has its own Add Week Off button
   };
 
   return (
@@ -452,13 +452,14 @@ export function MasterDataPage() {
 
             {tab === 'acc' && (
               <RecordsCard count={filteredAccounts.length}>
-                <thead><tr><th>Customer / Internal</th><th>Type</th><th>Department</th><th style={{ textAlign: 'right' }}>Projects</th><th className={styles.editCol} /></tr></thead>
+                <thead><tr><th>Customer / Internal</th><th>Type</th><th>Department</th><th>Week Off</th><th style={{ textAlign: 'right' }}>Projects</th><th className={styles.editCol} /></tr></thead>
                 <tbody>
                   {filteredAccounts.map((a) => (
                     <tr key={a.id}>
                       <td>{a.name}</td>
                       <td style={{ color: 'var(--slate)' }}>{a.accountType}</td>
                       <td style={{ color: 'var(--slate)' }}>{deptName(a.departmentId)}</td>
+                      <td style={{ color: 'var(--slate)' }}>{a.weekOffDays?.length ? a.weekOffDays.join(', ') : '—'}</td>
                       <td className="num" style={{ textAlign: 'right' }}>{projects.data?.filter((p) => p.accountId === a.id).length ?? 0}</td>
                       <td className={styles.editCol}><button className={styles.editBtn} onClick={() => handleAddOrEditAccount(a)} title="Edit account" aria-label={`Edit account ${a.name}`}>✎</button></td>
                     </tr>

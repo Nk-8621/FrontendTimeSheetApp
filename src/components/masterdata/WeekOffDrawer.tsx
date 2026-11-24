@@ -104,7 +104,7 @@ export function ClientWeekOffDrawer({ existing, options, onSave, onDelete, onCan
             );
           })}
         </div>
-        <div className={controls.hint}>The client's week-off days. Employees assigned to this client follow them.</div>
+        <div className={controls.hint}>Week-off days for the employees you add under this custom week off.</div>
       </div>
 
       <DateRange from={from} to={to} onFrom={(v) => { setFrom(v); setError(''); }} onTo={(v) => { setTo(v); setError(''); }} />
@@ -112,7 +112,7 @@ export function ClientWeekOffDrawer({ existing, options, onSave, onDelete, onCan
       {error && <div className={styles.errMsg}>{error}</div>}
 
       <div className={styles.footer}>
-        <button className={`${controls.btn} ${controls.pri}`} onClick={handleSave}>{existing ? 'Save Changes' : 'Add Client Week Off'}</button>
+        <button className={`${controls.btn} ${controls.pri}`} onClick={handleSave}>{existing ? 'Save Changes' : 'Add Custom Week Off'}</button>
         <button className={controls.btn} onClick={onCancel}>Cancel</button>
         {existing && onDelete && (
           <>

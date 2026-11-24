@@ -50,7 +50,7 @@ export function WeekOffsPanel() {
   function handleAddOrEditClient(existing?: ClientWeekOffDto) {
     if (!options) return;
     openDrawer({
-      title: existing ? 'Edit Client Week Off' : 'Add Client Week Off',
+      title: existing ? 'Edit Custom Week Off' : 'Add Custom Week Off',
       body: (
         <ClientWeekOffDrawer
           existing={existing}
@@ -61,7 +61,7 @@ export function WeekOffsPanel() {
               ? mutations.updateClient.mutateAsync({ id: existing.id, body })
               : mutations.createClient.mutateAsync(body);
             request
-              .then(() => { closeDrawer(); toast(existing ? 'Client week off updated' : 'Client week off added', 'ok'); })
+              .then(() => { closeDrawer(); toast(existing ? 'Custom week off updated' : 'Custom week off added', 'ok'); })
               .catch((err) => showError(err, 'Could not save this week off'));
           }}
           onDelete={existing ? () => handleDeleteClient(existing) : undefined}
@@ -72,14 +72,14 @@ export function WeekOffsPanel() {
 
   async function handleDeleteClient(client: ClientWeekOffDto) {
     const ok = await confirm({
-      title: 'Delete Client Week Off',
+      title: 'Delete Custom Week Off',
       message: `Delete the ${client.weekOffDays.join(', ')} week offs for ${client.clientName}?`,
       confirmLabel: 'Delete',
       danger: true,
     });
     if (!ok) return;
     mutations.removeClient.mutateAsync(client.id)
-      .then(() => { closeDrawer(); toast('Client week off deleted', 'ok'); })
+      .then(() => { closeDrawer(); toast('Custom week off deleted', 'ok'); })
       .catch((err) => showError(err, 'Could not delete this week off'));
   }
 
@@ -130,7 +130,7 @@ export function WeekOffsPanel() {
   async function handleRemoveEmployee(employee: EmployeeWeekOffDto, clientName: string) {
     const ok = await confirm({
       title: 'Remove Employee',
-      message: `Remove ${employee.employeeName} from ${clientName}? Their week offs go back to the company default (Sat, Sun) for those dates.`,
+      message: `Remove ${employee.employeeName} from ${clientName}? Their week offs go back to their primary client's default for those dates.`,
       confirmLabel: 'Remove',
       danger: true,
     });
@@ -197,7 +197,7 @@ export function WeekOffsPanel() {
             style={{ display: 'none' }}
             onChange={(e) => handleFilePicked(e.target.files?.[0])}
           />
-          <button className={`${controls.btn} ${controls.pri}`} onClick={() => handleAddOrEditClient()} disabled={!options}>Add Client Week Off</button>
+          <button className={`${controls.btn} ${controls.pri}`} onClick={() => handleAddOrEditClient()} disabled={!options}>Add Custom Week Off</button>
         </div>
       </div>
 
@@ -242,7 +242,7 @@ export function WeekOffsPanel() {
                       <td className="num" style={{ textAlign: 'right', fontWeight: 600 }}>{c.employees.length}</td>
                       <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
                         <button className={`${controls.btn} ${controls.sm}`} onClick={() => handleAddEmployees(c)} disabled={!options}>Add Employees</button>
-                        <button className={styles.editBtn} onClick={() => handleAddOrEditClient(c)} title="Edit client week off" aria-label={`Edit week off for ${c.clientName}`} style={{ marginLeft: 6 }}>✎</button>
+                        <button className={styles.editBtn} onClick={() => handleAddOrEditClient(c)} title="Edit custom week off" aria-label={`Edit week off for ${c.clientName}`} style={{ marginLeft: 6 }}>✎</button>
                       </td>
                     </tr>
                     {isOpen && c.employees.length === 0 && (
@@ -272,7 +272,7 @@ export function WeekOffsPanel() {
           </table>
         </div>
         <div className={styles.gridFoot}>
-          <span>{visible.length} client week off{visible.length !== 1 ? 's' : ''} · Employees not listed here follow the company default (Sat, Sun)</span>
+          <span>{visible.length} custom week off{visible.length !== 1 ? 's' : ''} · Employees not listed here follow their primary client's default week off (Customers & Internal)</span>
         </div>
       </div>
     </>

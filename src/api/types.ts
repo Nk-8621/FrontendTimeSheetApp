@@ -23,6 +23,8 @@ export interface AccountDto {
   departmentId: number;
   name: string;
   accountType: 'Customer' | 'Internal';
+  /** CLIENT WEEK OFF (Nov 2026): the client's default week off, e.g. ['Sat', 'Sun']. */
+  weekOffDays: string[];
 }
 
 export interface ProjectDto {
@@ -139,11 +141,13 @@ export interface CreateAccountRequest {
   departmentId: number;
   name: string;
   accountType: 'Customer' | 'Internal';
+  weekOffDays?: string[]; // left out = Sat, Sun
 }
 export interface UpdateAccountRequest {
   departmentId?: number;
   name?: string;
   accountType?: 'Customer' | 'Internal';
+  weekOffDays?: string[]; // left out = unchanged
 }
 
 export interface CreateProjectRequest {
