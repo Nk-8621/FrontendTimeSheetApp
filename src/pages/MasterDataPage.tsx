@@ -100,8 +100,11 @@ export function MasterDataPage() {
   const filteredAccounts = (accounts.data ?? []).filter((a) => matches(a.name, a.accountType, deptName(a.departmentId)));
   const filteredProjects = (projects.data ?? []).filter((p) =>
     matches(p.code, p.name, accName(p.accountId), p.projectTypeName, p.projectLeadEmployeeName, p.projectManagerEmployeeName));
-  const filteredEmployees = (employees.data ?? []).filter((e) =>
-    matches(e.fullName, e.employeeCode, e.designation, deptName(e.departmentId), e.managerName));
+  // Always A-Z by name: the server sends employees in no fixed order, so the
+  // list used to jump around after a save (e.g. editing someone's projects).
+  const filteredEmployees = (employees.data ?? [])
+    .filter((e) => matches(e.fullName, e.employeeCode, e.designation, deptName(e.departmentId), e.managerName))
+    .sort((a, b) => a.fullName.localeCompare(b.fullName));
   const showSearch = tab === 'acc' || tab === 'proj' || tab === 'res';
 
   function showError(err: unknown, fallback: string) {

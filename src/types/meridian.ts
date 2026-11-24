@@ -12,8 +12,8 @@ export const NAV_GROUPS: Record<string, { group: string; icon: string; title: st
   ap1: { group: 'Approvals', icon: '✓', title: 'Level 1 Approvals' },
   ap2: { group: 'Approvals', icon: '✓✓', title: 'Level 2 Approvals' },
   reqap: { group: 'Approvals', icon: '✋✓', title: 'Request Approval' },
-  team: { group: 'Oversight', icon: '▦', title: 'Team Compliance' },
-  rep: { group: 'Oversight', icon: '◫', title: 'Reports' },
+  team: { group: 'Insights', icon: '▦', title: 'Team Compliance' },
+  rep: { group: 'Insights', icon: '◫', title: 'Reports' },
   mast: { group: 'Setup', icon: '⚙', title: 'Master Data' },
   notif: { group: 'Notifications', icon: '◔', title: 'Notifications' },
 };
