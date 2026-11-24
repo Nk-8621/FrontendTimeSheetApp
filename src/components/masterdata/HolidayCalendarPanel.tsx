@@ -26,9 +26,6 @@ function todayKey() {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 }
 
-function daysBetween(fromKey: string, toKey: string) {
-  return Math.round((Date.parse(toKey) - Date.parse(fromKey)) / 86400000);
-}
 
 interface HolidayCalendarPanelProps {
   holidays: HolidayDto[];
@@ -43,20 +40,24 @@ export function HolidayCalendarPanel({ holidays, accounts, onAdd, onEdit }: Holi
   const [filter, setFilter] = useState<string>(COMPANY);
   const [when, setWhen] = useState<When>('all');
 
-  const clients = accounts.filter((a) => a.accountType === 'Customer').sort((a, b) => a.name.localeCompare(b.name));
   const clientName = (id: number) => accounts.find((a) => a.id === id)?.name ?? 'Client';
+  // Carbynetech's own holidays: no client, or an Internal account (e.g. the
+  // "Carbynetech" internal account). Everything else is a client holiday.
+  const internalIds = new Set(accounts.filter((a) => a.accountType === 'Internal').map((a) => a.id));
+  const isCompanyHoliday = (h: HolidayDto) => h.accountId === null || internalIds.has(h.accountId);
+  // Only clients that have at least one holiday are offered in the filter.
+  const clients = accounts
+    .filter((a) => a.accountType === 'Customer' && holidays.some((h) => h.accountId === a.id))
+    .sort((a, b) => a.name.localeCompare(b.name));
   const isCompany = filter === COMPANY;
-  const selectedName = isCompany ? 'Carbynetech' : clientName(Number(filter));
 
   // This year's holidays, oldest first.
   const yearHolidays = holidays
     .filter((h) => readDate(h.date).year === year)
     .sort((a, b) => a.date.localeCompare(b.date));
-  const companyCount = yearHolidays.filter((h) => h.accountId === null).length;
-  const clientCount = yearHolidays.length - companyCount;
 
   // Holidays for the picked Carbynetech / client.
-  const forFilter = yearHolidays.filter((h) => (isCompany ? h.accountId === null : h.accountId === Number(filter)));
+  const forFilter = yearHolidays.filter((h) => (isCompany ? isCompanyHoliday(h) : h.accountId === Number(filter)));
   const nextHoliday = forFilter.find((h) => readDate(h.date).key >= today);
 
   // Then All / Upcoming / Past.
@@ -102,34 +103,6 @@ export function HolidayCalendarPanel({ holidays, accounts, onAdd, onEdit }: Holi
         <div className={`${styles.card} ${styles.empty}`}>No data found</div>
       ) : (
         <>
-          <div className={styles.kpis}>
-            <div className={styles.kpi}>
-              <b>{forFilter.length}</b>
-              <span>{selectedName} holidays in {year}</span>
-            </div>
-            <div className={styles.kpi}>
-              <b>{isCompany ? clientCount : companyCount}</b>
-              <span>{isCompany ? 'Client holidays' : 'Carbynetech holidays'} in {year}</span>
-            </div>
-            <div className={`${styles.kpi} ${styles.next}`}>
-              <span>Next holiday</span>
-              {nextHoliday ? (
-                <>
-                  <b className={styles.nextName}>
-                    {DAYS[readDate(nextHoliday.date).weekday].slice(0, 3)}, {readDate(nextHoliday.date).day} {MONTHS[readDate(nextHoliday.date).month].slice(0, 3)} · {nextHoliday.name}
-                  </b>
-                  <span>
-                    {daysBetween(today, readDate(nextHoliday.date).key) === 0
-                      ? 'Today'
-                      : `in ${daysBetween(today, readDate(nextHoliday.date).key)} days`}
-                  </span>
-                </>
-              ) : (
-                <b className={styles.nextName}>No more holidays in {year}</b>
-              )}
-            </div>
-          </div>
-
           <div className={styles.card}>
             {byMonth.length === 0 && <div className={styles.empty}>No data found</div>}
             {byMonth.map(([month, list]) => (
@@ -156,8 +129,8 @@ export function HolidayCalendarPanel({ holidays, accounts, onAdd, onEdit }: Holi
                         </div>
                         <span className={styles.location}>{h.location}</span>
                         <span className={styles.chipCell}>
-                          <span className={`${styles.chip} ${h.accountId ? styles.chipClient : ''}`}>
-                            {h.accountId ? clientName(h.accountId) : 'Carbynetech'}
+                          <span className={`${styles.chip} ${isCompanyHoliday(h) ? '' : styles.chipClient}`}>
+                            {isCompanyHoliday(h) ? 'Carbynetech' : clientName(h.accountId!)}
                           </span>
                         </span>
                         <button className={styles.editBtn} onClick={() => onEdit(h)} title="Edit holiday" aria-label={`Edit holiday ${h.name}`}>✎</button>
