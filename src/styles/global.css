@@ -62,6 +62,12 @@ input, select, textarea {
      when moving between short and long screens. */
   scrollbar-gutter: stable;
 }
+/* Keep the header and page at their real height. Without this, on a long
+   page the browser squeezes them to fit the window, so the header got
+   shorter and everything moved when switching between short and long tabs. */
+.main-column > * {
+  flex-shrink: 0;
+}
 
 .page-content {
   padding: 18px 20px 60px;
