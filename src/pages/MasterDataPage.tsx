@@ -61,7 +61,7 @@ export function MasterDataPage() {
   // One search box, shared by the long list tabs (Customers, Projects,
   // Resources) and cleared on every tab switch.
   const [search, setSearch] = useState('');
-  const { openDrawer, closeDrawer, toast } = useUI();
+  const { openDrawer, closeDrawer, toast, confirm } = useUI();
   const { employeeCode: myEmployeeCode } = useSession();
 
   const departments = useDepartments();
@@ -227,11 +227,13 @@ export function MasterDataPage() {
     });
   }
 
-  function handleSyncProjectModules(project: ProjectDto) {
-    const confirmed = window.confirm(
-      `Pull in any Modules/Tasks from "${project.projectTypeName ?? 'its Project Type'}" that "${project.name}" doesn't already have?\n\n` +
-      "This only adds what's missing — it never renames or removes any existing Module/Task, so nothing already logged against them is affected.",
-    );
+  async function handleSyncProjectModules(project: ProjectDto) {
+    const confirmed = await confirm({
+      title: 'Sync Modules/Tasks',
+      message: `Pull in any Modules/Tasks from "${project.projectTypeName ?? 'its Project Type'}" that "${project.name}" doesn't already have? ` +
+        "This only adds what's missing — it never renames or removes any existing Module/Task, so nothing already logged against them is affected.",
+      confirmLabel: 'Sync',
+    });
     if (!confirmed) return;
     mutations.syncProjectModuleTemplate.mutate(project.id, {
       onSuccess: () => toast('Modules/Tasks synced from the project type template', 'ok'),
@@ -271,8 +273,14 @@ export function MasterDataPage() {
   /** Reassign-then-delete: try the plain delete first: if the backend
    * reports Projects still reference this type, ask which Project Type to
    * reassign them to and retry with that. */
-  function handleDeleteProjectType(type: ProjectTypeDto) {
-    if (!window.confirm(`Delete the "${type.name}" Project Type? Its module/task templates go with it.`)) return;
+  async function handleDeleteProjectType(type: ProjectTypeDto) {
+    const ok = await confirm({
+      title: 'Delete Project Type',
+      message: `Delete the "${type.name}" Project Type? Its module/task templates go with it.`,
+      confirmLabel: 'Delete',
+      danger: true,
+    });
+    if (!ok) return;
 
     mutations.deleteProjectType.mutate(
       { id: type.id, body: {} },
@@ -622,6 +630,7 @@ function ResourceRow({
     e && e.managerEmployeeId !== null ? employeeById.get(e.managerEmployeeId) : undefined;
   const manager = managerOf(employee);
   const skipManager = managerOf(manager);
+  const { confirm } = useUI();
   const setPrimaryAccount = useSetPrimaryAccount();
   const deactivate = useDeactivateEmployee();
   const reactivate = useReactivateEmployee();
@@ -634,10 +643,13 @@ function ResourceRow({
     );
   }
 
-  function handleDeactivate() {
-    const confirmed = window.confirm(
-      `Deactivate ${employee.fullName}? They will no longer be able to sign in, and anyone reporting directly to them will be moved up to ${manager?.fullName ?? 'their manager'}. This does not delete any of their historical timesheet data.`,
-    );
+  async function handleDeactivate() {
+    const confirmed = await confirm({
+      title: 'Deactivate Employee',
+      message: `Deactivate ${employee.fullName}? They will no longer be able to sign in, and anyone reporting directly to them will be moved up to ${manager?.fullName ?? 'their manager'}. This does not delete any of their historical timesheet data.`,
+      confirmLabel: 'Deactivate',
+      danger: true,
+    });
     if (!confirmed) return;
     deactivate.mutate(employee.employeeCode, { onError: (err) => onShowError(err, 'Could not deactivate this employee') });
   }

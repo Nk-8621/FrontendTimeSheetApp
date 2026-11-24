@@ -57,7 +57,7 @@ interface ModuleTaskTreeProps {
 export function ModuleTaskTree({
   projectId, modules, tasks, mutations, moduleNameSuggestions = [], taskNameSuggestions = [], embedded = false,
 }: ModuleTaskTreeProps) {
-  const { toast } = useUI();
+  const { toast, confirm } = useUI();
 
   const [newModuleName, setNewModuleName] = useState('');
   const [newModuleTasks, setNewModuleTasks] = useState<string[]>(['']);
@@ -179,12 +179,13 @@ export function ModuleTaskTree({
   /** A renamed Module/Task keeps its id, so every timesheet line already
    * logged against it shows the new name too - including approved weeks.
    * Ask first whenever that's the case. Returns false if the admin cancels. */
-  function confirmRenameOfUsedItem(oldName: string, newName: string, usedByLines: number) {
+  async function confirmRenameOfUsedItem(oldName: string, newName: string, usedByLines: number) {
     if (usedByLines === 0) return true;
-    return window.confirm(
-      `"${oldName}" is used in ${usedByLines} timesheet line(s).\n\n` +
-      `Renaming it to "${newName}" also changes the name shown on those existing timesheets, including approved weeks. Continue?`,
-    );
+    return confirm({
+      title: 'Rename',
+      message: `"${oldName}" is used in ${usedByLines} timesheet line(s). Renaming it to "${newName}" also changes the name shown on those existing timesheets, including approved weeks. Continue?`,
+      confirmLabel: 'Rename',
+    });
   }
 
   async function handleRenameModule(mod: ModuleDto) {
@@ -197,7 +198,7 @@ export function ModuleTaskTree({
     }
     try {
       const usage = await masterDataApi.getModuleUsage(mod.id);
-      if (!confirmRenameOfUsedItem(mod.name, name, usage.timeEntryCount)) return;
+      if (!(await confirmRenameOfUsedItem(mod.name, name, usage.timeEntryCount))) return;
       await mutations.updateModule.mutateAsync({ id: mod.id, body: { name } });
       setEditingModuleId(null);
     } catch (err) {
@@ -215,7 +216,7 @@ export function ModuleTaskTree({
     }
     try {
       const usage = await masterDataApi.getTaskUsage(t.id);
-      if (!confirmRenameOfUsedItem(t.name, name, usage.timeEntryCount)) return;
+      if (!(await confirmRenameOfUsedItem(t.name, name, usage.timeEntryCount))) return;
       await mutations.updateTask.mutateAsync({ id: t.id, body: { name } });
       setEditingTaskId(null);
     } catch (err) {
@@ -234,7 +235,7 @@ export function ModuleTaskTree({
       }
       const taskCount = tasksFor(mod.id).length;
       const alsoTasks = taskCount > 0 ? ` and its ${taskCount} task type${taskCount !== 1 ? 's' : ''}` : '';
-      if (!window.confirm(`Delete the module "${mod.name}"${alsoTasks}? This can't be undone.`)) return;
+      if (!(await confirm({ title: 'Delete Module', message: `Delete the module "${mod.name}"${alsoTasks}? This can't be undone.`, confirmLabel: 'Delete', danger: true }))) return;
       await mutations.deleteModule.mutateAsync(mod.id);
       toast(`Module "${mod.name}" deleted`, 'ok');
     } catch (err) {
@@ -249,7 +250,7 @@ export function ModuleTaskTree({
         toast(`"${t.name}" can't be deleted — it's used in ${usage.timeEntryCount} timesheet line(s). You can still rename it.`, 'bad');
         return;
       }
-      if (!window.confirm(`Delete the task type "${t.name}"? This can't be undone.`)) return;
+      if (!(await confirm({ title: 'Delete Task Type', message: `Delete the task type "${t.name}"? This can't be undone.`, confirmLabel: 'Delete', danger: true }))) return;
       await mutations.deleteTask.mutateAsync(t.id);
       toast(`Task type "${t.name}" deleted`, 'ok');
     } catch (err) {

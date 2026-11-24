@@ -26,7 +26,7 @@ interface ProjectTypeTemplateDrawerProps {
 export function ProjectTypeTemplateDrawer({ projectTypeId, typeName, onClose }: ProjectTypeTemplateDrawerProps) {
   const mutations = useMasterDataMutations();
   const projectTypesWithTemplates = useProjectTypesWithTemplates();
-  const { toast } = useUI();
+  const { toast, confirm } = useUI();
   const type = projectTypesWithTemplates.data?.find((t) => t.id === projectTypeId);
   const [newModuleName, setNewModuleName] = useState('');
   const [newTaskName, setNewTaskName] = useState<Record<number, string>>({});
@@ -89,13 +89,20 @@ export function ProjectTypeTemplateDrawer({ projectTypeId, typeName, onClose }: 
     );
   }
 
-  function handleDeleteModule(id: number, name: string) {
-    if (!window.confirm(`Remove the "${name}" module template? Its task templates go with it. This only affects future projects — existing Modules/Tasks already created from it are untouched.`)) return;
+  async function handleDeleteModule(id: number, name: string) {
+    const ok = await confirm({
+      title: 'Remove Module Template',
+      message: `Remove the "${name}" module template? Its task templates go with it. This only affects future projects — existing Modules/Tasks already created from it are untouched.`,
+      confirmLabel: 'Remove',
+      danger: true,
+    });
+    if (!ok) return;
     mutations.deleteModuleTemplate.mutate(id, { onError: (err) => showError(err, 'Could not remove this module') });
   }
 
-  function handleDeleteTask(id: number, name: string) {
-    if (!window.confirm(`Remove the "${name}" task template?`)) return;
+  async function handleDeleteTask(id: number, name: string) {
+    const ok = await confirm({ title: 'Remove Task Template', message: `Remove the "${name}" task template?`, confirmLabel: 'Remove', danger: true });
+    if (!ok) return;
     mutations.deleteTaskTemplate.mutate(id, { onError: (err) => showError(err, 'Could not remove this task') });
   }
 

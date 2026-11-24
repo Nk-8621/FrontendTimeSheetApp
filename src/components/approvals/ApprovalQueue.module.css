@@ -186,23 +186,27 @@
   border-bottom: 1px solid var(--rule);
   margin-bottom: 14px;
 }
-.tabs button {
+.tabs > button {
+  white-space: nowrap;
   border: 0;
   background: none;
-  padding: 8px 13px;
-  font-size: 12.5px;
+  padding: 8px 11px;
+  /* TABS (Nov 2026): all caps, black; selected = page-title navy (same as Master Data). */
+  font-size: 11.5px;
   font-weight: 600;
-  color: var(--slate);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink);
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
   cursor: pointer;
 }
-.tabs button:hover {
-  color: var(--ink);
+.tabs > button:hover {
+  color: var(--oxideDeep);
 }
-.tabs button.tabOn {
-  color: var(--oxide);
-  border-bottom-color: var(--oxide);
+.tabs > button.tabOn {
+  color: var(--oxideDeep);
+  border-bottom-color: var(--oxideDeep);
 }
 .qRow.returned {
   border-left-color: var(--clay);

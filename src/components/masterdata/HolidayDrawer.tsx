@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useUI } from '../ui/UIProvider';
 import type { HolidayDto, AccountDto } from '../../api/types';
 import controls from '../../styles/controls.module.css';
 import styles from '../timesheet/EntryDrawer.module.css';
@@ -31,9 +32,17 @@ export function HolidayDrawer({ existing, accounts, onSave, onDelete, onCancel }
     });
   }
 
-  function handleDelete() {
+  const { confirm } = useUI();
+
+  async function handleDelete() {
     if (!onDelete || !existing) return;
-    if (!window.confirm(`Remove the "${existing.name}" holiday? Anyone's timesheet for that week will treat the day as a normal working day again.`)) return;
+    const ok = await confirm({
+      title: 'Remove Holiday',
+      message: `Remove the "${existing.name}" holiday? Anyone's timesheet for that week will treat the day as a normal working day again.`,
+      confirmLabel: 'Remove',
+      danger: true,
+    });
+    if (!ok) return;
     onDelete();
   }
 
