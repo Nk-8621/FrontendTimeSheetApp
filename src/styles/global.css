@@ -18,6 +18,8 @@ body {
   font-size: 13px;
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
+  /* Equal-width digits, so hours and totals line up in columns. */
+  font-variant-numeric: tabular-nums;
 }
 
 button {

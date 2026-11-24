@@ -45,11 +45,13 @@ export function HolidayCalendarPanel({ holidays, accounts, onAdd, onEdit }: Holi
   // "Carbynetech" internal account). Everything else is a client holiday.
   const internalIds = new Set(accounts.filter((a) => a.accountType === 'Internal').map((a) => a.id));
   const isCompanyHoliday = (h: HolidayDto) => h.accountId === null || internalIds.has(h.accountId);
-  // Only clients that have at least one holiday are offered in the filter.
+  // Every client is offered in the filter, with or without holidays.
   const clients = accounts
-    .filter((a) => a.accountType === 'Customer' && holidays.some((h) => h.accountId === a.id))
+    .filter((a) => a.accountType === 'Customer')
     .sort((a, b) => a.name.localeCompare(b.name));
   const isCompany = filter === COMPANY;
+  // A client with no holidays saved at all (any year).
+  const clientHasNoHolidays = !isCompany && !holidays.some((h) => h.accountId === Number(filter));
 
   // This year's holidays, oldest first.
   const yearHolidays = holidays
@@ -100,7 +102,7 @@ export function HolidayCalendarPanel({ holidays, accounts, onAdd, onEdit }: Holi
       </div>
 
       {forFilter.length === 0 ? (
-        <div className={`${styles.card} ${styles.empty}`}>No data found</div>
+        <div className={`${styles.card} ${styles.empty}`}>{clientHasNoHolidays ? 'No Records Found' : 'No data found'}</div>
       ) : (
         <>
           <div className={styles.card}>
