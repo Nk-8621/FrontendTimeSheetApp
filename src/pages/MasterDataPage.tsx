@@ -807,13 +807,16 @@ function ProjectAllocationRow({ row }: { row: { projectId: number; projectCode: 
             {isLoading && <span style={{ fontSize: 11.5, color: 'var(--slate)' }}>Loading…</span>}
             {allocated && allocated.length === 0 && <span style={{ fontSize: 11.5, color: 'var(--slate)' }}>No employees allocated.</span>}
             {allocated && allocated.length > 0 && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-                {allocated.map((e) => (
-                  <span key={e.employeeId} style={{ fontSize: 12 }}>
-                    {e.fullName} <span style={{ color: 'var(--slate)' }}>({e.departmentName})</span>
-                  </span>
+              // One employee per line: number, name, code, department.
+              <ol style={{ margin: 0, paddingLeft: 22, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {[...allocated].sort((a, b) => a.fullName.localeCompare(b.fullName)).map((e) => (
+                  <li key={e.employeeId} style={{ fontSize: 12.5 }}>
+                    <span style={{ display: 'inline-block', minWidth: 240 }}>{e.fullName}</span>
+                    <span style={{ display: 'inline-block', minWidth: 90, color: 'var(--slate)' }}>{e.employeeCode}</span>
+                    <span style={{ color: 'var(--slate)' }}>{e.departmentName}</span>
+                  </li>
                 ))}
-              </div>
+              </ol>
             )}
           </td>
         </tr>
