@@ -94,11 +94,10 @@ export function ApprovalsPage({ level2, title }: ApprovalsPageProps) {
             <button className={tab === 'returned' ? styles.tabOn : ''} onClick={() => setTab('returned')}>
               Returned by Level 2{returned && returned.length > 0 ? ` (${returned.length})` : ''}
             </button>
-            {!showReturned && (
-              <div style={{ marginLeft: 'auto', alignSelf: 'center', paddingBottom: 6 }}>
-                <WeekNav weekStart={selectedWeek} onShift={shiftWeek} />
-              </div>
-            )}
+            {/* Kept on both tabs (hidden on Returned) so the tabs line doesn't move when switching. */}
+            <div style={{ marginLeft: 'auto', alignSelf: 'center', paddingBottom: 6, visibility: showReturned ? 'hidden' : 'visible' }}>
+              <WeekNav weekStart={selectedWeek} onShift={shiftWeek} />
+            </div>
           </div>
         )}
         {level2 && (

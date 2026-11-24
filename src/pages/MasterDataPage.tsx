@@ -28,6 +28,7 @@ import { ProjectTypeTemplateDrawer } from '../components/masterdata/ProjectTypeT
 import { EmployeeAllocationsDrawer } from '../components/masterdata/EmployeeAllocationsDrawer';
 import { EmployeeEditDrawer } from '../components/masterdata/EmployeeEditDrawer';
 import { WeekOffsPanel } from '../components/masterdata/WeekOffsPanel';
+import { HolidayCalendarPanel } from '../components/masterdata/HolidayCalendarPanel';
 import controls from '../styles/controls.module.css';
 import drawerStyles from '../components/timesheet/EntryDrawer.module.css';
 import styles from './MasterData.module.css';
@@ -393,7 +394,7 @@ export function MasterDataPage() {
     ptype: () => handleAddOrEditProjectType(),
     res: () => handleAddEmployee(),
     palloc: null,
-    hol: () => handleAddOrEditHoliday(),
+    hol: null, // the Holiday calendar has its own New Record button, next to its filters
     woff: null, // the Custom WeekOffs tab has its own Add Week Off button
   };
 
@@ -577,20 +578,13 @@ export function MasterDataPage() {
             {tab === 'woff' && <WeekOffsPanel />}
 
             {tab === 'hol' && (
-              <RecordsCard count={holidays.data?.length ?? 0}>
-                <thead><tr><th>Date</th><th>Holiday</th><th>Applies to</th><th>Client</th><th className={styles.editCol} /></tr></thead>
-                <tbody>
-                  {holidays.data?.map((h) => (
-                    <tr key={h.holidayId}>
-                      <td className="num">{new Date(h.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })}</td>
-                      <td>{h.name}</td>
-                      <td style={{ color: 'var(--slate)' }}>{h.location}</td>
-                      <td style={{ color: 'var(--slate)' }}>{h.accountId ? accName(h.accountId) : 'All clients'}</td>
-                      <td className={styles.editCol}><button className={styles.editBtn} onClick={() => handleAddOrEditHoliday(h)} title="Edit holiday" aria-label={`Edit holiday ${h.name}`}>✎</button></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </RecordsCard>
+              // HOLIDAY CALENDAR (Nov 2026): year + Carbynetech/client view, grouped by month.
+              <HolidayCalendarPanel
+                holidays={holidays.data ?? []}
+                accounts={accounts.data ?? []}
+                onAdd={() => handleAddOrEditHoliday()}
+                onEdit={(h) => handleAddOrEditHoliday(h)}
+              />
             )}
           </>
         )}

@@ -117,14 +117,6 @@
   top: auto;
   bottom: 0;
 }
-.flyHd {
-  padding: 6px 16px 8px;
-  font-size: 9.5px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: #7E9BB5;
-  font-weight: 600;
-}
 .flyItem {
   display: flex;
   align-items: center;

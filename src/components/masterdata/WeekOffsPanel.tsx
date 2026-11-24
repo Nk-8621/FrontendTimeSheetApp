@@ -174,7 +174,7 @@ export function WeekOffsPanel() {
 
   return (
     <>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap', minHeight: 34 }}>
         <div style={{ flex: 1, maxWidth: 360 }}>
           <input
             className={controls.textInput}

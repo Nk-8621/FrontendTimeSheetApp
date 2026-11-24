@@ -79,7 +79,7 @@ export function StoryCard({ story, tasks, runsThisWeek, expanded, editable, onTo
             <span>{tasks.length} task{tasks.length === 1 ? '' : 's'} this week</span>
           </span>
         </span>
-        <span className={styles.hoursBig}><b>{fmtH(storyHours)}</b>h this week</span>
+        <span className={styles.hoursBig}><b>{fmtH(storyHours)}</b>hours this week</span>
       </div>
 
       {expanded && (

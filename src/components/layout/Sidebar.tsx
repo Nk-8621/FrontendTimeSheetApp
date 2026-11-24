@@ -118,7 +118,6 @@ export function Sidebar() {
         </button>
         {open && (
           <div className={styles.fly}>
-            <div className={styles.flyHd}>{group}</div>
             {keys.map((key) => {
               const badge = badgeFor(key);
               return (

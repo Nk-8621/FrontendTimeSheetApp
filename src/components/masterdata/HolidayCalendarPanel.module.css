@@ -1,0 +1,245 @@
+/* HOLIDAY CALENDAR (Nov 2026) */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+  min-height: 34px; /* same as the other Master Data tabs */
+}
+
+.year {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--ruleStrong);
+  border-radius: var(--r);
+  background: var(--paper);
+  overflow: hidden;
+}
+.year span {
+  padding: 6px 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.year button {
+  border: none;
+  background: var(--paper);
+  padding: 6px 10px;
+  font-size: 13px;
+  color: var(--slate);
+  cursor: pointer;
+}
+.year button:hover {
+  background: var(--oxideTint);
+  color: var(--oxide);
+}
+
+.filter {
+  width: 220px;
+}
+
+.seg {
+  display: flex;
+  border: 1px solid var(--ruleStrong);
+  border-radius: var(--r);
+  overflow: hidden;
+  background: var(--paper);
+}
+.seg button {
+  border: none;
+  background: var(--paper);
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink2);
+  cursor: pointer;
+}
+.seg button + button {
+  border-left: 1px solid var(--ruleStrong);
+}
+.seg button.on {
+  background: var(--oxide);
+  color: #fff;
+}
+
+.add {
+  margin-left: auto;
+}
+
+/* Summary cards */
+.kpis {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.kpi {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--rLg);
+  box-shadow: var(--sh1);
+  padding: 10px 14px;
+  min-width: 170px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.kpi b {
+  font-size: 20px;
+  color: var(--ink);
+}
+.kpi span {
+  font-size: 11.5px;
+  color: var(--slate2);
+}
+.next {
+  border-left: 3px solid var(--oxide);
+  min-width: 280px;
+}
+.kpi b.nextName {
+  font-size: 14px;
+}
+
+/* Month list */
+.card {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--rLg);
+  box-shadow: var(--sh1);
+  overflow: hidden;
+}
+.empty {
+  padding: 28px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--slate2);
+}
+
+.month {
+  display: flex;
+  border-bottom: 1px solid var(--rule);
+}
+.month:last-child {
+  border-bottom: none;
+}
+.monthName {
+  width: 120px;
+  flex-shrink: 0;
+  padding: 12px 16px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--slate);
+  border-right: 1px solid var(--rule);
+}
+.monthName small {
+  display: block;
+  margin-top: 2px;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--slate2);
+}
+.rows {
+  flex: 1;
+  min-width: 0;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 9px 16px;
+  border-bottom: 1px solid #F3F5F8;
+}
+.row:last-child {
+  border-bottom: none;
+}
+.past {
+  opacity: 0.55;
+}
+
+.tile {
+  width: 46px;
+  flex-shrink: 0;
+  text-align: center;
+  border: 1px solid var(--ruleStrong);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+.tile i {
+  display: block;
+  font-style: normal;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  padding: 1px 0;
+  background: var(--oxide);
+  color: #fff;
+}
+.tile b {
+  display: block;
+  font-size: 15px;
+  padding: 2px 0;
+  color: var(--ink);
+}
+.tilePast i {
+  background: var(--slate2);
+}
+
+.name {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+}
+.name small {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--slate2);
+}
+.nextTag {
+  margin-left: 6px;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--verd);
+}
+
+.location {
+  width: 140px;
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--slate);
+}
+.chipCell {
+  width: 210px;
+  flex-shrink: 0;
+  text-align: right;
+}
+.chip {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 10px;
+  background: var(--oxideTint);
+  color: var(--oxide);
+}
+.chipClient {
+  background: var(--amberTint);
+  color: var(--amber);
+}
+
+.editBtn {
+  border: none;
+  background: none;
+  color: var(--slate2);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+.editBtn:hover {
+  color: var(--oxide);
+}
