@@ -111,6 +111,30 @@ export function MasterDataPage() {
     toast(err instanceof ApiError ? err.message : fallback, 'bad');
   }
 
+  /** REMOVE (Nov 2026): asks first, then removes. If the backend refuses
+   * (something still uses it), its reason is shown in a box to read. */
+  async function handleRemove(kind: string, name: string, remove: () => Promise<unknown>) {
+    const ok = await confirm({
+      title: `Remove ${kind}`,
+      message: `Remove "${name}"? This can't be undone.`,
+      confirmLabel: 'Remove',
+      danger: true,
+    });
+    if (!ok) return;
+    try {
+      await remove();
+      closeDrawer();
+      toast(`${kind} removed`, 'ok');
+    } catch (err) {
+      await confirm({
+        title: `Can't Remove ${kind}`,
+        message: err instanceof ApiError ? err.message : `Could not remove this ${kind.toLowerCase()}.`,
+        confirmLabel: 'OK',
+        hideCancel: true,
+      });
+    }
+  }
+
   function handleAddOrEditDepartment(existing?: DepartmentDto) {
     openDrawer({
       title: existing ? 'Edit department' : 'New department',
@@ -128,6 +152,7 @@ export function MasterDataPage() {
               .then(() => { closeDrawer(); toast(existing ? 'Department updated' : 'Department created', 'ok'); })
               .catch((err) => showError(err, 'Could not save this department'));
           }}
+          onDelete={existing ? () => handleRemove('Department', existing.name, () => mutations.deleteDepartment.mutateAsync(existing.id)) : undefined}
         />
       ),
     });
@@ -150,6 +175,7 @@ export function MasterDataPage() {
               .then(() => { closeDrawer(); toast(existing ? 'Account updated' : 'Account created', 'ok'); })
               .catch((err) => showError(err, 'Could not save this account'));
           }}
+          onDelete={existing ? () => handleRemove('Customer / Internal', existing.name, () => mutations.deleteAccount.mutateAsync(existing.id)) : undefined}
         />
       ),
     });
@@ -167,6 +193,7 @@ export function MasterDataPage() {
           projectTypes={projectTypes.data ?? []}
           employees={employees.data ?? []}
           onCancel={closeDrawer}
+          onDelete={existing ? () => handleRemove('Project', existing.name, () => mutations.deleteProject.mutateAsync(existing.id)) : undefined}
           onSave={(rows) => {
             if (existing) {
               // Edit is always exactly one row.

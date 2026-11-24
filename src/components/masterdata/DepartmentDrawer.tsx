@@ -8,12 +8,14 @@ interface DepartmentDrawerProps {
   departments: DepartmentDto[];
   onSave: (data: SaveDepartmentRequest) => void;
   onCancel: () => void;
+  /** Edit only: shows a red Remove button (the page asks to confirm). */
+  onDelete?: () => void;
 }
 
 /** Add or edit a department. Departments nest one level deep (e.g. "SAP" >
  * "SAP Technical"), so only top-level departments are offered as a parent.
  * The backend repeats every check here. */
-export function DepartmentDrawer({ existing, departments, onSave, onCancel }: DepartmentDrawerProps) {
+export function DepartmentDrawer({ existing, departments, onSave, onCancel, onDelete }: DepartmentDrawerProps) {
   const [code, setCode] = useState(existing?.code ?? '');
   const [name, setName] = useState(existing?.name ?? '');
   const [parentId, setParentId] = useState<number | ''>(existing?.parentDepartmentId ?? '');
@@ -53,6 +55,12 @@ export function DepartmentDrawer({ existing, departments, onSave, onCancel }: De
       <div className={styles.footer}>
         <button className={`${controls.btn} ${controls.pri}`} onClick={handleSave}>{existing ? 'Save changes' : 'Create department'}</button>
         <button className={controls.btn} onClick={onCancel}>Cancel</button>
+        {existing && onDelete && (
+          <>
+            <div style={{ flex: 1 }} />
+            <button className={`${controls.btn} ${controls.dgr}`} onClick={onDelete}>Remove</button>
+          </>
+        )}
       </div>
     </div>
   );

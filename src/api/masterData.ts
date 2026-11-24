@@ -67,6 +67,10 @@ export const masterDataApi = {
   createHoliday: (body: CreateHolidayRequest) => http.post<HolidayDto>('/api/masterdata/holidays', body),
   updateHoliday: (id: number, body: UpdateHolidayRequest) => http.put<HolidayDto>(`/api/masterdata/holidays/${id}`, body),
   deleteHoliday: (id: number) => http.delete<void>(`/api/masterdata/holidays/${id}`),
+  // REMOVE (Nov 2026): the backend refuses (with the reason) while anything still uses the record.
+  deleteDepartment: (id: number) => http.delete<void>(`/api/masterdata/departments/${id}`),
+  deleteAccount: (id: number) => http.delete<void>(`/api/masterdata/accounts/${id}`),
+  deleteProject: (id: number) => http.delete<void>(`/api/masterdata/projects/${id}`),
 
   // ---- Project Type template management (Admin only) ----
   createProjectType: (body: CreateProjectTypeRequest) => http.post<ProjectTypeDto>('/api/masterdata/project-types', body),

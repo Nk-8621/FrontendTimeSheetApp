@@ -17,7 +17,7 @@ const GROUP_ICONS: Record<string, ReactNode> = {
   'My Work': svg(<><rect x="3" y="7" width="18" height="13" rx="2" /><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><path d="M3 12h18" /></>),
   Approvals: svg(<><circle cx="12" cy="12" r="9" /><polyline points="8 12.5 11 15.5 16 9.5" /></>),
   Insights: svg(<><line x1="5" y1="20" x2="5" y2="11" /><line x1="12" y1="20" x2="12" y2="5" /><line x1="19" y1="20" x2="19" y2="14" /><line x1="3" y1="20" x2="21" y2="20" /></>),
-  Setup: svg(<><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></>),
+  Configure: svg(<><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></>),
   Notifications: svg(<><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.7 21a2 2 0 0 1-3.4 0" /></>),
 };
 
@@ -85,18 +85,45 @@ export function Sidebar() {
       </>
     );
 
-    // A group with a single page for this user goes straight there.
+    const open = openGroup === group;
+    // The pop-out list of the group's pages (shown on hover).
+    const flyout = open && (
+      <div className={styles.fly}>
+        {keys.map((key) => {
+          const badge = badgeFor(key);
+          return (
+            <NavLink
+              key={key}
+              to={pathFor(key)}
+              end={key === 'ts'}
+              className={({ isActive: on }) => `${styles.flyItem} ${on ? styles.cur : ''}`}
+            >
+              {NAV_GROUPS[key].title}
+              {badge > 0 && <span className={styles.cnt}>{badge}</span>}
+            </NavLink>
+          );
+        })}
+      </div>
+    );
+
+    // A group with a single page: hovering still shows its pop-out (same as
+    // the other groups), and clicking the icon goes straight to the page.
     if (keys.length === 1) {
       return (
-        <div key={group} className={styles.grp}>
-          <NavLink to={pathFor(keys[0])} end={keys[0] === 'ts'} className={cls} title={NAV_GROUPS[keys[0]].title}>
+        <div
+          key={group}
+          className={styles.grp}
+          onMouseEnter={() => setOpenGroup(group)}
+          onMouseLeave={() => setOpenGroup((g) => (g === group ? null : g))}
+        >
+          <NavLink to={pathFor(keys[0])} end={keys[0] === 'ts'} className={`${cls} ${open ? styles.open : ''}`}>
             {inner}
           </NavLink>
+          {flyout}
         </div>
       );
     }
 
-    const open = openGroup === group;
     return (
       <div
         key={group}
@@ -116,24 +143,7 @@ export function Sidebar() {
         >
           {inner}
         </button>
-        {open && (
-          <div className={styles.fly}>
-            {keys.map((key) => {
-              const badge = badgeFor(key);
-              return (
-                <NavLink
-                  key={key}
-                  to={pathFor(key)}
-                  end={key === 'ts'}
-                  className={({ isActive: on }) => `${styles.flyItem} ${on ? styles.cur : ''}`}
-                >
-                  {NAV_GROUPS[key].title}
-                  {badge > 0 && <span className={styles.cnt}>{badge}</span>}
-                </NavLink>
-              );
-            })}
-          </div>
-        )}
+        {flyout}
       </div>
     );
   };

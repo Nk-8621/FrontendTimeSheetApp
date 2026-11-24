@@ -47,6 +47,8 @@ interface ProjectDrawerProps {
    * assumes a bulk-create API. */
   onSave: (rows: ProjectRow[]) => void;
   onCancel: () => void;
+  /** Edit only: shows a red Remove button (the page asks to confirm). */
+  onDelete?: () => void;
 }
 
 /** Project Type is set once — either at creation, or later via edit for an
@@ -55,7 +57,7 @@ interface ProjectDrawerProps {
  * offers the "create a brand-new Project Type from here" flow — that lives
  * on the Project Types tab, where a type is set up once and then just picked
  * from a plain dropdown here. */
-export function ProjectDrawer({ existing, departments, accounts, projectTypes, employees, onSave, onCancel }: ProjectDrawerProps) {
+export function ProjectDrawer({ existing, departments, accounts, projectTypes, employees, onSave, onCancel, onDelete }: ProjectDrawerProps) {
   const existingAccount = existing ? accounts.find((a) => a.id === existing.accountId) : undefined;
   // Edit mode keeps the original single Department -> Account drill-down,
   // since an existing project already has exactly one account and changing
@@ -387,6 +389,12 @@ export function ProjectDrawer({ existing, departments, accounts, projectTypes, e
       <div className={styles.footer}>
         <button className={`${controls.btn} ${controls.pri}`} onClick={handleSave}>{existing ? 'Save changes' : 'Create project'}</button>
         <button className={controls.btn} onClick={onCancel}>Cancel</button>
+        {existing && onDelete && (
+          <>
+            <div style={{ flex: 1 }} />
+            <button className={`${controls.btn} ${controls.dgr}`} onClick={onDelete}>Remove</button>
+          </>
+        )}
       </div>
     </div>
   );

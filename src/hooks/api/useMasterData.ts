@@ -179,6 +179,20 @@ export function useMasterDataMutations() {
     onSuccess: () => invalidate('holidays'),
   });
 
+  // REMOVE (Nov 2026)
+  const deleteDepartment = useMutation({
+    mutationFn: (id: number) => masterDataApi.deleteDepartment(id),
+    onSuccess: () => invalidate('departments'),
+  });
+  const deleteAccount = useMutation({
+    mutationFn: (id: number) => masterDataApi.deleteAccount(id),
+    onSuccess: () => invalidate('accounts'),
+  });
+  const deleteProject = useMutation({
+    mutationFn: (id: number) => masterDataApi.deleteProject(id),
+    onSuccess: () => invalidate('projects', 'modules', 'tasks'),
+  });
+
   // ---- Project Type template management ----
   const createProjectType = useMutation({
     mutationFn: (body: CreateProjectTypeRequest) => masterDataApi.createProjectType(body),
@@ -222,9 +236,9 @@ export function useMasterDataMutations() {
   });
 
   return {
-    createDepartment, updateDepartment,
-    createAccount, updateAccount,
-    createProject, updateProject, syncProjectModuleTemplate,
+    createDepartment, updateDepartment, deleteDepartment,
+    createAccount, updateAccount, deleteAccount,
+    createProject, updateProject, deleteProject, syncProjectModuleTemplate,
     createModule, updateModule,
     createTask, updateTask,
     deleteModule, deleteTask,

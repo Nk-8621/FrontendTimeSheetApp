@@ -9,9 +9,11 @@ interface AccountDrawerProps {
   departments: DepartmentDto[];
   onSave: (data: { departmentId: number; name: string; accountType: 'Customer' | 'Internal'; weekOffDays: string[] }) => void;
   onCancel: () => void;
+  /** Edit only: shows a red Remove button (the page asks to confirm). */
+  onDelete?: () => void;
 }
 
-export function AccountDrawer({ existing, departments, onSave, onCancel }: AccountDrawerProps) {
+export function AccountDrawer({ existing, departments, onSave, onCancel, onDelete }: AccountDrawerProps) {
   const [departmentId, setDepartmentId] = useState<number | ''>(existing?.departmentId ?? '');
   const [name, setName] = useState(existing?.name ?? '');
   const [accountType, setAccountType] = useState<'Customer' | 'Internal'>(existing?.accountType ?? 'Customer');
@@ -80,6 +82,12 @@ export function AccountDrawer({ existing, departments, onSave, onCancel }: Accou
       <div className={styles.footer}>
         <button className={`${controls.btn} ${controls.pri}`} onClick={handleSave}>{existing ? 'Save changes' : 'Create account'}</button>
         <button className={controls.btn} onClick={onCancel}>Cancel</button>
+        {existing && onDelete && (
+          <>
+            <div style={{ flex: 1 }} />
+            <button className={`${controls.btn} ${controls.dgr}`} onClick={onDelete}>Remove</button>
+          </>
+        )}
       </div>
     </div>
   );

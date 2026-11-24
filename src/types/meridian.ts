@@ -14,7 +14,7 @@ export const NAV_GROUPS: Record<string, { group: string; icon: string; title: st
   reqap: { group: 'Approvals', icon: '✋✓', title: 'Request Approval' },
   team: { group: 'Insights', icon: '▦', title: 'Team Compliance' },
   rep: { group: 'Insights', icon: '◫', title: 'Reports' },
-  mast: { group: 'Setup', icon: '⚙', title: 'Master Data' },
+  mast: { group: 'Configure', icon: '⚙', title: 'Master Data' },
   notif: { group: 'Notifications', icon: '◔', title: 'Notifications' },
 };
 
