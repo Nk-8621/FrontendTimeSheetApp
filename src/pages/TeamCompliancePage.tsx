@@ -6,9 +6,10 @@ import { Banner } from '../components/timesheet/Banner';
 import { WeekDetailTable } from '../components/timesheet/WeekDetailTable';
 import { useTeamCompliance } from '../hooks/api/useTeam';
 import { useWeekDetail } from '../hooks/api/useApprovals';
-import { useSession } from '../session/SessionContext';
 import { mondayOf, addDays, toISO, weekDays } from '../lib/dates';
+import { downloadCsv } from '../lib/csv';
 import type { TeamComplianceRowDto } from '../api/types';
+import controls from '../styles/controls.module.css';
 import queueStyles from '../components/approvals/ApprovalQueue.module.css';
 import kpiStyles from '../components/timesheet/KpiStrip.module.css';
 import styles from './TeamCompliance.module.css';
@@ -22,6 +23,7 @@ function cellClass(hours: number, dayType: string, leaveHalf: string | null) {
   if (dayType === 'LH' && leaveHalf) return styles.split;
   if (dayType === 'LH' && hours === 0) return styles.lh;
   if (dayType === 'WFH' && hours === 0) return styles.wfh;
+  if (dayType === 'OD' && hours === 0) return styles.od;
   if (hours === 0) return styles.z;
   if (hours < 4) return styles.lo;
   if (hours < 8) return styles.md;
@@ -36,13 +38,16 @@ function cellContent(hours: number, dayType: string, leaveHalf: string | null) {
   if (dayType === 'LH' && leaveHalf) {
     const leaf = <span key="leaf" className={styles.leaf}>L</span>;
     const rest = <span key="rest" className={styles.rest}>{hours ? hours.toFixed(1).replace(/\.0$/, '') : '–'}</span>;
-    return leaveHalf === 'LeaveSecondHalf' ? <>{rest}{leaf}</> : <>{leaf}{rest}</>;
+    // Any *SecondHalf request (paid, unpaid or comp-off) puts the "L" on the right.
+    return leaveHalf.endsWith('SecondHalf') ? <>{rest}{leaf}</> : <>{leaf}{rest}</>;
   }
   if (dayType === 'L') return 'L';
   if (dayType === 'H') return 'H';
   if (hours) return hours.toFixed(1).replace(/\.0$/, '');
   if (dayType === 'LH') return 'L½';
   if (dayType === 'WFH') return 'WFH';
+  if (dayType === 'OD') return 'OD';
+  if (dayType === 'O') return 'W-OFF';
   return '·';
 }
 
@@ -62,7 +67,18 @@ function TeamComplianceRow({ row, weekStart }: TeamComplianceRowProps) {
 
   return (
     <>
-      <tr onClick={() => setIsOpen((o) => !o)} style={{ cursor: 'pointer' }}>
+      <tr
+        onClick={() => setIsOpen((o) => !o)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setIsOpen((o) => !o);
+          }
+        }}
+        tabIndex={0}
+        aria-expanded={isOpen}
+        style={{ cursor: 'pointer' }}
+      >
         <td style={{ padding: '9px 14px', borderTop: '1px solid var(--rule)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <div style={{ width: 23, height: 23, borderRadius: '50%', background: 'var(--oxideTint)', color: 'var(--oxide)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9.5, fontWeight: 700, flexShrink: 0 }}>{initials}</div>
@@ -78,8 +94,8 @@ function TeamComplianceRow({ row, weekStart }: TeamComplianceRowProps) {
           return (
             <td key={i} style={{ padding: '4px', borderTop: '1px solid var(--rule)', textAlign: 'center' }}>
               <div
-                className={`${styles.hc} ${cellClass(h, row.dailyDayTypes[i], leaveHalf)}`}
-                title={`${DAY_NAMES[i]} - ${row.dailyDayTypes[i]}${leaveHalf ? ` (${leaveHalf})` : ''}`}
+                className={`${styles.hc} ${cellClass(h, row.dailyDayTypes[i], leaveHalf)} ${row.dailyDayTypes[i] === 'O' && !h ? styles.wo : ''}`}
+                title={`${DAY_NAMES[i]} — ${row.dailyDayTypes[i]}${leaveHalf ? ` (${leaveHalf})` : ''}`}
               >
                 {cellContent(h, row.dailyDayTypes[i], leaveHalf)}
               </div>
@@ -118,14 +134,22 @@ function TeamComplianceRow({ row, weekStart }: TeamComplianceRowProps) {
 }
 
 export function TeamCompliancePage() {
-  const { isAdmin } = useSession();
   const [weekStart, setWeekStart] = useState(() => mondayOf(toISO(new Date())));
-  const { data: rows, isLoading, isError } = useTeamCompliance(weekStart);
+  const { data: rows, isError } = useTeamCompliance(weekStart);
+  const [search, setSearch] = useState('');
   const today = toISO(new Date());
 
   const shiftWeek = (direction: -1 | 1) => setWeekStart((w) => addDays(w, direction * 7));
   const days = weekDays(weekStart);
   const zeroLogged = rows?.filter((r) => !r.hasLogged) ?? [];
+
+  // SEARCH (Nov 2026): filters only the table below. The KPI cards and the
+  // CSV download stay on the whole team.
+  const searchText = search.trim().toLowerCase();
+  const visibleRows = (rows ?? []).filter((r) =>
+    !searchText ||
+    [r.fullName, r.employeeCode, r.designation, r.departmentName]
+      .some((v) => v?.toLowerCase().includes(searchText)));
 
   const totalHours = rows?.reduce((sum, r) => sum + r.totalHours, 0) ?? 0;
   const totalCapacity = rows?.reduce((sum, r) => sum + r.capacityHours, 0) ?? 0;
@@ -137,32 +161,42 @@ export function TeamCompliancePage() {
   const pctBillable = totalHours ? Math.round((totalBillable / totalHours) * 100) : 0;
   const pctPartialBillable = totalHours ? Math.round((totalPartialBillable / totalHours) * 100) : 0;
 
+  /** One row per person, for the week currently on screen - the same
+   * per-employee totals already shown in the grid below, not the day-by-day
+   * detail. Whether to also offer a line-by-line export is a separate
+   * conversation for later. */
+  function handleExportSummary() {
+    if (!rows || rows.length === 0) return;
+    downloadCsv(
+      `team-compliance-summary-${weekStart}.csv`,
+      ['Employee Code', 'Name', 'Designation', 'Department', 'Total Hours', 'Capacity Hours', 'Billable Hours', 'Partial billable Hours', 'Non-billable Hours', 'Bill %', 'Status'],
+      rows.map((r) => [
+        r.employeeCode, r.fullName, r.designation, r.departmentName,
+        r.totalHours, r.capacityHours, r.billableHours, r.partialBillableHours, r.nonBillableHours,
+        r.totalHours ? Math.round((r.billableHours / r.totalHours) * 100) : 0,
+        r.status,
+      ]),
+    );
+  }
+
   return (
     <>
-      <PageHeader crumb="Oversight" title="Team Compliance">
-        <WeekNav weekStart={weekStart} onShift={shiftWeek} />
-      </PageHeader>
+      <PageHeader title="Team Compliance" />
       <div className="page-content">
-        <Banner>
-          {isAdmin ? 'Showing every employee in the organization.' : 'Showing your direct reports.'}
-        </Banner>
-        {isLoading && <Banner>Loading compliance data...</Banner>}
-        {isError && <Banner kind="reject">Couldn't load compliance data - check that the backend API is reachable.</Banner>}
+        {/* Week picker sits below the header, same as User Stories. */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+          <WeekNav weekStart={weekStart} onShift={shiftWeek} />
+        </div>
+
+        {isError && <Banner kind="reject">Couldn't load compliance data — check that the backend API is reachable.</Banner>}
 
         {rows && (
           <>
-            {zeroLogged.length > 0 && (
-              <Banner kind="warn">
-                <b>{zeroLogged.length} team member{zeroLogged.length > 1 ? 's have' : ' has'} logged nothing this week:</b>{' '}
-                {zeroLogged.map((z) => z.fullName).join(', ')}.
-              </Banner>
-            )}
-
             <div className={kpiStyles.kpis}>
               <div className={`${kpiStyles.kpi} ${kpiStyles.a}`}>
                 <div className={kpiStyles.k}>Team hours logged</div>
                 <div className={kpiStyles.v}>{totalHours.toFixed(0)}<small> / {totalCapacity.toFixed(0)}</small></div>
-                <div className={kpiStyles.d}>{pctOfCapacity}% of capacity - {elapsedDays} of 7 days elapsed</div>
+                <div className={kpiStyles.d}>{pctOfCapacity}% of capacity — {elapsedDays} of 7 days elapsed</div>
               </div>
               <div className={`${kpiStyles.kpi} ${kpiStyles.g}`}>
                 <div className={kpiStyles.k}>Billable share</div>
@@ -184,6 +218,22 @@ export function TeamCompliancePage() {
                 <div className={kpiStyles.v}>{zeroLogged.length}</div>
                 <div className={kpiStyles.d}>of {rows.length} in scope</div>
               </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+              <div style={{ flex: 1, maxWidth: 360 }}>
+                <input
+                  className={controls.textInput}
+                  type="search"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search by name, code, designation, department…"
+                  aria-label="Search team members"
+                />
+              </div>
+              <button style={{ marginLeft: 'auto' }} className={controls.btn} onClick={handleExportSummary} disabled={rows.length === 0}>
+                Download weekly summary (CSV)
+              </button>
             </div>
 
             <div className={queueStyles.table} style={{ overflowX: 'auto' }}>
@@ -208,9 +258,13 @@ export function TeamCompliancePage() {
                   {rows.length === 0 ? (
                     <tr><td colSpan={COLUMN_COUNT}><div className={queueStyles.empty}>No direct reports found.</div></td></tr>
                   ) : (
-                    rows.map((row) => (
-                      <TeamComplianceRow key={row.employeeCode} row={row} weekStart={weekStart} />
-                    ))
+                    visibleRows.length === 0 ? (
+                      <tr><td colSpan={COLUMN_COUNT}><div className={queueStyles.empty}>No team members match "{search.trim()}".</div></td></tr>
+                    ) : (
+                      visibleRows.map((row) => (
+                        <TeamComplianceRow key={row.employeeCode} row={row} weekStart={weekStart} />
+                      ))
+                    )
                   )}
                 </tbody>
               </table>
@@ -222,6 +276,7 @@ export function TeamCompliancePage() {
                 <span><i className={styles.sw} style={{ background: 'repeating-linear-gradient(45deg,#FBE9E7 0 4px,#F5D9D6 4px 8px)' }} /> Leave</span>
                 <span><i className={styles.sw} style={{ background: 'repeating-linear-gradient(45deg,#FBE9E7 0 4px,#FCF7F6 4px 8px)' }} /> Half-day leave</span>
                 <span><i className={styles.sw} style={{ background: 'var(--violetTint)', border: '1px solid var(--violetLine)' }} /> WFH</span>
+                <span><i className={styles.sw} style={{ background: 'var(--verdTint)', border: '1px solid var(--verdLine)' }} /> On Duty</span>
                 <span><i className={styles.sw} style={{ background: 'repeating-linear-gradient(45deg,#FCF2E1 0 4px,#F6E7CB 4px 8px)' }} /> Holiday</span>
               </div>
             </div>

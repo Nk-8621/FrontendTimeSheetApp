@@ -1,0 +1,65 @@
+.scroll {
+  /* Same height as the Approval trail's scroll box (260px + its 14px padding top and bottom). */
+  max-height: 288px;
+  overflow-y: auto;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.table th,
+.table td {
+  white-space: nowrap;   /* keep each week on one line */
+}
+.table th {
+  position: sticky;   /* header stays visible while the rows scroll */
+  top: 0;
+  background: var(--paper);
+  text-align: left;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--slate);
+  font-weight: 600;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--rule);
+}
+.table td {
+  padding: 7px 14px;
+  border-bottom: 1px solid var(--rule);
+  font-size: 12px;
+  vertical-align: middle;
+}
+.table tr:last-child td {
+  border-bottom: none;
+}
+/* The week open in My Timesheet. */
+.selected td {
+  background: var(--oxideTint);
+}
+.muted {
+  color: var(--slate);
+}
+.viewCol {
+  text-align: center;
+  width: 60px;
+}
+.viewBtn {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 6px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--r);
+  color: var(--oxide);
+  cursor: pointer;
+}
+.viewBtn:hover {
+  background: var(--oxideTint);
+  border-color: var(--oxideMid);
+}
+.empty {
+  padding: 14px;
+  font-size: 12px;
+  color: var(--slate);
+}

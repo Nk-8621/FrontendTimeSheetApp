@@ -1,4 +1,5 @@
 import { PageHeader } from '../components/layout/PageHeader';
+import { KekaSyncNotice, REQUESTS_UNDER_DEVELOPMENT } from '../components/requests/KekaSyncNotice';
 import { Card } from '../components/ui/Card';
 import { Banner } from '../components/timesheet/Banner';
 import { StatusPill } from '../components/ui/StatusPill';
@@ -12,15 +13,21 @@ import { dayMonth } from '../lib/dates';
 import controls from '../styles/controls.module.css';
 import styles from '../components/requests/RequestList.module.css';
 
+// UNDER DEVELOPMENT (Nov 2026): shows the KEKA notice instead of the page.
 export function RequestsPage() {
+  if (REQUESTS_UNDER_DEVELOPMENT) return <KekaSyncNotice title="Requests" />;
+  return <RequestsPageContent />;
+}
+
+function RequestsPageContent() {
   const { employeeCode } = useSession();
   const { openDrawer, closeDrawer, toast } = useUI();
-  const { data: requests, isLoading, isError } = useMyDayTypeRequests(employeeCode);
+  const { data: requests, isError } = useMyDayTypeRequests(employeeCode);
   const mutations = useDayTypeRequestMutations(employeeCode);
 
   function handleNewRequest() {
     openDrawer({
-      title: 'Request WFH or Leave',
+      title: 'New Request',
       body: (
         <NewRequestDrawer
           onCancel={closeDrawer}
@@ -37,25 +44,22 @@ export function RequestsPage() {
 
   return (
     <>
-      <PageHeader crumb="My Work" title="Requests">
-        <button className={`${controls.btn} ${controls.pri} ${controls.sm}`} onClick={handleNewRequest}>
-          + New request
-        </button>
-      </PageHeader>
+      <PageHeader title="Requests" />
 
       <div className="page-content">
-        <Banner>
-          Request WFH or Leave for a single day. It takes effect immediately — shown as Pending until your Level 1
-          manager approves or rejects it. A rejection reverts the day automatically.
-        </Banner>
-
-        {isLoading && <Banner>Loading your requests…</Banner>}
         {isError && <Banner kind="reject">Couldn't load your requests — check that the backend API is reachable.</Banner>}
 
-        {requests && (
-          <Card title="Your requests" noPad>
-            {requests.length === 0 ? (
-              <div className={styles.empty}>No requests yet — use "+ New request" above to ask for WFH or Leave.</div>
+        <Card
+          title="Your requests"
+          noPad
+          headerRight={
+            <button className={`${controls.btn} ${controls.pri} ${controls.sm}`} onClick={handleNewRequest}>
+              New Request
+            </button>
+          }
+        >
+          {requests && (requests.length === 0 ? (
+              <div className={styles.empty}>No requests yet — use "New Request" above to ask for WFH or Leave.</div>
             ) : (
               <table className={styles.table}>
                 <thead>
@@ -82,9 +86,8 @@ export function RequestsPage() {
                   ))}
                 </tbody>
               </table>
-            )}
-          </Card>
-        )}
+            ))}
+        </Card>
       </div>
     </>
   );

@@ -39,8 +39,6 @@ export function SubmitDrawer({
 
   return (
     <div>
-      {isLoading && <Banner>Checking this week for issues…</Banner>}
-
       {!isLoading && errors.length > 0 && (
         <Banner kind="reject">
           <div>
@@ -62,18 +60,13 @@ export function SubmitDrawer({
           </div>
         </Banner>
       )}
-      {!isLoading && errors.length === 0 && warnings.length === 0 && (
-        <Banner>
-          <b>Nothing to flag.</b> {fmt(totalHours)} h logged, all lines described.
-        </Banner>
-      )}
 
       <div className={controls.field} style={{ border: '1px solid var(--rule)', borderRadius: 'var(--rLg)', padding: '10px 12px' }}>
         <table style={{ width: '100%' }}>
           <tbody>
             <tr><td style={{ color: 'var(--slate)' }}>Total hours</td><td style={{ textAlign: 'right', fontWeight: 600 }}>{fmt(totalHours)} h</td></tr>
             <tr><td style={{ color: 'var(--slate)' }}>Billable</td><td style={{ textAlign: 'right', fontWeight: 600 }}>{fmt(billableHours)} h</td></tr>
-            <tr><td style={{ color: 'var(--slate)' }}>Partial Billable</td><td style={{ textAlign: 'right', fontWeight: 600 }}>{fmt(partialBillableHours)} h</td></tr>
+            <tr><td style={{ color: 'var(--slate)' }}>Partial billable</td><td style={{ textAlign: 'right', fontWeight: 600 }}>{fmt(partialBillableHours)} h</td></tr>
             <tr><td style={{ color: 'var(--slate)' }}>Non-billable</td><td style={{ textAlign: 'right', fontWeight: 600 }}>{fmt(nonBillable)} h</td></tr>
             <tr><td style={{ color: 'var(--slate)' }}>Task lines</td><td style={{ textAlign: 'right', fontWeight: 600 }}>{entryCount}</td></tr>
             <tr><td style={{ color: 'var(--slate)' }}>Level 1 approver</td><td style={{ textAlign: 'right', fontWeight: 600 }}>{leadName}</td></tr>

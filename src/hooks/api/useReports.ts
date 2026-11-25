@@ -11,9 +11,12 @@ export function useProjectHoursReport(weekStart: string) {
 
 /** The full Reports screen: all 5 rollup views computed once from the
  * filtered dataset (week range, department, approval status). */
-export function useReportsSummary(weekFrom: string, weekTo: string, departmentId: number | undefined, approvalStatus: ReportApprovalStatus) {
+// DATE RANGE (Nov 2026): fromDate/toDate are exact dates (were week starts).
+export function useReportsSummary(fromDate: string, toDate: string, departmentId: number | undefined, approvalStatus: ReportApprovalStatus) {
   return useQuery({
-    queryKey: ['reports-summary', weekFrom, weekTo, departmentId, approvalStatus],
-    queryFn: () => reportsApi.getSummary(weekFrom, weekTo, departmentId, approvalStatus),
+    queryKey: ['reports-summary', fromDate, toDate, departmentId, approvalStatus],
+    queryFn: () => reportsApi.getSummary(fromDate, toDate, departmentId, approvalStatus),
+    // Don't call the backend while To is before From.
+    enabled: Boolean(fromDate && toDate && toDate >= fromDate),
   });
 }

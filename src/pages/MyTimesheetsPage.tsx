@@ -9,13 +9,12 @@ import styles from '../components/approvals/ApprovalQueue.module.css';
 
 export function MyTimesheetsPage() {
   const { employeeCode } = useSession();
-  const { data: weeks, isLoading, isError } = useTimesheetHistory(employeeCode);
+  const { data: weeks, isError } = useTimesheetHistory(employeeCode);
 
   return (
     <>
-      <PageHeader crumb="My Work" title="My Timesheets" />
+      <PageHeader title="All Timesheets" />
       <div className="page-content">
-        {isLoading && <Banner>Loading your timesheet history…</Banner>}
         {isError && <Banner kind="reject">Couldn't load your history — check that the backend API is reachable.</Banner>}
 
         {weeks && (
@@ -26,8 +25,8 @@ export function MyTimesheetsPage() {
                 <th>Status</th>
                 <th style={{ textAlign: 'right' }}>Total</th>
                 <th style={{ textAlign: 'right' }}>Billable</th>
-                <th style={{ textAlign: 'right' }}>Partial Billable</th>
-                <th style={{ textAlign: 'right' }}>Submitted</th>
+                <th style={{ textAlign: 'right' }}>Partial billable</th>
+                <th style={{ textAlign: 'right' }}>Submitted On</th>
                 <th />
               </tr>
             </thead>

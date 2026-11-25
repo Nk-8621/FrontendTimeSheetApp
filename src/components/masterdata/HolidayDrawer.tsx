@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useUI } from '../ui/UIProvider';
 import type { HolidayDto, AccountDto } from '../../api/types';
 import controls from '../../styles/controls.module.css';
 import styles from '../timesheet/EntryDrawer.module.css';
@@ -6,7 +7,7 @@ import styles from '../timesheet/EntryDrawer.module.css';
 interface HolidayDrawerProps {
   existing?: HolidayDto;
   accounts: AccountDto[];
-  onSave: (data: { holidayId: number; holidayDate: string; name: string; location: string; accountId: number | null }) => void;
+  onSave: (data: { holidayId: number; holidayDate: string; name: string; location: string; accountId: number | null; clearAccountId: boolean }) => void;
   onDelete?: () => void;
   onCancel: () => void;
 }
@@ -23,7 +24,26 @@ export function HolidayDrawer({ existing, accounts, onSave, onDelete, onCancel }
       setError('Date, name, and location are all required.');
       return;
     }
-    onSave({ holidayId: existing?.holidayId ?? 0, holidayDate: date, name: name.trim(), location: location.trim(), accountId });
+    onSave({
+      holidayId: existing?.holidayId ?? 0, holidayDate: date, name: name.trim(), location: location.trim(), accountId,
+      // Only matters on edit: the backend treats a null accountId as "unchanged",
+      // so switching back to "All clients" has to be said explicitly.
+      clearAccountId: accountId === null,
+    });
+  }
+
+  const { confirm } = useUI();
+
+  async function handleDelete() {
+    if (!onDelete || !existing) return;
+    const ok = await confirm({
+      title: 'Remove Holiday',
+      message: `Remove the "${existing.name}" holiday? Anyone's timesheet for that week will treat the day as a normal working day again.`,
+      confirmLabel: 'Remove',
+      danger: true,
+    });
+    if (!ok) return;
+    onDelete();
   }
 
   return (
@@ -47,7 +67,7 @@ export function HolidayDrawer({ existing, accounts, onSave, onDelete, onCancel }
           value={accountId ?? ''}
           onChange={(e) => setAccountId(e.target.value === '' ? null : Number(e.target.value))}
         >
-          <option value="">All clients - company-wide holiday</option>
+          <option value="">All clients — company-wide holiday</option>
           {accounts.map((a) => (
             <option key={a.id} value={a.id}>{a.name}</option>
           ))}
@@ -64,7 +84,7 @@ export function HolidayDrawer({ existing, accounts, onSave, onDelete, onCancel }
         {existing && onDelete && (
           <>
             <div style={{ flex: 1 }} />
-            <button className={`${controls.btn} ${controls.dgr}`} onClick={onDelete}>Remove</button>
+            <button className={`${controls.btn} ${controls.dgr}`} onClick={handleDelete}>Remove</button>
           </>
         )}
       </div>

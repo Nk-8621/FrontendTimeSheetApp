@@ -4,28 +4,17 @@ import { NotificationCard } from '../components/notifications/NotificationCard';
 import { useNotifications } from '../hooks/api/useNotifications';
 
 export function NotificationsPage() {
-  const { data: notifications, isLoading, isError } = useNotifications();
-  const unreadCount = notifications?.filter((n) => !n.isBroadcast && !n.readAt).length ?? 0;
+  const { data: notifications, isError } = useNotifications();
 
   return (
     <>
-      <PageHeader crumb="Setup" title="Notifications" />
+      <PageHeader title="Notifications" />
       <div className="page-content">
-        {isLoading && <Banner>Loading notifications…</Banner>}
+        <Banner kind="warn"><b>Under development:</b> notifications aren't sent yet. This page will show them once the feature is ready.</Banner>
+
         {isError && <Banner kind="reject">Couldn't load notifications — check that the backend API is reachable.</Banner>}
 
-        {notifications && (
-          <>
-            {unreadCount > 0 && (
-              <Banner>{unreadCount} unread notification{unreadCount > 1 ? 's' : ''}.</Banner>
-            )}
-            {notifications.length === 0 ? (
-              <Banner>You're all caught up — nothing here right now.</Banner>
-            ) : (
-              notifications.map((n) => <NotificationCard key={n.id} notification={n} />)
-            )}
-          </>
-        )}
+        {notifications?.map((n) => <NotificationCard key={n.id} notification={n} />)}
       </div>
     </>
   );

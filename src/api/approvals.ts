@@ -11,11 +11,13 @@ export const approvalsApi = {
   recall: (employeeCode: string, weekStart: string) =>
     http.post<WeekRecordDto>(`/api/approvals/${employeeCode}/${weekStart}/recall`),
 
-  approveLevel1: (employeeCode: string, weekStart: string) =>
-    http.post<WeekRecordDto>(`/api/approvals/${employeeCode}/${weekStart}/approve-level1`),
+  // comment is optional (bulk approve sends none) - shown on the week's
+  // approval trail next to the "Level N approved" event.
+  approveLevel1: (employeeCode: string, weekStart: string, comment?: string | null) =>
+    http.post<WeekRecordDto>(`/api/approvals/${employeeCode}/${weekStart}/approve-level1`, comment ? { comment } : undefined),
 
-  approveLevel2: (employeeCode: string, weekStart: string) =>
-    http.post<WeekRecordDto>(`/api/approvals/${employeeCode}/${weekStart}/approve-level2`),
+  approveLevel2: (employeeCode: string, weekStart: string, comment?: string | null) =>
+    http.post<WeekRecordDto>(`/api/approvals/${employeeCode}/${weekStart}/approve-level2`, comment ? { comment } : undefined),
 
   reject: (employeeCode: string, weekStart: string, reason: string) =>
     http.post<WeekRecordDto>(`/api/approvals/${employeeCode}/${weekStart}/reject`, { reason }),
@@ -25,6 +27,10 @@ export const approvalsApi = {
 
   getQueue: (level2: boolean) =>
     http.get<ApprovalQueueItemDto[]>(`/api/approvals/queue?level2=${level2}`),
+
+  // Level 1 page, "Returned by Level 2" tab (view only).
+  getReturnedByLevel2: () =>
+    http.get<ApprovalQueueItemDto[]>('/api/approvals/returned'),
 
   getWeekDetail: (employeeCode: string, weekStart: string) =>
   http.get<ApprovalQueueItemDto>(`/api/approvals/${employeeCode}/${weekStart}/detail`),

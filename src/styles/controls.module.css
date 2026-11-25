@@ -44,8 +44,11 @@
   color: #fff;
   font-weight: 600;
 }
+/* Must set its own background - otherwise .btn:hover's near-white background
+   wins and the white "Approve" text disappears on hover. */
 .ok:hover:not(:disabled) {
-  filter: brightness(1.12);
+  background: #0A5E4E;
+  border-color: #0A5E4E;
 }
 
 .dgr {
@@ -66,6 +69,38 @@
 }
 .gh:hover {
   background: var(--oxideTint);
+}
+
+/* Text-link action (icon + label) for secondary actions in tight header rows. */
+.lnk {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--oxide);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.lnk:hover:not(:disabled) {
+  text-decoration: underline;
+}
+.lnk:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+/* A link button shown as not available yet - still clickable so it can explain why. */
+.lnkOff {
+  opacity: 0.5;
+}
+.lnk svg {
+  width: 13px;
+  height: 13px;
+  flex: none;
 }
 
 .sm {
@@ -116,7 +151,25 @@
   color: var(--clay);
 }
 .hint {
-  font-size: 10.5px;
+  font-size: 11.5px;
   color: var(--slate);
   margin-top: 3px;
+}
+
+/* Roomier fields inside the centred boxes (Add / Edit Task, New / Edit User
+   Story - see UIProvider "center" size). Right-hand drawers are unchanged. */
+:global(.center-box) .field {
+  margin-bottom: 22px;
+}
+:global(.center-box) .field label {
+  font-size: 12px;
+  margin-bottom: 7px;
+}
+:global(.center-box) .textInput,
+:global(.center-box) .select {
+  padding: 10px 12px;
+  font-size: 13.5px;
+}
+:global(.center-box) .hint {
+  font-size: 12px;
 }

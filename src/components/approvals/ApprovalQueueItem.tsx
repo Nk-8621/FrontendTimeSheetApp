@@ -8,9 +8,9 @@ import { ApproveDrawer } from './ApproveDrawer';
 import { RejectDrawer } from './RejectDrawer';
 import controls from '../../styles/controls.module.css';
 import styles from './ApprovalQueue.module.css';
+import { WeekDetailTable } from '../timesheet/WeekDetailTable';
+import { splitReturnReason } from '../../lib/returnReason';
 
-const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const fmtH = (n: number) => (n ? (Math.round(n * 100) / 100).toString() : '');
 
 function initialsOf(name: string) {
   const parts = name.trim().split(/\s+/);
@@ -20,9 +20,11 @@ function initialsOf(name: string) {
 interface ApprovalQueueItemProps {
   item: ApprovalQueueItemDto;
   level2: boolean;
+  /** "Returned by Level 2" tab: show the week without Approve / Return buttons. */
+  readOnly?: boolean;
 }
 
-export function ApprovalQueueItem({ item, level2 }: ApprovalQueueItemProps) {
+export function ApprovalQueueItem({ item, level2, readOnly = false }: ApprovalQueueItemProps) {
   const [open, setOpen] = useState(false);
   const mutations = useApprovalMutations(item.employeeCode, item.weekStartDate);
   const { openDrawer, closeDrawer, toast } = useUI();
@@ -36,12 +38,10 @@ export function ApprovalQueueItem({ item, level2 }: ApprovalQueueItemProps) {
       title: 'Approve timesheet',
       body: (
         <ApproveDrawer
-          flags={item.flags}
-          nextStepText={level2 ? 'On approval the week is locked. Later changes need an adjustment request.' : 'On approval this moves to Level 2.'}
           onCancel={closeDrawer}
-          onConfirm={() => {
+          onConfirm={(comment) => {
             const mutation = level2 ? mutations.approveLevel2 : mutations.approveLevel1;
-            mutation.mutate(undefined, {
+            mutation.mutate(comment || undefined, {
               onSuccess: () => { closeDrawer(); toast(`${item.fullName} approved at Level ${level2 ? 2 : 1}`, 'ok'); },
               onError: (err) => showError(err, 'Could not approve this week'),
             });
@@ -53,7 +53,7 @@ export function ApprovalQueueItem({ item, level2 }: ApprovalQueueItemProps) {
 
   function handleReject() {
     openDrawer({
-      title: 'Return for correction',
+      title: 'Return Timesheet',
       body: (
         <RejectDrawer
           employeeName={item.fullName}
@@ -69,15 +69,25 @@ export function ApprovalQueueItem({ item, level2 }: ApprovalQueueItemProps) {
     });
   }
 
+  const returned = splitReturnReason(item.returnReason);
   const isBusy = mutations.approveLevel1.isPending || mutations.approveLevel2.isPending || mutations.reject.isPending;
   const pctBillable = item.totalHours ? Math.round((item.billableHours / item.totalHours) * 100) : 0;
 
-  const dailyTotals = DAY_NAMES.map((_, i) => item.lines.reduce((sum, l) => sum + l.hoursByDay[i], 0));
-
   return (
-    <div className={`${styles.qRow} ${item.flags.length ? styles.flag : styles.clean} ${open ? styles.open : ''}`}>
+    <div className={`${styles.qRow} ${readOnly ? styles.returned : item.flags.length ? styles.flag : styles.clean} ${open ? styles.open : ''}`}>
       <div className={styles.qHd} onClick={() => setOpen((o) => !o)}>
-        <span className={styles.caret}>▶</span>
+        {/* A real button so keyboard/screen-reader users can expand the row too.
+            No onClick of its own: its click (mouse or Enter/Space) bubbles up
+            to the row's handler above, so the row toggles exactly once. */}
+        <button
+          type="button"
+          className={styles.caret}
+          style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'inherit', font: 'inherit' }}
+          aria-expanded={open}
+          aria-label={`${open ? 'Hide' : 'Show'} hours for ${item.fullName}, week of ${dayMonth(item.weekStartDate)}`}
+        >
+          ▶
+        </button>
         <div className={styles.avatar}>{initialsOf(item.fullName)}</div>
         <div style={{ minWidth: 170 }}>
           <div className={styles.name}>{item.fullName}</div>
@@ -100,13 +110,27 @@ export function ApprovalQueueItem({ item, level2 }: ApprovalQueueItemProps) {
           <div className={`${styles.mt} num`}>{pctBillable}% billable</div>
         </div>
         <div style={{ flex: 1 }} />
-        <button className={`${controls.btn} ${controls.ok} ${controls.sm}`} disabled={isBusy} onClick={(e) => { e.stopPropagation(); handleApprove(); }}>
-          Approve
-        </button>
-        <button className={`${controls.btn} ${controls.dgr} ${controls.sm}`} disabled={isBusy} onClick={(e) => { e.stopPropagation(); handleReject(); }} style={{ marginLeft: 6 }}>
-          Return
-        </button>
+        {readOnly ? (
+          <span className={styles.returnedTag}>Waiting for employee</span>
+        ) : (
+          <>
+            <button className={`${controls.btn} ${controls.ok} ${controls.sm}`} disabled={isBusy} onClick={(e) => { e.stopPropagation(); handleApprove(); }}>
+              Approve
+            </button>
+            <button className={`${controls.btn} ${controls.dgr} ${controls.sm}`} disabled={isBusy} onClick={(e) => { e.stopPropagation(); handleReject(); }} style={{ marginLeft: 6 }}>
+              Return
+            </button>
+          </>
+        )}
       </div>
+
+      {readOnly && (
+        <div className={styles.returnedRow}>
+          <div><b>Returned by {item.returnedByName ?? 'Level 2'}</b></div>
+          <div><b>Reason:</b> {returned.reason || 'No reason given'}</div>
+          {returned.comments && <div><b>Comments:</b> {returned.comments}</div>}
+        </div>
+      )}
 
       {item.flags.length > 0 && (
         <div className={styles.flagRow}>
@@ -116,68 +140,9 @@ export function ApprovalQueueItem({ item, level2 }: ApprovalQueueItemProps) {
       )}
 
       <div className={styles.qBd}>
-        <table className={styles.detailTable}>
-          <thead>
-            <tr>
-              <th>Department › Customer › Project</th>
-              <th>Module › Task</th>
-              <th>Type</th>
-              {DAY_NAMES.map((d, i) => (
-                <th key={d} style={{ width: 52 }}>
-                  {d}
-                  <div style={{ fontWeight: 400, fontSize: 9, color: 'var(--slate2)' }}>{item.dayTypes[i]?.dayType.slice(0, 3)}</div>
-                </th>
-              ))}
-              <th style={{ textAlign: 'right' }}>Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {item.lines.map((line, idx) => {
-              const lineTotal = line.hoursByDay.reduce((a, b) => a + b, 0);
-              return (
-                <tr key={idx}>
-                  <td>
-                    <div style={{ fontSize: 10.5, color: 'var(--slate)' }}>{line.departmentCode} › {line.accountName}</div>
-                    <div style={{ fontWeight: 600, fontSize: 11.5 }}>{line.projectName}</div>
-                  </td>
-                  <td>
-                    <div style={{ fontSize: 10.5, color: 'var(--slate)' }}>{line.moduleName}</div>
-                    <div style={{ fontSize: 11.5, fontWeight: 500 }}>{line.taskName}</div>
-                    <div style={{ fontSize: 10.5, color: line.note ? 'var(--slate)' : 'var(--clay)', marginTop: 2 }}>
-                      {line.note || 'No description'}
-                    </div>
-                  </td>
-                  <td><span className={`${controls.btn} ${controls.sm}`} style={{ pointerEvents: 'none', padding: '2px 8px', fontSize: 10.5 }}>{line.classification === 'Billable' ? 'Bill' : line.classification === 'PartialBillable' ? 'Partial' : 'Non-b'}</span></td>
-                  {line.hoursByDay.map((v, i) => {
-                    const dayCap = item.dayTypes[i]?.capacityHours ?? 0;
-                    const mismatch = dayCap === 0 && v > 0;
-                    return (
-                      <td key={i} className={mismatch ? styles.capMismatch : ''} style={{ textAlign: 'center' }}>
-                        {fmtH(v) || <span style={{ color: '#D3DAE2' }}>·</span>}
-                      </td>
-                    );
-                  })}
-                  <td style={{ textAlign: 'right', fontWeight: 600 }}>{fmtH(lineTotal)}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-          <tfoot>
-            <tr className={styles.detailFoot}>
-              <td colSpan={3}>Daily total / capacity</td>
-              {dailyTotals.map((t, i) => {
-                const cap = item.dayTypes[i]?.capacityHours ?? 0;
-                return (
-                  <td key={i} style={{ textAlign: 'center', color: t < cap ? 'var(--amber)' : undefined }}>
-                    {fmtH(t) || '—'}
-                    <div style={{ fontSize: 9, fontWeight: 400, color: 'var(--slate2)' }}>/{cap}</div>
-                  </td>
-                );
-              })}
-              <td style={{ textAlign: 'right' }}>{item.totalHours.toFixed(1)}</td>
-            </tr>
-          </tfoot>
-        </table>
+        {/* Same table Team Compliance uses (also shows the billing category) - one
+            implementation instead of a copy that drifts. */}
+        <WeekDetailTable item={item} />
       </div>
     </div>
   );

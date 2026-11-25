@@ -1,6 +1,6 @@
 import { getAuthHeaders } from './authBridge';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5160';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '';
 
 export class ApiError extends Error {
   status: number;
@@ -46,5 +46,8 @@ export const http = {
     request<T>(path, { method: 'POST', body: body !== undefined ? JSON.stringify(body) : undefined }),
   put: <T>(path: string, body?: unknown) =>
     request<T>(path, { method: 'PUT', body: body !== undefined ? JSON.stringify(body) : undefined }),
-  delete: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
+  // body is optional — e.g. DELETE /project-types/{id} takes an optional
+  // ReplacementProjectTypeId in its body; existing no-body deletes still work.
+  delete: <T>(path: string, body?: unknown) =>
+    request<T>(path, { method: 'DELETE', body: body !== undefined ? JSON.stringify(body) : undefined }),
 };

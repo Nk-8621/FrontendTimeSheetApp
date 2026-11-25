@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import type { DepartmentDto, EmployeeDto } from '../../api/types';
+import type { DepartmentDto, EmployeeDto, EmployeeProjectAllocationInput, ProjectDto } from '../../api/types';
+import { ProjectAllocationList, allocationIsComplete } from './ProjectAllocationList';
 import controls from '../../styles/controls.module.css';
 import styles from '../timesheet/EntryDrawer.module.css';
 
 interface EmployeeDrawerProps {
   departments: DepartmentDto[];
   employees: EmployeeDto[]; // populates the manager picker
+  projects: ProjectDto[]; // populates the initial-allocation checklist
   onSave: (data: {
     fullName: string;
     email: string;
@@ -14,11 +16,12 @@ interface EmployeeDrawerProps {
     departmentId: number;
     isExternal: boolean;
     employeeCode: string | null;
+    allocations: EmployeeProjectAllocationInput[];
   }) => void;
   onCancel: () => void;
 }
 
-export function EmployeeDrawer({ departments, employees, onSave, onCancel }: EmployeeDrawerProps) {
+export function EmployeeDrawer({ departments, employees, projects, onSave, onCancel }: EmployeeDrawerProps) {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [designation, setDesignation] = useState('');
@@ -26,6 +29,7 @@ export function EmployeeDrawer({ departments, employees, onSave, onCancel }: Emp
   const [departmentId, setDepartmentId] = useState<number | ''>('');
   const [isExternal, setIsExternal] = useState(false);
   const [employeeCode, setEmployeeCode] = useState('');
+  const [allocations, setAllocations] = useState<EmployeeProjectAllocationInput[]>([]);
   const [error, setError] = useState('');
 
   function handleSave() {
@@ -37,6 +41,10 @@ export function EmployeeDrawer({ departments, employees, onSave, onCancel }: Emp
       setError('Employee code is required for internal employees.');
       return;
     }
+    if (allocations.some((a) => !allocationIsComplete(a))) {
+      setError('Pick a billing category for every allocated project.');
+      return;
+    }
     onSave({
       fullName: fullName.trim(),
       email: email.trim(),
@@ -45,6 +53,7 @@ export function EmployeeDrawer({ departments, employees, onSave, onCancel }: Emp
       departmentId: Number(departmentId),
       isExternal,
       employeeCode: isExternal ? null : employeeCode.trim(),
+      allocations,
     });
   }
 
@@ -72,7 +81,7 @@ export function EmployeeDrawer({ departments, employees, onSave, onCancel }: Emp
         </div>
         <div className={controls.hint}>
           {isExternal
-            ? 'A login code (EXT####) is generated automatically - they log in with email instead.'
+            ? 'A login code (EXT####) is generated automatically — they log in with email instead.'
             : 'Enter the real employee code assigned by HR.'}
         </div>
       </div>
@@ -124,6 +133,15 @@ export function EmployeeDrawer({ departments, employees, onSave, onCancel }: Emp
           ))}
         </select>
         <div className={controls.hint}>This determines who approves their timesheets at Level 1.</div>
+      </div>
+
+      <div className={controls.field}>
+        <label>Allocate to projects</label>
+        <ProjectAllocationList projects={projects} value={allocations} onChange={setAllocations} maxHeight={220} />
+        <div className={controls.hint}>
+          Optional — ticking a project also requires its billing classification and category. More projects can
+          always be allocated later from the Resources tab.
+        </div>
       </div>
 
       <div className={styles.footer}>

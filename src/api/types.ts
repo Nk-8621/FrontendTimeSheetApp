@@ -23,6 +23,8 @@ export interface AccountDto {
   departmentId: number;
   name: string;
   accountType: 'Customer' | 'Internal';
+  /** CLIENT WEEK OFF (Nov 2026): the client's default week off, e.g. ['Sat', 'Sun']. */
+  weekOffDays: string[];
 }
 
 export interface ProjectDto {
@@ -30,62 +32,176 @@ export interface ProjectDto {
   accountId: number;
   code: string;
   name: string;
-  defaultBillable: boolean;
+  defaultBillable: TimeEntryClassification;
   isActive: boolean;
+  projectTypeId: number | null;
+  projectTypeName: string | null;
+  /** Free-text technology tag (e.g. "Digital IOT", "Analytics") - no fixed list. */
+  projectTech: string | null;
+  billingType: string | null;
+  customerPO: string | null;
+  notes: string | null;
+  /** True for a project auto-created via the "Others" quick-add flow -
+   * missing a real Account/Code/BillingType until admin fills them in. */
+  needsReview: boolean;
+  projectLeadEmployeeId: number | null;
+  projectLeadEmployeeName: string | null;
+  projectManagerEmployeeId: number | null;
+  projectManagerEmployeeName: string | null;
+  deliveryHeadEmployeeId: number | null;
+  deliveryHeadEmployeeName: string | null;
 }
 
-export interface TaskCategoryDto {
+export interface ModuleDto {
+  id: number;
+  projectId: number;
+  name: string;
+  projectTypeId: number | null;
+  projectTypeCode: string | null;
+}
+
+export interface WorkTaskDto {
+  id: number;
+  moduleId: number;
+  name: string;
+}
+
+// ---- Project Type + its Level-1/Level-2 template ----
+
+export interface ProjectTypeDto {
   id: number;
   code: string;
   name: string;
 }
 
-// export interface HolidayDto {
-//   id: number;
-//   date: string;
-//   name: string;
-//   location: string;
-// }
+export interface ProjectTypeTaskTemplateDto {
+  id: number;
+  name: string;
+  sortOrder: number;
+}
+
+export interface ProjectTypeModuleTemplateDto {
+  id: number;
+  name: string;
+  sortOrder: number;
+  tasks: ProjectTypeTaskTemplateDto[];
+}
+
+/** Full tree for the admin Project Type template-management screen. */
+export interface ProjectTypeWithTemplateDto {
+  id: number;
+  code: string;
+  name: string;
+  modules: ProjectTypeModuleTemplateDto[];
+}
+
+export interface CreateProjectTypeRequest {
+  code: string;
+  name: string;
+}
+export interface UpdateProjectTypeRequest {
+  code?: string;
+  name?: string;
+}
+/** Deleting a Project Type that any Project/Module still uses requires
+ * picking a replacement up front - every affected Project/Module gets
+ * reassigned to replacementProjectTypeId before the delete proceeds. */
+export interface DeleteProjectTypeRequest {
+  replacementProjectTypeId?: number | null;
+}
+
+export interface CreateProjectTypeModuleTemplateRequest {
+  projectTypeId: number;
+  name: string;
+  sortOrder: number;
+}
+export interface UpdateProjectTypeModuleTemplateRequest {
+  name?: string;
+  sortOrder?: number;
+}
+export interface CreateProjectTypeTaskTemplateRequest {
+  projectTypeModuleTemplateId: number;
+  name: string;
+  sortOrder: number;
+}
+export interface UpdateProjectTypeTaskTemplateRequest {
+  name?: string;
+  sortOrder?: number;
+}
 
 // ---- Admin-only create/update requests (Master Data screen) ----
 
+/** Create and edit both send every field. parentDepartmentId null = top-level. */
+export interface SaveDepartmentRequest {
+  code: string;
+  name: string;
+  parentDepartmentId: number | null;
+}
 export interface CreateAccountRequest {
   departmentId: number;
   name: string;
   accountType: 'Customer' | 'Internal';
+  weekOffDays?: string[]; // left out = Sat, Sun
 }
 export interface UpdateAccountRequest {
   departmentId?: number;
   name?: string;
   accountType?: 'Customer' | 'Internal';
+  weekOffDays?: string[]; // left out = unchanged
 }
 
 export interface CreateProjectRequest {
   accountId: number;
   code: string;
   name: string;
-  defaultBillable: boolean;
-  /** If supplied, auto-creates a starter "General" module pre-populated with
-   * that category's task list (matching the original wireframe). Pass
-   * undefined/null to create an empty project with no modules yet. */
-  initialModuleTaskCategoryCode?: string | null;
+  defaultBillable: TimeEntryClassification;
+  /** If supplied, auto-creates the project's starter Modules/Tasks from that
+   * Project Type's Level-1/Level-2 template. Pass null to create an empty
+   * project with no modules yet. */
+  projectTypeId?: number | null;
+  projectTech?: string | null;
+  billingType?: string | null;
+  customerPO?: string | null;
+  notes?: string | null;
+  projectLeadEmployeeId?: number | null;
+  projectManagerEmployeeId?: number | null;
+  deliveryHeadEmployeeId?: number | null;
 }
+/** projectTypeId is retroactive-classification-only — the backend applies
+ * it ONLY when the project currently has no projectTypeId (one created
+ * before this feature, or without one). It does not affect a project that
+ * already has a projectTypeId - that can no longer be changed. */
 export interface UpdateProjectRequest {
   accountId?: number;
   code?: string;
   name?: string;
-  defaultBillable?: boolean;
+  defaultBillable?: TimeEntryClassification;
   isActive?: boolean;
+  projectTypeId?: number | null;
+  projectTech?: string | null;
+  billingType?: string | null;
+  customerPO?: string | null;
+  notes?: string | null;
+  needsReview?: boolean;
+  projectLeadEmployeeId?: number | null;
+  projectManagerEmployeeId?: number | null;
+  deliveryHeadEmployeeId?: number | null;
 }
 
 export interface CreateModuleRequest {
   projectId: number;
   name: string;
-  taskCategoryCode: string;
+  projectTypeId?: number | null;
 }
 export interface UpdateModuleRequest {
   name?: string;
-  taskCategoryCode?: string;
+  projectTypeId?: number | null;
+}
+
+/** How many timesheet lines use a Module or Task Type. 0 = it can be deleted;
+ * above 0, renaming it also changes the name on those existing lines. */
+export interface MasterDataUsageDto {
+  timeEntryCount: number;
 }
 
 export interface CreateTaskRequest {
@@ -96,29 +212,88 @@ export interface UpdateTaskRequest {
   name?: string;
 }
 
+/** Self-service "Others" quick-add (Add Task Line, employee-reachable). The
+ * created Project lands in the "Pending Classification" internal account,
+ * flagged needsReview, for an admin to properly classify later. */
+export interface QuickAddProjectRequest {
+  name: string;
+}
+/** Not part of any Project Type's template - projectTypeId stays null on
+ * the created Module. */
+export interface QuickAddModuleRequest {
+  projectId: number;
+  name: string;
+}
+export interface QuickAddTaskRequest {
+  moduleId: number;
+  name: string;
+}
+
 export interface CreateHolidayRequest {
   holidayDate: string;
   name: string;
   location: string;
+  /** Null/omitted = company-wide holiday. */
+  accountId?: number | null;
 }
 export interface UpdateHolidayRequest {
-  id : number;
+  id: number;
   holidayDate: string;
   name?: string;
   location?: string;
+  /** Null/omitted leaves the client scope unchanged on the backend - send
+   * clearAccountId: true to turn a client-specific holiday company-wide. */
+  accountId?: number | null;
+  clearAccountId?: boolean;
 }
 
-export interface ModuleDto {
-  id: number;
+export interface HolidayDto {
+  holidayId: number;
+  date: string;
+  name: string;
+  location: string;
+  accountId: number | null;
+}
+
+// ---- Project-wise resource allocation (admin reporting) ----
+
+export interface ProjectResourceAllocationDto {
   projectId: number;
-  name: string;
-  taskCategoryCode: string;
+  projectCode: string;
+  projectName: string;
+  resourceCount: number;
+}
+export interface AllocatedEmployeeDto {
+  employeeId: number;
+  employeeCode: string;
+  fullName: string;
+  departmentName: string;
 }
 
-export interface WorkTaskDto {
-  id: number;
-  moduleId: number;
-  name: string;
+/** One row in a bulk project-allocation request — the admin picks the
+ * project AND, mandatorily, its Classification + BillingCategory together
+ * (see BillingClassificationRules on the backend). The employee no longer
+ * picks these per timesheet line — TimesheetService derives them from
+ * whichever allocation matches the line's project. */
+export interface EmployeeProjectAllocationInput {
+  projectId: number;
+  classification: TimeEntryClassification;
+  billingCategory: TimeEntryBillingCategory | null;
+}
+
+/** One of an employee's current project allocations, with the admin-set
+ * Classification/BillingCategory and enough project detail to display it
+ * without a second round trip. */
+export interface EmployeeProjectAllocationDto {
+  projectId: number;
+  projectCode: string;
+  projectName: string;
+  classification: TimeEntryClassification;
+  billingCategory: TimeEntryBillingCategory | null;
+}
+
+export interface SetEmployeeProjectAllocationsRequest {
+  allocations: EmployeeProjectAllocationInput[];
 }
 
 export interface EmployeeDto {
@@ -133,6 +308,18 @@ export interface EmployeeDto {
   managerEmployeeId: number | null;
   managerName: string | null;
   isActive: boolean;
+  primaryAccountId: number | null;
+  email: string | null;
+}
+
+/** Admin edit of an existing employee (Resources tab › Edit). All fields are
+ * sent every time. Employee code and Internal/External can't be changed. */
+export interface UpdateEmployeeRequest {
+  fullName: string;
+  email: string;
+  designation: string;
+  departmentId: number;
+  managerEmployeeCode: string;
 }
 
 /** Monday..Sunday, matching the backend's HoursByDay array order. */
@@ -152,6 +339,12 @@ export interface TimeEntryDto {
   billingCategory: TimeEntryBillingCategory | null;
   note: string | null;
   hoursByDay: WeekHours;
+  /** Set when this line is a task under a user story - `note` is then the task name. */
+  userStoryId: number | null;
+  userStoryName: string | null;
+  /** The story's dates (YYYY-MM-DD) - days outside them are locked for this line. */
+  userStoryStartDate: string | null;
+  userStoryEndDate: string | null;
 }
 
 export interface CreateTimeEntryRequest {
@@ -172,14 +365,56 @@ export interface UpdateTimeEntryRequest {
   billingCategory?: string | null;
   note?: string | null;
   hoursByDay?: WeekHours;
+  /** Moves a story task to another of the employee's user stories. */
+  userStoryId?: number;
 }
 
-export type ApiDayType = 'W' | 'WFH' | 'L' | 'LH' | 'H' | 'O';
+export interface UserStoryDto {
+  id: number;
+  name: string;
+  projectId: number;
+  projectName: string;
+  /** First and last day the story runs (YYYY-MM-DD). */
+  startDate: string;
+  endDate: string;
+  isActive: boolean;
+  createdAt: string;
+  /** Tasks logged under the story in any week. The story can be deleted only when this is 0. */
+  taskCount: number;
+}
+
+export interface CreateUserStoryRequest {
+  name: string;
+  /** null = no project (only for employees with no allocated projects) - the
+   * story then goes to their department's "Internal Work" project. */
+  projectId: number | null;
+  startDate: string;
+  endDate: string;
+}
+
+/** Edit a story's name and dates - the project can't change. */
+export interface UpdateUserStoryRequest {
+  name: string;
+  startDate: string;
+  endDate: string;
+}
+
+export interface CreateStoryTaskRequest {
+  userStoryId: number;
+  taskName: string;
+  hoursByDay: WeekHours;
+}
+
+export type ApiDayType = 'W' | 'WFH' | 'L' | 'LH' | 'H' | 'O' | 'OD';
 
 export interface DayTypeDto {
   date: string;
   dayType: ApiDayType;
   capacityHours: number;
+  /** Only set when dayType is 'LH' - which half-day leave request drove it. */
+  requestType?: DayTypeRequestType | null;
+  /** Day status (Nov 2026): true when the employee can switch this day between Working / Leave / WFH. */
+  canChange?: boolean;
 }
 
 export type WeekStatusDto = 'Draft' | 'PendingL1' | 'PendingL2' | 'Approved' | 'Rejected';
@@ -201,7 +436,7 @@ export interface WeekRecordDto {
   trail: ApprovalEventDto[];
 }
 
-export type DayTypeRequestType = 'WFH' | 'LeaveFirstHalf' | 'LeaveSecondHalf' | 'LeaveFull';
+export type DayTypeRequestType = 'WFH' | 'LeaveFirstHalf' | 'LeaveSecondHalf' | 'LeaveFull' | 'OnDuty' | 'CompOffFirstHalf' | 'CompOffSecondHalf' | 'CompOffFull' | 'UnpaidFirstHalf' | 'UnpaidSecondHalf' | 'UnpaidFull';
 export type DayTypeRequestStatus = 'Pending' | 'Approved' | 'Rejected';
 
 export interface DayTypeRequestDto {
@@ -310,6 +545,9 @@ export interface ApprovalQueueItemDto {
   flags: string[];
   lines: ApprovalQueueLineDto[];
   dayTypes: DayTypeDto[];
+  /** Only set in the "Returned by Level 2" list: who returned the week and why. */
+  returnedByName?: string | null;
+  returnReason?: string | null;
 }
 
 /** One row in any of the Reports screen's five rollup tabs. */
@@ -321,6 +559,8 @@ export interface ReportRollupRowDto {
   partialBillableHours: number;
   nonBillableHours: number;
   resourceCount: number;
+  /** The employees behind this row (Department / Customer / Project tabs). */
+  resources?: ReportRollupRowDto[] | null;
 }
 
 export type ReportApprovalStatus = 'all' | 'sub' | 'ok';
@@ -369,10 +609,67 @@ export interface AccessProfileDto {
   navKeys: string[];
 }
 
-export interface HolidayDto {
-  holidayId: number;
-  date: string;
-  name: string;
-  location: string;
-  accountId: number | null;
+// ---- Week Offs (Nov 2026): Master Data -> Week Offs ----
+
+/** Short day names used for week offs, Monday first. */
+export const WEEK_DAY_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
+
+/** An employee assigned to a client's week offs. */
+export interface EmployeeWeekOffDto {
+  id: number;
+  employeeCode: string;
+  employeeName: string;
+  accountId: number;
+  effectiveFrom: string;
+  /** null = no end date */
+  effectiveTo: string | null;
+  createdByName: string | null;
+}
+
+/** One row of the Week Offs list: a client's week-off days for a period,
+ * with the employees assigned to that client during it. */
+export interface ClientWeekOffDto {
+  id: number;
+  accountId: number;
+  clientName: string;
+  /** e.g. ['Fri', 'Sat'] */
+  weekOffDays: string[];
+  effectiveFrom: string;
+  effectiveTo: string | null;
+  employees: EmployeeWeekOffDto[];
+}
+
+export interface SaveClientWeekOffRequest {
+  accountId: number;
+  weekOffDays: string[];
+  effectiveFrom: string;
+  effectiveTo: string | null;
+}
+
+export interface AssignEmployeesRequest {
+  accountId: number;
+  employeeCodes: string[];
+  effectiveFrom: string;
+  effectiveTo: string | null;
+}
+
+export interface UpdateEmployeeWeekOffRequest {
+  effectiveFrom: string;
+  effectiveTo: string | null;
+}
+
+export interface WeekOffOptionDto {
+  value: string;
+  label: string;
+}
+
+export interface WeekOffOptionsDto {
+  employees: WeekOffOptionDto[];
+  clients: WeekOffOptionDto[];
+}
+
+/** Excel upload result - nothing was saved when errors is not empty. */
+export interface WeekOffImportResultDto {
+  imported: number;
+  errors: string[];
 }

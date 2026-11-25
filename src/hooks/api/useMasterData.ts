@@ -1,9 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { masterDataApi } from '../../api/masterData';
 import type {
-  CreateAccountRequest, UpdateAccountRequest, CreateProjectRequest, UpdateProjectRequest,
+  SaveDepartmentRequest, CreateAccountRequest, UpdateAccountRequest, CreateProjectRequest, UpdateProjectRequest,
   CreateModuleRequest, UpdateModuleRequest, CreateTaskRequest, UpdateTaskRequest,
   CreateHolidayRequest, UpdateHolidayRequest,
+  CreateProjectTypeRequest, UpdateProjectTypeRequest, DeleteProjectTypeRequest,
+  CreateProjectTypeModuleTemplateRequest, UpdateProjectTypeModuleTemplateRequest,
+  CreateProjectTypeTaskTemplateRequest, UpdateProjectTypeTaskTemplateRequest,
+  QuickAddProjectRequest, QuickAddModuleRequest, QuickAddTaskRequest,
 } from '../../api/types';
 
 // Reference data changes rarely — cached for 5 minutes so switching screens
@@ -46,8 +50,53 @@ export function useHolidays() {
   return useQuery({ queryKey: ['holidays'], queryFn: masterDataApi.getHolidays, staleTime: STALE_TIME_MS });
 }
 
-export function useTaskCategories() {
-  return useQuery({ queryKey: ['task-categories'], queryFn: masterDataApi.getTaskCategories, staleTime: STALE_TIME_MS });
+/** Project Types (Level-0) — the plain Code/Name list every dropdown uses. */
+export function useProjectTypes() {
+  return useQuery({ queryKey: ['project-types'], queryFn: masterDataApi.getProjectTypes, staleTime: STALE_TIME_MS });
+}
+
+/** One Project Type's full Level-1/Level-2 template tree, fetched by itself.
+ * Kept for parity/future use - the template-management screen currently
+ * reads from useProjectTypesWithTemplates() instead (see below) so it stays
+ * in sync across every Project Type at once. */
+export function useProjectTypeWithTemplate(projectTypeId: number | undefined) {
+  return useQuery({
+    queryKey: ['project-type', projectTypeId, 'template'],
+    queryFn: () => masterDataApi.getProjectTypeWithTemplate(projectTypeId!),
+    enabled: Boolean(projectTypeId),
+  });
+}
+
+/** Admin-only — the full Level-1/Level-2 template tree, for the Project Type
+ * management screen. Kept as a separate query from useProjectTypes() (the
+ * plain Code/Name list every dropdown uses) since only one screen needs the
+ * full tree and it's a heavier fetch. */
+export function useProjectTypesWithTemplates() {
+  return useQuery({
+    queryKey: ['project-types', 'with-templates'],
+    queryFn: masterDataApi.getProjectTypesWithTemplates,
+    staleTime: STALE_TIME_MS,
+  });
+}
+
+/** Every project's current resource count — backs the admin "Resource
+ * Allocation" tab. */
+export function useProjectResourceAllocations() {
+  return useQuery({
+    queryKey: ['projects', 'resource-allocations'],
+    queryFn: masterDataApi.getProjectResourceAllocations,
+    staleTime: 60 * 1000,
+  });
+}
+
+/** Which employees are allocated to one project — backs that tab's
+ * drill-down row. */
+export function useAllocatedEmployees(projectId: number | undefined) {
+  return useQuery({
+    queryKey: ['project', projectId, 'allocated-employees'],
+    queryFn: () => masterDataApi.getAllocatedEmployees(projectId!),
+    enabled: Boolean(projectId),
+  });
 }
 
 /** All Master Data admin mutations, bundled together — each invalidates
@@ -55,6 +104,15 @@ export function useTaskCategories() {
 export function useMasterDataMutations() {
   const queryClient = useQueryClient();
   const invalidate = (...keys: string[]) => keys.forEach((k) => queryClient.invalidateQueries({ queryKey: [k] }));
+
+  const createDepartment = useMutation({
+    mutationFn: (body: SaveDepartmentRequest) => masterDataApi.createDepartment(body),
+    onSuccess: () => invalidate('departments'),
+  });
+  const updateDepartment = useMutation({
+    mutationFn: ({ id, body }: { id: number; body: SaveDepartmentRequest }) => masterDataApi.updateDepartment(id, body),
+    onSuccess: () => invalidate('departments'),
+  });
 
   const createAccount = useMutation({
     mutationFn: (body: CreateAccountRequest) => masterDataApi.createAccount(body),
@@ -71,7 +129,13 @@ export function useMasterDataMutations() {
   });
   const updateProject = useMutation({
     mutationFn: ({ id, body }: { id: number; body: UpdateProjectRequest }) => masterDataApi.updateProject(id, body),
-    onSuccess: () => invalidate('projects'),
+    // A retroactive Project Type classification can populate Modules/Tasks
+    // too, so refresh those alongside the Project itself.
+    onSuccess: () => invalidate('projects', 'modules', 'tasks'),
+  });
+  const syncProjectModuleTemplate = useMutation({
+    mutationFn: (id: number) => masterDataApi.syncProjectModuleTemplate(id),
+    onSuccess: () => invalidate('projects', 'modules', 'tasks'),
   });
 
   const createModule = useMutation({
@@ -92,6 +156,16 @@ export function useMasterDataMutations() {
     onSuccess: () => invalidate('tasks'),
   });
 
+  // Deleting a module also deletes its tasks on the server, so both refresh.
+  const deleteModule = useMutation({
+    mutationFn: (id: number) => masterDataApi.deleteModule(id),
+    onSuccess: () => invalidate('modules', 'tasks'),
+  });
+  const deleteTask = useMutation({
+    mutationFn: (id: number) => masterDataApi.deleteTask(id),
+    onSuccess: () => invalidate('tasks'),
+  });
+
   const createHoliday = useMutation({
     mutationFn: (body: CreateHolidayRequest) => masterDataApi.createHoliday(body),
     onSuccess: () => invalidate('holidays'),
@@ -105,11 +179,96 @@ export function useMasterDataMutations() {
     onSuccess: () => invalidate('holidays'),
   });
 
+  // REMOVE (Nov 2026)
+  const deleteDepartment = useMutation({
+    mutationFn: (id: number) => masterDataApi.deleteDepartment(id),
+    onSuccess: () => invalidate('departments'),
+  });
+  const deleteAccount = useMutation({
+    mutationFn: (id: number) => masterDataApi.deleteAccount(id),
+    onSuccess: () => invalidate('accounts'),
+  });
+  const deleteProject = useMutation({
+    mutationFn: (id: number) => masterDataApi.deleteProject(id),
+    onSuccess: () => invalidate('projects', 'modules', 'tasks'),
+  });
+
+  // ---- Project Type template management ----
+  const createProjectType = useMutation({
+    mutationFn: (body: CreateProjectTypeRequest) => masterDataApi.createProjectType(body),
+    onSuccess: () => invalidate('project-types'),
+  });
+  const updateProjectType = useMutation({
+    mutationFn: ({ id, body }: { id: number; body: UpdateProjectTypeRequest }) => masterDataApi.updateProjectType(id, body),
+    onSuccess: () => invalidate('project-types'),
+  });
+  const deleteProjectType = useMutation({
+    mutationFn: ({ id, body }: { id: number; body: DeleteProjectTypeRequest }) => masterDataApi.deleteProjectType(id, body),
+    // Reassigning affected Projects/Modules to a replacement type changes
+    // their ProjectTypeId too, so refetch those alongside the types list.
+    onSuccess: () => invalidate('project-types', 'projects', 'modules'),
+  });
+
+  const createModuleTemplate = useMutation({
+    mutationFn: (body: CreateProjectTypeModuleTemplateRequest) => masterDataApi.createModuleTemplate(body),
+    onSuccess: () => invalidate('project-types'),
+  });
+  const updateModuleTemplate = useMutation({
+    mutationFn: ({ id, body }: { id: number; body: UpdateProjectTypeModuleTemplateRequest }) => masterDataApi.updateModuleTemplate(id, body),
+    onSuccess: () => invalidate('project-types'),
+  });
+  const deleteModuleTemplate = useMutation({
+    mutationFn: (id: number) => masterDataApi.deleteModuleTemplate(id),
+    onSuccess: () => invalidate('project-types'),
+  });
+
+  const createTaskTemplate = useMutation({
+    mutationFn: (body: CreateProjectTypeTaskTemplateRequest) => masterDataApi.createTaskTemplate(body),
+    onSuccess: () => invalidate('project-types'),
+  });
+  const updateTaskTemplate = useMutation({
+    mutationFn: ({ id, body }: { id: number; body: UpdateProjectTypeTaskTemplateRequest }) => masterDataApi.updateTaskTemplate(id, body),
+    onSuccess: () => invalidate('project-types'),
+  });
+  const deleteTaskTemplate = useMutation({
+    mutationFn: (id: number) => masterDataApi.deleteTaskTemplate(id),
+    onSuccess: () => invalidate('project-types'),
+  });
+
   return {
-    createAccount, updateAccount,
-    createProject, updateProject,
+    createDepartment, updateDepartment, deleteDepartment,
+    createAccount, updateAccount, deleteAccount,
+    createProject, updateProject, deleteProject, syncProjectModuleTemplate,
     createModule, updateModule,
     createTask, updateTask,
+    deleteModule, deleteTask,
     createHoliday, updateHoliday, deleteHoliday,
+    createProjectType, updateProjectType, deleteProjectType,
+    createModuleTemplate, updateModuleTemplate, deleteModuleTemplate,
+    createTaskTemplate, updateTaskTemplate, deleteTaskTemplate,
   };
+}
+
+/** "Others" quick-add — reachable from Add Task Line by any authenticated
+ * employee, not just admins. Invalidates the same query keys the admin
+ * mutations do, so the newly created record shows up everywhere immediately
+ * (including back on the Master Data screen, flagged needsReview). */
+export function useQuickAddMutations() {
+  const queryClient = useQueryClient();
+  const invalidate = (...keys: string[]) => keys.forEach((k) => queryClient.invalidateQueries({ queryKey: [k] }));
+
+  const quickAddProject = useMutation({
+    mutationFn: (body: QuickAddProjectRequest) => masterDataApi.quickAddProject(body),
+    onSuccess: () => invalidate('projects'),
+  });
+  const quickAddModule = useMutation({
+    mutationFn: (body: QuickAddModuleRequest) => masterDataApi.quickAddModule(body),
+    onSuccess: () => invalidate('modules'),
+  });
+  const quickAddTask = useMutation({
+    mutationFn: (body: QuickAddTaskRequest) => masterDataApi.quickAddTask(body),
+    onSuccess: () => invalidate('tasks'),
+  });
+
+  return { quickAddProject, quickAddModule, quickAddTask };
 }

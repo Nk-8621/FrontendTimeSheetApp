@@ -5,20 +5,39 @@
 export type RoleId = 'EMP' | 'LEAD' | 'L2' | 'ADMIN';
 
 export const NAV_GROUPS: Record<string, { group: string; icon: string; title: string }> = {
+  stories: { group: 'My Work', icon: '◎', title: 'User Stories' },
   ts: { group: 'My Work', icon: '▤', title: 'My Timesheet' },
-  hist: { group: 'My Work', icon: '❐', title: 'My Timesheets' },
+  hist: { group: 'My Work', icon: '❐', title: 'All Timesheets' },
   req: { group: 'My Work', icon: '✋', title: 'Requests' },
   ap1: { group: 'Approvals', icon: '✓', title: 'Level 1 Approvals' },
   ap2: { group: 'Approvals', icon: '✓✓', title: 'Level 2 Approvals' },
   reqap: { group: 'Approvals', icon: '✋✓', title: 'Request Approval' },
-  team: { group: 'Oversight', icon: '▦', title: 'Team Compliance' },
-  rep: { group: 'Oversight', icon: '◫', title: 'Reports' },
-  mast: { group: 'Setup', icon: '⚙', title: 'Master Data' },
-  notif: { group: 'Setup', icon: '◔', title: 'Notifications' },
+  team: { group: 'Insights', icon: '▦', title: 'Team Compliance' },
+  rep: { group: 'Insights', icon: '◫', title: 'Reports' },
+  mast: { group: 'Configure', icon: '⚙', title: 'Master Data' },
+  notif: { group: 'Notifications', icon: '◔', title: 'Notifications' },
 };
 
 export const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
+
+/** Most hours one task line can hold on one day (same as
+ *  TimeEntryRules.MaxHoursPerLinePerDay on the backend). */
+export const MAX_HOURS_PER_LINE = 8;
 export const STANDARD_HOURS_PER_DAY = 8;
+
+/** The one wording for billing classification across every screen. */
+export const CLASSIFICATION_LABELS: Record<string, string> = {
+  Billable: 'Billable',
+  NonBillable: 'Non-billable',
+  PartialBillable: 'Partial billable',
+};
+
+/** Shorter versions for narrow table cells (week grid, approval detail). */
+export const CLASSIFICATION_SHORT_LABELS: Record<string, string> = {
+  Billable: 'Billable',
+  NonBillable: 'Non-bill',
+  PartialBillable: 'Partial',
+};
 
 export const DAY_TYPE_LABELS: Record<string, { css: string; label: string }> = {
   W: { css: '', label: 'Working' },
@@ -26,20 +45,36 @@ export const DAY_TYPE_LABELS: Record<string, { css: string; label: string }> = {
   L: { css: 'lv', label: 'Leave' },
   LH: { css: 'lv', label: 'Half-day Leave' },
   H: { css: 'hd', label: 'Holiday' },
-  O: { css: '', label: 'Weekly Off' },
+  O: { css: '', label: 'W-OFF' }, // same label on every screen
+  OD: { css: 'od', label: 'On Duty' },
 };
 
 export const DAY_TYPE_REQUEST_LABELS: Record<string, string> = {
   WFH: 'WFH',
-  LeaveFirstHalf: 'Leave - First Half',
-  LeaveSecondHalf: 'Leave - Second Half',
-  LeaveFull: 'Full-day Leave',
+  LeaveFirstHalf: 'Paid Leave - First Half',
+  LeaveSecondHalf: 'Paid Leave - Second Half',
+  LeaveFull: 'Paid Leave - Full Day',
+  OnDuty: 'On Duty',
+  CompOffFirstHalf: 'Comp-Off - First Half',
+  CompOffSecondHalf: 'Comp-Off - Second Half',
+  CompOffFull: 'Comp-Off - Full Day',
+  UnpaidFirstHalf: 'Unpaid Leave - First Half',
+  UnpaidSecondHalf: 'Unpaid Leave - Second Half',
+  UnpaidFull: 'Unpaid Leave - Full Day',
 };
 
 export const DAY_TYPE_REQUEST_STATUS_LABELS: Record<string, { css: string; label: string }> = {
   Pending: { css: 'p-l1', label: 'Pending' },
   Approved: { css: 'p-ok', label: 'Approved' },
   Rejected: { css: 'p-rej', label: 'Rejected' },
+};
+
+// Active/Inactive appeared as separate hand-rolled `style={{color}}` spots
+// across the Master Data screen (Projects, Resources) before this — same
+// StatusPill component and vocabulary as every other status in the app.
+export const ACTIVE_STATUS_LABELS: Record<string, { css: string; label: string }> = {
+  Active: { css: 'p-ok', label: 'Active' },
+  Inactive: { css: 'p-draft', label: 'Inactive' },
 };
 
 // Keys match the backend's WeekStatusDto strings exactly (PendingL1/L2, not l1/l2).
@@ -51,3 +86,18 @@ export const WEEK_STATUS_LABELS: Record<string, { css: string; label: string }> 
   Approved: { css: 'p-ok', label: 'Approved & Locked' },
   Rejected: { css: 'p-rej', label: 'Returned for Correction' },
 };
+
+/** Most hours a day can hold across all lines: its capacity. A W-OFF day has
+ * 0 h, so no hours can be entered on it (extra hours on a week off are not
+ * supported for now - Nov 2026 decision). */
+export function dayEntryLimit(day: { dayType: string; capacityHours: number }) {
+  return day.capacityHours;
+}
+
+/** DAY STATUS (Nov 2026): the choices for a day's status, picked in the Add Task drawer. */
+export const DAY_STATUS_OPTIONS: [string, string][] = [
+  ['W', 'Working'],
+  ['L', 'Leave'],
+  ['LH', 'Half Day Leave'], // 4 h instead of 8
+  ['WFH', 'WFH'],
+];

@@ -18,6 +18,7 @@ export function RejectRequestDrawer({ employeeName, onConfirm, onCancel }: Rejec
         <textarea
           className={controls.textarea}
           value={comment}
+          maxLength={500}
           onChange={(e) => setComment(e.target.value)}
           placeholder="Let them know why, if it helps."
           autoFocus

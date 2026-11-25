@@ -1,4 +1,5 @@
 import { PageHeader } from '../components/layout/PageHeader';
+import { KekaSyncNotice, REQUESTS_UNDER_DEVELOPMENT } from '../components/requests/KekaSyncNotice';
 import { Card } from '../components/ui/Card';
 import { Banner } from '../components/timesheet/Banner';
 import { RejectRequestDrawer } from '../components/requests/RejectRequestDrawer';
@@ -11,10 +12,16 @@ import { dayMonth } from '../lib/dates';
 import controls from '../styles/controls.module.css';
 import styles from '../components/requests/RequestList.module.css';
 
+// UNDER DEVELOPMENT (Nov 2026): shows the KEKA notice instead of the page.
 export function RequestApprovalPage() {
+  if (REQUESTS_UNDER_DEVELOPMENT) return <KekaSyncNotice title="Request Approval" />;
+  return <RequestApprovalPageContent />;
+}
+
+function RequestApprovalPageContent() {
   const { employeeCode } = useSession();
   const { openDrawer, closeDrawer, toast } = useUI();
-  const { data: queue, isLoading, isError } = useDayTypeRequestQueue();
+  const { data: queue, isError } = useDayTypeRequestQueue();
   const mutations = useDayTypeRequestMutations(employeeCode);
 
   function handleApprove(requestId: number) {
@@ -44,15 +51,9 @@ export function RequestApprovalPage() {
 
   return (
     <>
-      <PageHeader crumb="Approvals" title="Request Approval" />
+      <PageHeader title="Request Approval" />
 
       <div className="page-content">
-        <Banner kind="warn">
-          <b>Level 1 — reporting lead / project manager.</b> These requests already took effect on the employee's
-          timesheet. Rejecting one reverts that day back to normal automatically.
-        </Banner>
-
-        {isLoading && <Banner>Loading the queue…</Banner>}
         {isError && <Banner kind="reject">Couldn't load the request queue — check that the backend API is reachable.</Banner>}
 
         {queue && (

@@ -1,10 +1,11 @@
 import type { ApprovalQueueItemDto } from '../../api/types';
+import { CLASSIFICATION_SHORT_LABELS, DAY_TYPE_LABELS } from '../../types/meridian';
 import styles from '../approvals/ApprovalQueue.module.css';
 
 const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const fmtH = (n: number) => (n ? (Math.round(n * 100) / 100).toString() : '');
 
-/** The day-by-day breakdown table (Department/Account/Project/Module/Task,
+/** The day-by-day breakdown table (Department/Account/Project/Task,
  * hours per day, capacity-mismatch highlighting) — shared between the
  * Approval Queue's expandable rows and Team Compliance's "view what they
  * actually logged" detail, so both stay visually identical and only need
@@ -17,12 +18,12 @@ export function WeekDetailTable({ item }: { item: ApprovalQueueItemDto }) {
       <thead>
         <tr>
           <th>Department › Customer › Project</th>
-          <th>Module › Task</th>
+          <th>Task</th>
           <th>Type</th>
           {DAY_NAMES.map((d, i) => (
             <th key={d} style={{ width: 52 }}>
               {d}
-              <div style={{ fontWeight: 400, fontSize: 9, color: 'var(--slate2)' }}>{item.dayTypes[i]?.dayType.slice(0, 3)}</div>
+              <div style={{ fontWeight: 400, fontSize: 9, color: 'var(--slate2)' }}>{DAY_TYPE_LABELS[item.dayTypes[i]?.dayType ?? '']?.label ?? item.dayTypes[i]?.dayType}</div>
             </th>
           ))}
           <th style={{ textAlign: 'right' }}>Total</th>
@@ -38,15 +39,16 @@ export function WeekDetailTable({ item }: { item: ApprovalQueueItemDto }) {
                 <div style={{ fontWeight: 600, fontSize: 11.5 }}>{line.projectName}</div>
               </td>
               <td>
-                <div style={{ fontSize: 10.5, color: 'var(--slate)' }}>{line.moduleName}</div>
-                <div style={{ fontSize: 11.5, fontWeight: 500 }}>{line.taskName}</div>
-                <div style={{ fontSize: 10.5, color: line.note ? 'var(--slate)' : 'var(--clay)', marginTop: 2 }}>
-                  {line.note || 'No description'}
-                </div>
+                {/* Only what the employee worked on. Older lines with no text fall back to the task name. */}
+                {line.note || line.taskName ? (
+                  <div style={{ fontSize: 11.5, fontWeight: 500 }}>{line.note || line.taskName}</div>
+                ) : (
+                  <div style={{ fontSize: 10.5, color: 'var(--clay)' }}>No description</div>
+                )}
               </td>
               <td>
                 <span className={styles.ft}>
-                  {line.classification === 'Billable' ? 'Bill' : line.classification === 'PartialBillable' ? 'Partial' : 'Non-b'}
+                  {CLASSIFICATION_SHORT_LABELS[line.classification]}
                 </span>
                 {line.billingCategory && <div style={{ fontSize: 9, color: 'var(--slate2)', marginTop: 2 }}>{line.billingCategory}</div>}
               </td>

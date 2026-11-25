@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { employeesApi } from '../../api/employees';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import type { SetEmployeeProjectAllocationsRequest, UpdateEmployeeRequest } from '../../api/types';
 
 /** Every employee — backs the Master Data "Resources" tab (read-only). */
 export function useAllEmployees() {
@@ -73,10 +74,46 @@ export function useReactivateEmployee() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['employees'] }),
   });
 }
+/** Refreshes both the Resources list ('employees') and any single-employee
+ * lookups ('employee', e.g. manager names in page headers). */
+export function useUpdateEmployee() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ employeeCode, body }: { employeeCode: string; body: UpdateEmployeeRequest }) =>
+      employeesApi.update(employeeCode, body),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      queryClient.invalidateQueries({ queryKey: ['employee'] });
+    },
+  });
+}
+
 export function useCreateEmployee() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: employeesApi.create,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['employees'] }),
+  });
+}
+
+/** This employee's current project allocations, each with its admin-set
+ * Classification/BillingCategory — pre-fills the allocation editor. */
+export function useEmployeeProjectAllocations(employeeCode: string | undefined) {
+  return useQuery({
+    queryKey: ['employee', employeeCode, 'projects'],
+    queryFn: () => employeesApi.getProjectAllocations(employeeCode!),
+    enabled: Boolean(employeeCode),
+  });
+}
+
+export function useSetEmployeeProjectAllocations() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ employeeCode, body }: { employeeCode: string; body: SetEmployeeProjectAllocationsRequest }) =>
+      employeesApi.setProjectAllocations(employeeCode, body),
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ['employee', vars.employeeCode, 'projects'] });
+      queryClient.invalidateQueries({ queryKey: ['projects', 'resource-allocations'] });
+    },
   });
 }

@@ -4,7 +4,7 @@ import { PageHeader } from '../components/layout/PageHeader';
 import { Banner } from '../components/timesheet/Banner';
 import { WeekNav } from '../components/timesheet/WeekNav';
 import { ApprovalQueueItem } from '../components/approvals/ApprovalQueueItem';
-import { useApprovalQueue } from '../hooks/api/useApprovals';
+import { useApprovalQueue, useReturnedByLevel2 } from '../hooks/api/useApprovals';
 import { useUI } from '../components/ui/UIProvider';
 import { approvalsApi } from '../api/approvals';
 import { dayMonth, addDays, mondayOf, toISO } from '../lib/dates';
@@ -18,8 +18,12 @@ interface ApprovalsPageProps {
 }
 
 export function ApprovalsPage({ level2, title }: ApprovalsPageProps) {
-  const { data: queue, isLoading, isError } = useApprovalQueue(level2);
-  const { toast } = useUI();
+  const { data: queue, isError } = useApprovalQueue(level2);
+  // Level 1 only: weeks you approved that Level 2 sent back to the employee.
+  const { data: returned, isError: returnedError } = useReturnedByLevel2(!level2);
+  const [tab, setTab] = useState<'pending' | 'returned'>('pending');
+  const showReturned = !level2 && tab === 'returned';
+  const { toast, confirm } = useUI();
   const queryClient = useQueryClient();
 
   // Always exactly one week selected - same pattern as My Timesheet, Team
@@ -34,8 +38,7 @@ export function ApprovalsPage({ level2, title }: ApprovalsPageProps) {
   };
 
   const weekQueue = queue?.filter((q) => q.weekStartDate === selectedWeek) ?? [];
-  const flagged = weekQueue.filter((q) => q.flags.length > 0);
-  const clean = weekQueue.filter((q) => q.flags.length === 0);
+  const flaggedCount = weekQueue.filter((q) => q.flags.length > 0).length;
   const totalHours = weekQueue.reduce((sum, q) => sum + q.totalHours, 0);
   const billableHours = weekQueue.reduce((sum, q) => sum + q.billableHours, 0);
   const partialBillableHours = weekQueue.reduce((sum, q) => sum + q.partialBillableHours, 0);
@@ -44,9 +47,22 @@ export function ApprovalsPage({ level2, title }: ApprovalsPageProps) {
 
   const otherWeeksCount = (queue?.length ?? 0) - weekQueue.length;
 
-  async function handleBulkApprove() {
+  async function handleApproveAll() {
+    // Approval can't be undone from the UI (Level 2 also locks the week), so
+    // approving everything at once gets the same confirm step as other
+    // irreversible actions here.
+    const count = weekQueue.length;
+    const ok = await confirm({
+      title: `Approve ${count} timesheet${count > 1 ? 's' : ''}?`,
+      message:
+        `All timesheets for ${dayMonth(selectedWeek)} – ${dayMonth(addDays(selectedWeek, 6))} will be approved at Level ${level2 ? 2 : 1}: `
+        + weekQueue.map((q) => q.fullName).join(', ') + '.'
+        + (flaggedCount > 0 ? ` ${flaggedCount} of them ${flaggedCount > 1 ? 'have' : 'has'} flags.` : ''),
+      confirmLabel: 'Approve All',
+    });
+    if (!ok) return;
     let succeeded = 0;
-    for (const item of clean) {
+    for (const item of weekQueue) {
       try {
         if (level2) await approvalsApi.approveLevel2(item.employeeCode, item.weekStartDate);
         else await approvalsApi.approveLevel1(item.employeeCode, item.weekStartDate);
@@ -58,66 +74,85 @@ export function ApprovalsPage({ level2, title }: ApprovalsPageProps) {
     queryClient.invalidateQueries({ queryKey: ['approval-queue'] });
     queryClient.invalidateQueries({ queryKey: ['pending-approvals'] });
     if (succeeded > 0) toast(`${succeeded} timesheet${succeeded > 1 ? 's' : ''} approved at Level ${level2 ? 2 : 1}`, 'ok');
-    if (succeeded < clean.length) toast(`${clean.length - succeeded} could not be approved - please check them individually`, 'bad');
+    if (succeeded < count) toast(`${count - succeeded} could not be approved — please check them individually`, 'bad');
   }
 
   return (
     <>
-      <PageHeader crumb="Approvals" title={title}>
-        <WeekNav weekStart={selectedWeek} onShift={shiftWeek} />
-        {clean.length > 0 && (
-          <button className={`${controls.btn} ${controls.ok} ${controls.sm}`} onClick={handleBulkApprove}>
-            Approve {clean.length} with no flags
-          </button>
-        )}
-      </PageHeader>
+      <PageHeader title={title} />
       <div className="page-content">
-        <Banner kind={level2 ? undefined : 'warn'}>
-          {level2
-            ? <><b>Level 2 - delivery head.</b> These weeks already cleared Level 1. Your approval locks the week.</>
-            : <><b>Level 1 - reporting lead / project manager.</b> You are approving that the effort is real and correctly attributed. Approved weeks move to Level 2.</>}
-        </Banner>
+        {isError && <Banner kind="reject">Couldn't load the approval queue — check that the backend API is reachable.</Banner>}
 
-        {otherWeeksCount > 0 && (
-          <Banner kind="warn">
-            <b>{otherWeeksCount} more timesheet{otherWeeksCount > 1 ? 's are' : ' is'} pending from other weeks</b> - use the week selector above to check them too.
-          </Banner>
+        {/* Week picker sits below the header, same as User Stories. On Level 1
+            it shares the line with the tabs (tabs left, week right); Level 2
+            has no tabs, so it gets its own right-aligned row. */}
+        {!level2 && (
+          <div className={styles.tabs}>
+            <button className={tab === 'pending' ? styles.tabOn : ''} onClick={() => setTab('pending')}>
+              Pending
+            </button>
+            <button className={tab === 'returned' ? styles.tabOn : ''} onClick={() => setTab('returned')}>
+              Returned by Level 2{returned && returned.length > 0 ? ` (${returned.length})` : ''}
+            </button>
+            {/* Kept on both tabs (hidden on Returned) so the tabs line doesn't move when switching. */}
+            <div style={{ marginLeft: 'auto', alignSelf: 'center', paddingBottom: 6, visibility: showReturned ? 'hidden' : 'visible' }}>
+              <WeekNav weekStart={selectedWeek} onShift={shiftWeek} />
+            </div>
+          </div>
+        )}
+        {level2 && (
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+            <WeekNav weekStart={selectedWeek} onShift={shiftWeek} />
+          </div>
         )}
 
-        {isLoading && <Banner>Loading the queue...</Banner>}
-        {isError && <Banner kind="reject">Couldn't load the approval queue - check that the backend API is reachable.</Banner>}
+        {showReturned && (
+          <>
+            {returnedError && <Banner kind="reject">Couldn't load the returned timesheets — check that the backend API is reachable.</Banner>}
+            <p style={{ fontSize: 12, color: 'var(--slate)', margin: '0 0 10px' }}>
+              Timesheets you approved that Level 2 sent back to the employee. Once the employee fixes and resubmits, they move back to Pending.
+            </p>
+            {returned && returned.length === 0 && (
+              <div className={styles.table}>
+                <div className={styles.empty}>Nothing has been returned by Level 2.</div>
+              </div>
+            )}
+            {returned && returned.length > 0 && (
+              <div className={styles.queue}>
+                {returned.map((item) => (
+                  <ApprovalQueueItem key={`${item.employeeCode}-${item.weekStartDate}`} item={item} level2={false} readOnly />
+                ))}
+              </div>
+            )}
+          </>
+        )}
 
-        {queue && (
+        {!showReturned && queue && (
           <>
             <div className={kpiStyles.kpis}>
               <div className={`${kpiStyles.kpi} ${kpiStyles.w}`}>
                 <div className={kpiStyles.k}>Awaiting you</div>
                 <div className={kpiStyles.v}>{weekQueue.length}</div>
-                <div className={kpiStyles.d}>this week{otherWeeksCount > 0 ? ` - ${queue.length} total across all weeks` : ''}</div>
+                <div className={kpiStyles.d}>this week{otherWeeksCount > 0 ? ` — ${queue.length} total across all weeks` : ''}</div>
               </div>
               <div className={`${kpiStyles.kpi} ${kpiStyles.a}`}>
                 <div className={kpiStyles.v}>{totalHours.toFixed(1)}<small> h</small></div>
                 <div className={kpiStyles.k} style={{ order: -1, marginBottom: 3 }}>Hours in queue</div>
                 <div className={kpiStyles.d}>{pctBillable}% billable · {pctPartialBillable}% partial</div>
               </div>
-              <div className={`${kpiStyles.kpi} ${kpiStyles.r}`}>
-                <div className={kpiStyles.k}>With flags</div>
-                <div className={kpiStyles.v}>{flagged.length}</div>
-                <div className={kpiStyles.d}>need a closer look</div>
-              </div>
-              <div className={`${kpiStyles.kpi} ${kpiStyles.g}`}>
-                <div className={kpiStyles.k}>No flags</div>
-                <div className={kpiStyles.v}>{clean.length}</div>
-                <div className={kpiStyles.d}>safe to bulk approve</div>
-              </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 9 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 9 }}>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--slate)' }}>
-                {dayMonth(selectedWeek)} - {dayMonth(addDays(selectedWeek, 6))}
+                {dayMonth(selectedWeek)} – {dayMonth(addDays(selectedWeek, 6))}
               </div>
               <div style={{ flex: 1 }} />
-              <span style={{ fontSize: 11, color: 'var(--slate)' }}>Click a row to see the hours behind it</span>
+              {/* Only when there's something to approve this week. */}
+              {weekQueue.length > 0 && (
+                <button className={`${controls.btn} ${controls.ok} ${controls.sm}`} onClick={handleApproveAll}>
+                  Approve All
+                </button>
+              )}
             </div>
 
             {weekQueue.length === 0 ? (
@@ -125,7 +160,7 @@ export function ApprovalsPage({ level2, title }: ApprovalsPageProps) {
                 <div className={styles.empty}>
                   <div style={{ fontWeight: 600, marginBottom: 4 }}>Nothing pending for this week</div>
                   {otherWeeksCount > 0
-                    ? `${otherWeeksCount} timesheet${otherWeeksCount > 1 ? 's are' : ' is'} still pending from another week - use the arrows above to find it.`
+                    ? `${otherWeeksCount} timesheet${otherWeeksCount > 1 ? 's are' : ' is'} still pending from another week — use the arrows above to find it.`
                     : 'Nothing is waiting on your approval right now.'}
                 </div>
               </div>

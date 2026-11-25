@@ -1,5 +1,5 @@
 import { http } from './httpClient';
-import type { AccessProfileDto, EmployeeDto } from './types';
+import type { AccessProfileDto, EmployeeDto, EmployeeProjectAllocationDto, EmployeeProjectAllocationInput, SetEmployeeProjectAllocationsRequest, UpdateEmployeeRequest } from './types';
 
 export const employeesApi = {
   getAll: () => http.get<EmployeeDto[]>('/api/employees'),
@@ -19,9 +19,20 @@ export const employeesApi = {
   departmentId: number;
   isExternal: boolean;
   employeeCode: string | null;
+  /** Projects to allocate this employee to right away, each with its
+   * mandatory Classification + BillingCategory — the same editor shown on
+   * the Add Employee form. Omit/empty to skip (allocations can always be
+   * added later from the Resources tab). */
+  allocations?: EmployeeProjectAllocationInput[] | null;
 }) => http.post<EmployeeDto>('/api/employees', request),
+
+update: (employeeCode: string, body: UpdateEmployeeRequest) => http.put<EmployeeDto>(`/api/employees/${employeeCode}`, body),
 
 deactivate: (employeeCode: string) => http.post<void>(`/api/employees/${employeeCode}/deactivate`),
 reactivate: (employeeCode: string) => http.post<void>(`/api/employees/${employeeCode}/reactivate`),
-};
 
+// ---- Project allocations (backs the Resources tab's allocation editor) ----
+getProjectAllocations: (employeeCode: string) => http.get<EmployeeProjectAllocationDto[]>(`/api/employees/${employeeCode}/projects`),
+setProjectAllocations: (employeeCode: string, body: SetEmployeeProjectAllocationsRequest) =>
+  http.put<void>(`/api/employees/${employeeCode}/projects`, body),
+};

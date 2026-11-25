@@ -3,13 +3,14 @@ import { useSearchParams } from 'react-router-dom';
 import { PageHeader } from '../components/layout/PageHeader';
 import { WeekNav } from '../components/timesheet/WeekNav';
 import { StatusPill } from '../components/ui/StatusPill';
-import { DAY_TYPE_REQUEST_STATUS_LABELS } from '../types/meridian';
+import { DAY_NAMES, DAY_TYPE_REQUEST_STATUS_LABELS } from '../types/meridian';
 import { KpiStrip } from '../components/timesheet/KpiStrip';
 import { Banner } from '../components/timesheet/Banner';
 import { WeekGrid } from '../components/timesheet/WeekGrid';
 import { ApprovalTrail } from '../components/timesheet/ApprovalTrail';
-import { DayTypesCard } from '../components/timesheet/DayTypesCard';
+import { RecentTimesheetsCard } from '../components/timesheet/RecentTimesheetsCard';
 import { EntryDrawer } from '../components/timesheet/EntryDrawer';
+import { StoryTaskDrawer } from '../components/userStories/StoryTaskDrawer';
 import { SubmitDrawer } from '../components/timesheet/SubmitDrawer';
 import { useUI } from '../components/ui/UIProvider';
 import { useSession } from '../session/SessionContext';
@@ -18,7 +19,8 @@ import { useManager, useSkipManager } from '../hooks/api/useEmployees';
 import { useApprovalMutations } from '../hooks/api/useApprovals';
 import { ApiError } from '../api/httpClient';
 import type { TimeEntryDto } from '../api/types';
-import { mondayOf, addDays, toISO } from '../lib/dates';
+import { mondayOf, addDays, toISO, dayMonth } from '../lib/dates';
+import { splitReturnReason } from '../lib/returnReason';
 import controls from '../styles/controls.module.css';
 
 export function MyTimesheetPage() {
@@ -31,14 +33,24 @@ export function MyTimesheetPage() {
   });
   const thisWeek = mondayOf(toISO(new Date()));
 
-  const { data: week, isLoading, isError } = useWeek(employeeCode, weekStart);
+  const { data: week, isError } = useWeek(employeeCode, weekStart);
   const { data: manager } = useManager(employeeCode);
-  const { data: skipManager } = useSkipManager(employeeCode);
+  const skipManagerQuery = useSkipManager(employeeCode);
+  const skipManager = skipManagerQuery.data;
   const mutations = useTimesheetMutations(employeeCode, weekStart);
   const approvalMutations = useApprovalMutations(employeeCode, weekStart);
 
-  const leadName = manager?.fullName ?? '—';
-  const l2Name = skipManager?.fullName ?? '—';
+  // Mirrors WeekApprovalService.DetermineApprovalRoutingAsync: when my manager
+  // has no manager of their own (the skip-manager lookup 404s), there is no
+  // Level 1 step - the week goes straight to my manager as Level 2.
+  const skipsLevel1 = Boolean(manager) && skipManagerQuery.isError;
+  const leadName = skipsLevel1 ? 'Not required' : manager?.fullName ?? '—';
+  const l2Name = skipsLevel1 ? manager?.fullName ?? '—' : skipManager?.fullName ?? '—';
+
+  // Same rule as WeekApprovalService.RecallAsync: recallable while nobody has
+  // approved it yet - PendingL1, or PendingL2 with no Level 1 approval event.
+  const hasLevel1Approval = week?.week.trail.some((e) => e.text.startsWith('Level 1 approved')) ?? false;
+  const canRecall = week?.week.status === 'PendingL1' || (week?.week.status === 'PendingL2' && !hasLevel1Approval);
 
   function shiftWeek(direction: -1 | 1) {
     setWeekStart((w) => addDays(w, direction * 7));
@@ -68,33 +80,30 @@ export function MyTimesheetPage() {
     );
   }
 
-  function handleAddLine() {
-    if (!week) return;
-    openDrawer({
-      title: 'Add task line',
-      body: (
-        <EntryDrawer
-          dayTypes={week.dayTypes}
-          onCancel={closeDrawer}
-          onSave={(data) => {
-            mutations.addEntry.mutate(data, {
-              onSuccess: () => { closeDrawer(); toast('Task line added', 'ok'); },
-              onError: (err) => showError(err, 'Could not add line'),
-            });
-          }}
-        />
-      ),
-    });
-  }
-
   function handleEditLine(entryId: number) {
     const entry = week?.entries.find((e) => e.id === entryId);
     if (!entry || !week) return;
+
+    // A task added under a user story opens the same simple panel used on
+    // the User Stories page (story, task name, hours per day).
+    if (entry.userStoryId !== null && entry.userStoryId !== undefined) {
+      openDrawer({
+        title: 'Edit Task',
+        size: 'center',
+        subtitle: entry.userStoryName ?? undefined,
+        body: <StoryTaskDrawer employeeCode={employeeCode} weekStart={weekStart} entryId={entryId} onDone={closeDrawer} />,
+      });
+      return;
+    }
+
+    // Older lines (added before User Stories, or by Excel import) keep the classic editor.
     openDrawer({
       title: 'Edit task line',
       body: (
         <EntryDrawer
+          employeeCode={employeeCode}
           dayTypes={week.dayTypes}
+          weekEntries={week.entries}
           existing={entry}
           onCancel={closeDrawer}
           onSave={(data) => {
@@ -110,27 +119,6 @@ export function MyTimesheetPage() {
             mutations.removeEntry.mutate(entryId, {
               onSuccess: () => { closeDrawer(); toast('Line removed'); },
               onError: (err) => showError(err, 'Could not remove line'),
-            });
-          }}
-        />
-      ),
-    });
-  }
-
-    function handleDuplicateLine(entryId: number) {
-    const entry = week?.entries.find((e) => e.id === entryId);
-    if (!entry || !week) return;
-    openDrawer({
-      title: 'Add task line',
-      body: (
-        <EntryDrawer
-          dayTypes={week.dayTypes}
-          duplicateFrom={entry}
-          onCancel={closeDrawer}
-          onSave={(data) => {
-            mutations.addEntry.mutate(data, {
-              onSuccess: () => { closeDrawer(); toast('Task line added', 'ok'); },
-              onError: (err) => showError(err, 'Could not add line'),
             });
           }}
         />
@@ -155,7 +143,10 @@ export function MyTimesheetPage() {
           onCancel={closeDrawer}
           onConfirm={() => {
             approvalMutations.submit.mutate(undefined, {
-              onSuccess: () => { closeDrawer(); toast('Week submitted — Level 1 approval requested', 'ok'); },
+              onSuccess: (result) => {
+                closeDrawer();
+                toast(result.status === 'PendingL2' ? `Week submitted — sent to ${l2Name} for approval` : 'Week submitted — Level 1 approval requested', 'ok');
+              },
               onError: (err) => showError(err, 'Could not submit week'),
             });
           }}
@@ -171,52 +162,58 @@ export function MyTimesheetPage() {
     });
   }
 
-  const canSubmit = week
-  ? week.dayTypes.every((dt) => {
-      if (dt.capacityHours === 0) return true; // non-working days aren't required to total anything
-      const dayIndex = week.dayTypes.findIndex((d) => d.date === dt.date);
-      const dayTotal = week.entries.reduce((sum, e) => sum + e.hoursByDay[dayIndex], 0);
-      return dayTotal === dt.capacityHours;
-    })
-  : false;
+  // Every working day must total exactly its capacity (non-working days
+  // aren't required to total anything). The grid shows a short count; the
+  // day-by-day detail appears when hovering over that note.
+  const unbalancedDays = week
+    ? week.dayTypes
+        .map((dt, dayIndex) => ({ dt, dayIndex, total: week.entries.reduce((sum, e) => sum + e.hoursByDay[dayIndex], 0) }))
+        .filter(({ dt, total }) => dt.capacityHours !== 0 && Math.abs(total - dt.capacityHours) > 0.001)
+    : [];
+  const canSubmit = Boolean(week) && unbalancedDays.length === 0;
+  const returnInfo = splitReturnReason(week?.week.rejectionReason);
+  const submitBlockedReason = unbalancedDays.length
+    ? `${unbalancedDays.length} working day${unbalancedDays.length > 1 ? 's' : ''} not complete`
+    : undefined;
+  const submitBlockedDetails = unbalancedDays
+    .map(({ dt, dayIndex, total }) => `${DAY_NAMES[dayIndex]} ${dayMonth(dt.date)}: ${Math.round(total * 100) / 100} of ${dt.capacityHours} h`)
+    .join('\n');
 
   return (
     <>
-      <PageHeader crumb="My Work" title="My Timesheet">
-        <WeekNav weekStart={weekStart} onShift={shiftWeek} />
-        {weekStart !== thisWeek && (
-          <button className={`${controls.btn} ${controls.sm}`} onClick={() => setWeekStart(thisWeek)}>This week</button>
-        )}
-        {week && <StatusPill status={week.week.status} />}
-        {week && week.dayTypeRequests
-          .filter((r) => r.status === 'Pending')
-          .map((r) => (
-            <span key={r.id} title={`${r.requestType} requested for ${r.requestDate}`}>
-              <StatusPill status={r.status} labels={DAY_TYPE_REQUEST_STATUS_LABELS} />
-            </span>
-          ))}
-    </PageHeader>
+      <PageHeader title="My Timesheet" />
 
       <div className="page-content">
-        {isLoading && <Banner>Loading your timesheet…</Banner>}
+        {/* The selected week drives everything below (cards, grid, trail, day
+            types), so its picker sits above all of them - and outside the
+            `week &&` check, so another week can still be picked if this one
+            fails to load. */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
+          <WeekNav weekStart={weekStart} onShift={shiftWeek} />
+          {weekStart !== thisWeek && (
+            <button className={`${controls.btn} ${controls.sm}`} onClick={() => setWeekStart(thisWeek)}>This week</button>
+          )}
+          {week && <StatusPill status={week.week.status} />}
+          {week && week.dayTypeRequests
+            .filter((r) => r.status === 'Pending')
+            .map((r) => (
+              <span key={r.id} title={`${r.requestType} requested for ${r.requestDate}`}>
+                <StatusPill status={r.status} labels={DAY_TYPE_REQUEST_STATUS_LABELS} />
+              </span>
+            ))}
+        </div>
+
         {isError && <Banner kind="reject">Couldn't load this week — check that the backend API is running and reachable.</Banner>}
 
         {week && (
           <>
             {week.week.status === 'Rejected' && (
-              <Banner kind="reject"><b>Returned by {week.week.rejectedByName ?? ''}:</b> {week.week.rejectionReason} — correct the entries and submit again.</Banner>
-            )}
-            {week.week.status === 'PendingL1' && (
-              <Banner>Awaiting Level 1 approval from <b>{leadName}</b>. Recall it if you need to make changes.</Banner>
-            )}
-            {week.week.status === 'PendingL2' && (
-              <Banner>Level 1 approved. Awaiting Level 2 approval from <b>{l2Name}</b>. Entries are read-only from here.</Banner>
-            )}
-            {week.week.status === 'Approved' && (
-              <Banner>Week locked. Approved at both levels. Corrections need an adjustment request.</Banner>
-            )}
-            {week.dayTypes.some((d) => d.dayType === 'H') && (
-              <Banner><b>Holiday this week</b> — one or more days are marked as a holiday.</Banner>
+              <Banner kind="reject">
+                <div><b>Returned by {week.week.rejectedByName ?? 'your approver'}</b></div>
+                <div><b>Reason:</b> {returnInfo.reason || 'No reason given'}</div>
+                {returnInfo.comments && <div><b>Comments:</b> {returnInfo.comments}</div>}
+                <div style={{ marginTop: 4 }}>Please correct the entries and submit again.</div>
+              </Banner>
             )}
 
             <KpiStrip
@@ -235,20 +232,20 @@ export function MyTimesheetPage() {
               rows={week.entries}
               dayTypes={week.dayTypes}
               editable={week.week.status === 'Draft' || week.week.status === 'Rejected'}
-              status={week.week.status}
+              canRecall={canRecall}
               onHourChange={handleHourChange}
               onCycleClassification={handleCycleClassification}
               onEditLine={handleEditLine}
-              onDuplicateLine={handleDuplicateLine}
-              onAddLine={handleAddLine}
               onSubmit={handleSubmit}
               canSubmit={canSubmit}
+              submitBlockedReason={submitBlockedReason}
+              submitBlockedDetails={submitBlockedDetails}
               onRecall={handleRecall}
             />
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 14 }}>
-              <ApprovalTrail trail={week.week.trail} leadName={leadName} l2Name={l2Name} />
-              <DayTypesCard dayTypes={week.dayTypes} />
+              <ApprovalTrail trail={week.week.trail} leadName={leadName} l2Name={l2Name} skipsLevel1={skipsLevel1} />
+              <RecentTimesheetsCard employeeCode={employeeCode} selectedWeek={weekStart} onView={setWeekStart} />
             </div>
           </>
         )}

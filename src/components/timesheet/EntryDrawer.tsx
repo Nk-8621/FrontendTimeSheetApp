@@ -1,12 +1,34 @@
 import { useState } from 'react';
 import type { TimeEntryDto, DayTypeDto, CreateTimeEntryRequest, WeekHours } from '../../api/types';
-import { DAY_NAMES } from '../../types/meridian';
+import { DAY_NAMES, DAY_TYPE_LABELS, MAX_HOURS_PER_LINE, dayEntryLimit } from '../../types/meridian';
 import { useMasterDataLookup } from '../../hooks/api/useMasterDataLookup';
+import { useQuickAddMutations } from '../../hooks/api/useMasterData';
+import { useEmployeeProjectAllocations } from '../../hooks/api/useEmployees';
+import { ApiError } from '../../api/httpClient';
+import { useUI } from '../ui/UIProvider';
 import controls from '../../styles/controls.module.css';
 import styles from './EntryDrawer.module.css';
 
+/** Sentinel <option> value for "+ Others (create new)" at the Project,
+ * Module, and Task levels — picking it swaps that field into a plain text
+ * input, and typing a name there creates a real, immediately-reusable
+ * record via the quick-add endpoints (see MasterDataService.QuickAdd*Async).
+ * Open to anyone regardless of project allocation, unchanged by the
+ * admin-assignment feature below. */
+const OTHERS = '__others__';
+
+/** Same vocabulary as TimeEntry.Classification / Project.DefaultBillable. */
+const CLASSIFICATION_LABEL: Record<'Billable' | 'NonBillable' | 'PartialBillable', string> = {
+  Billable: 'billable',
+  NonBillable: 'non-billable',
+  PartialBillable: 'partial billable',
+};
+
 interface EntryDrawerProps {
+  employeeCode: string;
   dayTypes: DayTypeDto[];
+  /** All lines of this week - used to work out how many hours are left on each day. */
+  weekEntries: TimeEntryDto[];
   existing?: TimeEntryDto;
   duplicateFrom?: TimeEntryDto;
   onSave: (data: CreateTimeEntryRequest) => void;
@@ -19,14 +41,14 @@ const dayMonth = (iso: string) => {
   return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', timeZone: 'UTC' });
 };
 
-export function EntryDrawer({ dayTypes, existing, duplicateFrom, onSave, onDelete, onCancel }: EntryDrawerProps) {
-  const { departments, accounts, projects, modules, tasks, accById, projById, modById, taskById, projAccountId, projDeptId } =
-    useMasterDataLookup();
+export function EntryDrawer({ employeeCode, dayTypes, weekEntries, existing, duplicateFrom, onSave, onDelete, onCancel }: EntryDrawerProps) {
+  const { modules, tasks, projById, modById, taskById } = useMasterDataLookup();
+  const { confirm } = useUI();
+  const { data: myAllocations } = useEmployeeProjectAllocations(employeeCode);
+  const allocations = myAllocations ?? [];
 
   const source = existing ?? duplicateFrom;
 
-  const [dept, setDept] = useState<number | ''>(source ? projDeptId(source.projectId) ?? '' : '');
-  const [acc, setAcc] = useState<number | ''>(source ? projAccountId(source.projectId) ?? '' : '');
   const [proj, setProj] = useState<number | ''>(source?.projectId ?? '');
   const [mod, setMod] = useState<number | ''>(source?.moduleId ?? '');
   const [task, setTask] = useState<number | ''>(source?.taskId ?? '');
@@ -41,15 +63,95 @@ export function EntryDrawer({ dayTypes, existing, duplicateFrom, onSave, onDelet
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [showDayError, setShowDayError] = useState(false);
 
-  const accountObj = acc !== '' ? accById(acc) : undefined;
+  // "+ Others" self-service create, one set of state per level.
+  const [projOthers, setProjOthers] = useState(false);
+  const [projOthersName, setProjOthersName] = useState('');
+  const [projOthersError, setProjOthersError] = useState('');
+  const [modOthers, setModOthers] = useState(false);
+  const [modOthersName, setModOthersName] = useState('');
+  const [modOthersError, setModOthersError] = useState('');
+  const [taskOthers, setTaskOthers] = useState(false);
+  const [taskOthersName, setTaskOthersName] = useState('');
+  const [taskOthersError, setTaskOthersError] = useState('');
+  const { quickAddProject, quickAddModule, quickAddTask } = useQuickAddMutations();
+
+  function quickAddErrorMessage(err: unknown, fallback: string) {
+    return err instanceof ApiError ? err.message : fallback;
+  }
+
+  function handleCreateProject() {
+    if (!projOthersName.trim()) return;
+    quickAddProject.mutate(
+      { name: projOthersName.trim() },
+      {
+        onSuccess: (created) => {
+          setProj(created.id); setMod(''); setTask('');
+          updateClassification(created.defaultBillable);
+          setProjOthers(false); setProjOthersName(''); setProjOthersError('');
+        },
+        onError: (err) => setProjOthersError(quickAddErrorMessage(err, 'Could not create this project')),
+      },
+    );
+  }
+
+  function handleCreateModule() {
+    if (!modOthersName.trim() || proj === '') return;
+    quickAddModule.mutate(
+      { projectId: proj, name: modOthersName.trim() },
+      {
+        onSuccess: (created) => {
+          setMod(created.id); setTask('');
+          setModOthers(false); setModOthersName(''); setModOthersError('');
+        },
+        onError: (err) => setModOthersError(quickAddErrorMessage(err, 'Could not create this module')),
+      },
+    );
+  }
+
+  function handleCreateTask() {
+    if (!taskOthersName.trim() || mod === '') return;
+    quickAddTask.mutate(
+      { moduleId: mod, name: taskOthersName.trim() },
+      {
+        onSuccess: (created) => {
+          setTask(created.id);
+          setTaskOthers(false); setTaskOthersName(''); setTaskOthersError('');
+          setShowTaskError(false);
+        },
+        onError: (err) => setTaskOthersError(quickAddErrorMessage(err, 'Could not create this task')),
+      },
+    );
+  }
+
   const projectObj = proj !== '' ? projById(proj) : undefined;
   const moduleObj = mod !== '' ? modById(mod) : undefined;
   const taskObj = task !== '' ? taskById(task) : undefined;
 
-  const accountsForDept = dept !== '' ? accounts.filter((a) => a.departmentId === dept) : [];
-  const projectsForAcc = acc !== '' ? projects.filter((p) => p.accountId === acc) : [];
+  // Only the projects this employee is actually allocated to show up here —
+  // "+ Others" below is the escape hatch for one that isn't yet, open to
+  // anyone regardless of assignment (unchanged from before this feature).
+  // An existing/duplicated line's own project is always included too, even
+  // if it's since fallen out of the current allocation list, so editing
+  // that line doesn't show an empty/mismatched project selection.
+  const allocatedProjectIds = new Set(allocations.map((a) => a.projectId));
+  if (source) allocatedProjectIds.add(source.projectId);
+  // Inactive projects drop off the list (as the Master Data project form
+  // promises) - except the line's own project when editing an existing line.
+  // A duplicate is a brand-new line, which the backend rejects on an inactive
+  // project, so it isn't offered there.
+  const allocatedProjects = Array.from(allocatedProjectIds)
+    .map((id) => projById(id))
+    .filter((p): p is NonNullable<ReturnType<typeof projById>> => Boolean(p) && (p!.isActive || p!.id === existing?.projectId));
   const modulesForProj = proj !== '' ? modules.filter((m) => m.projectId === proj) : [];
   const tasksForMod = mod !== '' ? tasks.filter((t) => t.moduleId === mod) : [];
+
+  // Once a project is picked, its billing classification/category are
+  // either the ones the admin set on this employee's allocation for it
+  // (read-only from here), or — if there's no allocation yet, which only
+  // happens for a project just quick-added via "+ Others" and still pending
+  // admin review — still chosen manually, same as before this feature.
+  const allocationForProj = proj !== '' ? allocations.find((a) => a.projectId === proj) : undefined;
+  const needsManualClassification = proj !== '' && !allocationForProj;
 
   // Days this line currently has hours on. An existing line with at least
   // one such day is locked to it/them — adjust the value, but logging this
@@ -69,7 +171,26 @@ export function EntryDrawer({ dayTypes, existing, duplicateFrom, onSave, onDelet
     const t = dayTypes[i]?.dayType;
     // LH (half-day leave) still has 4h available to work - only full leave,
     // holiday and weekly off are actually closed to entry.
-    return !(t === 'W' || t === 'WFH' || t === 'LH');
+    return !(t === 'W' || t === 'WFH' || t === 'OD' || t === 'LH');
+  }
+
+  // Hours already logged on each day by the OTHER lines of this week.
+  const usedByOtherLines = dayTypes.map((_, i) =>
+    weekEntries
+      .filter((e) => e.id !== existing?.id)
+      .reduce((total, e) => total + e.hoursByDay[i], 0),
+  );
+
+  // Most this line can hold on a day: 8 h per line, and the whole day can't
+  // go over its available hours (8 h, or 4 h on a half-day leave).
+  function maxHoursFor(i: number) {
+    const leftInDay = dayEntryLimit(dayTypes[i]) - usedByOtherLines[i];
+    return Math.max(0, Math.min(MAX_HOURS_PER_LINE, leftInDay));
+  }
+
+  // A working day whose hours are all used can't take a new task line.
+  function dayFull(i: number) {
+    return !capacityClosed(i) && maxHoursFor(i) === 0;
   }
 
   function handleSave() {
@@ -99,10 +220,6 @@ export function EntryDrawer({ dayTypes, existing, duplicateFrom, onSave, onDelet
   return (
     <div>
       <div className={styles.chain}>
-        {dept !== '' ? <b>{departments.find((d) => d.id === dept)?.name}</b> : <span className={styles.ph}>Department</span>}
-        <i>›</i>
-        {acc !== '' ? <b>{accountObj?.name}</b> : <span className={styles.ph}>Customer/Internal</span>}
-        <i>›</i>
         {proj !== '' ? <b>{projectObj?.code}</b> : <span className={styles.ph}>Project</span>}
         <i>›</i>
         {mod !== '' ? <b>{moduleObj?.name}</b> : <span className={styles.ph}>Module</span>}
@@ -111,140 +228,196 @@ export function EntryDrawer({ dayTypes, existing, duplicateFrom, onSave, onDelet
       </div>
 
       <div className={controls.field}>
-        <label>Department <span className={controls.req}>*</span></label>
-        <select
-          className={controls.select}
-          value={dept}
-          onChange={(e) => {
-            setDept(e.target.value ? Number(e.target.value) : '');
-            setAcc(''); setProj(''); setMod(''); setTask('');
-          }}
-        >
-          <option value="">Select department</option>
-          {departments.map((d) => (
-            <option key={d.id} value={d.id}>{d.name}</option>
-          ))}
-        </select>
-      </div>
-
-      <div className={controls.field}>
-        <label>Customer / Internal <span className={controls.req}>*</span></label>
-        <select
-          className={controls.select}
-          value={acc}
-          disabled={dept === ''}
-          onChange={(e) => {
-            const id = e.target.value ? Number(e.target.value) : '';
-            setAcc(id); setProj(''); setMod(''); setTask('');
-            if (id !== '') {
-              const a = accById(id);
-              if (a) updateClassification(a.accountType !== 'Internal' ? 'Billable' : 'NonBillable');
-            }
-          }}
-        >
-          <option value="">{dept !== '' ? 'Select customer or internal' : 'Select a department first'}</option>
-          {accountsForDept.map((a) => (
-            <option key={a.id} value={a.id}>{a.name}</option>
-          ))}
-        </select>
-        {acc !== '' && accountObj && (
+        <label>Project <span className={controls.req}>*</span></label>
+        {projOthers ? (
+          <>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <input
+                className={controls.textInput}
+                style={{ flex: 1 }}
+                autoFocus
+                placeholder="Type the project name"
+                value={projOthersName}
+                onChange={(e) => { setProjOthersName(e.target.value); setProjOthersError(''); }}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleCreateProject(); }}
+              />
+              <button className={`${controls.btn} ${controls.pri} ${controls.sm}`} onClick={handleCreateProject} disabled={quickAddProject.isPending}>
+                Create
+              </button>
+              <button className={`${controls.btn} ${controls.sm}`} onClick={() => { setProjOthers(false); setProjOthersName(''); setProjOthersError(''); }}>
+                Cancel
+              </button>
+            </div>
+            {projOthersError && <div className={styles.errMsg}>{projOthersError}</div>}
+            <div className={controls.hint}>
+              Creates a new project right away, pending admin classification — until an admin allocates it to you
+              with a billing classification, you'll pick one yourself for lines logged against it.
+            </div>
+          </>
+        ) : (
+          <select
+            className={controls.select}
+            value={proj}
+            onChange={(e) => {
+              if (e.target.value === OTHERS) { setProjOthers(true); return; }
+              const id = e.target.value ? Number(e.target.value) : '';
+              setProj(id); setMod(''); setTask('');
+              if (id !== '') {
+                const allocation = allocations.find((a) => a.projectId === id);
+                if (allocation) {
+                  setClassification(allocation.classification);
+                  setBillingCategory(allocation.billingCategory);
+                } else {
+                  const p = projById(id);
+                  if (p) updateClassification(p.defaultBillable);
+                }
+              }
+            }}
+          >
+            <option value="">Select project</option>
+            {allocatedProjects.map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+            <option value={OTHERS}>+ Others (create new)</option>
+          </select>
+        )}
+        {proj === '' && allocatedProjects.length === 0 && (
           <div className={controls.hint}>
-            {accountObj.accountType} account — default classification is {accountObj.accountType === 'Internal' ? 'non-billable' : 'billable'}
+            You aren't allocated to any projects yet — ask your admin, or use "+ Others" to add one pending review.
           </div>
         )}
-      </div>
-
-      <div className={controls.field}>
-        <label>Project <span className={controls.req}>*</span></label>
-        <select
-          className={controls.select}
-          value={proj}
-          disabled={acc === ''}
-          onChange={(e) => {
-            const id = e.target.value ? Number(e.target.value) : '';
-            setProj(id); setMod(''); setTask('');
-            if (id !== '') {
-              const p = projById(id);
-              if (p) updateClassification(p.defaultBillable ? 'Billable' : 'NonBillable');
-            }
-          }}
-        >
-          <option value="">{acc !== '' ? 'Select project' : 'Select a customer first'}</option>
-          {projectsForAcc.map((p) => (
-            <option key={p.id} value={p.id}>{p.name}</option>
-          ))}
-        </select>
       </div>
 
       <div className={controls.field}>
         <label>Module <span className={controls.req}>*</span></label>
-        <select
-          className={controls.select}
-          value={mod}
-          disabled={proj === ''}
-          onChange={(e) => {
-            setMod(e.target.value ? Number(e.target.value) : '');
-            setTask('');
-          }}
-        >
-          <option value="">{proj !== '' ? 'Select module' : 'Select a project first'}</option>
-          {modulesForProj.map((m) => (
-            <option key={m.id} value={m.id}>{m.name}</option>
-          ))}
-        </select>
+        {modOthers ? (
+          <>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <input
+                className={controls.textInput}
+                style={{ flex: 1 }}
+                autoFocus
+                placeholder="Type the module name"
+                value={modOthersName}
+                onChange={(e) => { setModOthersName(e.target.value); setModOthersError(''); }}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleCreateModule(); }}
+              />
+              <button className={`${controls.btn} ${controls.pri} ${controls.sm}`} onClick={handleCreateModule} disabled={quickAddModule.isPending}>
+                Create
+              </button>
+              <button className={`${controls.btn} ${controls.sm}`} onClick={() => { setModOthers(false); setModOthersName(''); setModOthersError(''); }}>
+                Cancel
+              </button>
+            </div>
+            {modOthersError && <div className={styles.errMsg}>{modOthersError}</div>}
+          </>
+        ) : (
+          <select
+            className={controls.select}
+            value={mod}
+            disabled={proj === ''}
+            onChange={(e) => {
+              if (e.target.value === OTHERS) { setModOthers(true); return; }
+              setMod(e.target.value ? Number(e.target.value) : '');
+              setTask('');
+            }}
+          >
+            <option value="">{proj !== '' ? 'Select module' : 'Select a project first'}</option>
+            {modulesForProj.map((m) => (
+              <option key={m.id} value={m.id}>{m.name}</option>
+            ))}
+            {proj !== '' && <option value={OTHERS}>+ Others (create new)</option>}
+          </select>
+        )}
       </div>
 
       <div className={controls.field}>
         <label>Task <span className={controls.req}>*</span></label>
-        <select
-          className={controls.select}
-          value={task}
-          disabled={mod === ''}
-          onChange={(e) => {
-            setTask(e.target.value ? Number(e.target.value) : '');
-            setShowTaskError(false);
-          }}
-        >
-          <option value="">{mod !== '' ? 'Select task' : 'Select a module first'}</option>
-          {tasksForMod.map((t) => (
-            <option key={t.id} value={t.id}>{t.name}</option>
-          ))}
-        </select>
+        {taskOthers ? (
+          <>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <input
+                className={controls.textInput}
+                style={{ flex: 1 }}
+                autoFocus
+                placeholder="Type the task name"
+                value={taskOthersName}
+                onChange={(e) => { setTaskOthersName(e.target.value); setTaskOthersError(''); }}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleCreateTask(); }}
+              />
+              <button className={`${controls.btn} ${controls.pri} ${controls.sm}`} onClick={handleCreateTask} disabled={quickAddTask.isPending}>
+                Create
+              </button>
+              <button className={`${controls.btn} ${controls.sm}`} onClick={() => { setTaskOthers(false); setTaskOthersName(''); setTaskOthersError(''); }}>
+                Cancel
+              </button>
+            </div>
+            {taskOthersError && <div className={styles.errMsg}>{taskOthersError}</div>}
+          </>
+        ) : (
+          <select
+            className={controls.select}
+            value={task}
+            disabled={mod === ''}
+            onChange={(e) => {
+              if (e.target.value === OTHERS) { setTaskOthers(true); return; }
+              setTask(e.target.value ? Number(e.target.value) : '');
+              setShowTaskError(false);
+            }}
+          >
+            <option value="">{mod !== '' ? 'Select task' : 'Select a module first'}</option>
+            {tasksForMod.map((t) => (
+              <option key={t.id} value={t.id}>{t.name}</option>
+            ))}
+            {mod !== '' && <option value={OTHERS}>+ Others (create new)</option>}
+          </select>
+        )}
         {showTaskError && <div className={styles.errMsg}>Select the task this effort belongs to.</div>}
       </div>
 
-      <div className={controls.field}>
-        <label>Classification</label>
-        <div className={styles.segBill}>
-          <button className={classification === 'Billable' ? styles.on : ''} onClick={() => updateClassification('Billable')}>Billable</button>
-          <button className={classification === 'NonBillable' ? styles.on : ''} onClick={() => updateClassification('NonBillable')}>Non-billable</button>
-          <button className={classification === 'PartialBillable' ? styles.on : ''} onClick={() => updateClassification('PartialBillable')}>Partial Billable</button>
+      {proj !== '' && (
+        <div className={controls.field}>
+          <label>Billing classification</label>
+          {needsManualClassification ? (
+            <>
+              <div className={styles.segBill}>
+                <button className={classification === 'Billable' ? styles.on : ''} onClick={() => updateClassification('Billable')}>Billable</button>
+                <button className={classification === 'NonBillable' ? styles.on : ''} onClick={() => updateClassification('NonBillable')}>Non-billable</button>
+                <button className={classification === 'PartialBillable' ? styles.on : ''} onClick={() => updateClassification('PartialBillable')}>Partial billable</button>
+              </div>
+              {classification !== 'PartialBillable' && (
+                <div className={styles.segCat}>
+                  {(classification === 'Billable' ? ['AMS', 'T&M', 'FB'] : ['OH']).map((opt) => (
+                    <button
+                      key={opt}
+                      className={billingCategory === opt ? styles.on : ''}
+                      onClick={() => setBillingCategory((cur) => (cur === opt ? null : opt))}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <div className={controls.hint}>
+                This project is pending admin review, so pick its billing classification here for now — once an
+                admin formally allocates it to you, this will be set automatically instead.
+              </div>
+            </>
+          ) : (
+            <div className={controls.hint}>
+              {CLASSIFICATION_LABEL[classification]}{billingCategory ? ` — ${billingCategory}` : ''}, as assigned by
+              your admin for this project.
+            </div>
+          )}
         </div>
-        {classification !== 'PartialBillable' && (
-          <div className={styles.segCat}>
-            {(classification === 'Billable' ? ['AMS', 'T&M', 'FB'] : ['OH']).map((opt) => (
-              <button
-                key={opt}
-                className={billingCategory === opt ? styles.on : ''}
-                onClick={() => setBillingCategory((cur) => (cur === opt ? null : opt))}
-              >
-                {opt}
-              </button>
-            ))}
-          </div>
-        )}
-        {proj !== '' && projectObj && (
-          <div className={controls.hint}>
-            Project default is {projectObj.defaultBillable ? 'billable' : 'non-billable'} — you can override it for this line.
-          </div>
-        )}
-      </div>
+      )}
 
       <div className={controls.field}>
         <label>{pickMode ? 'Which day is this for?' : 'Hours'} {pickMode && <span className={controls.req}>*</span>}</label>
         <div className={styles.dayPick}>
           {dayTypes.map((dt, i) => {
-            const closed = capacityClosed(i);
+            const full = dayFull(i);
+            const closed = capacityClosed(i) || full;
             if (!pickMode) {
               if (!claimedDays.includes(i)) return null;
               return (
@@ -258,7 +431,7 @@ export function EntryDrawer({ dayTypes, existing, duplicateFrom, onSave, onDelet
                     onChange={(e) => {
                       let v = parseFloat(e.target.value);
                       if (Number.isNaN(v) || v < 0) v = 0;
-                      v = Math.min(4, v);
+                      v = Math.min(maxHoursFor(i), v);
                       setHours((h) => h.map((x, idx) => (idx === i ? v : x)));
                     }}
                   />
@@ -270,7 +443,7 @@ export function EntryDrawer({ dayTypes, existing, duplicateFrom, onSave, onDelet
               <label
                 key={dt.date}
                 className={`${closed ? styles.off : ''} ${selected ? styles.on : ''}`}
-                title={dayMonth(dt.date)}
+                title={full ? `${dayMonth(dt.date)} — day is full` : `${dayMonth(dt.date)} — ${maxHoursFor(i)} h left`}
                 onClick={() => {
                   if (closed || i === selectedDay) return;
                   setHours([0, 0, 0, 0, 0, 0, 0]);
@@ -288,12 +461,12 @@ export function EntryDrawer({ dayTypes, existing, duplicateFrom, onSave, onDelet
                     onChange={(e) => {
                       let v = parseFloat(e.target.value);
                       if (Number.isNaN(v) || v < 0) v = 0;
-                      v = Math.min(4, v);
+                      v = Math.min(maxHoursFor(i), v);
                       setHours((h) => h.map((x, idx) => (idx === i ? v : x)));
                     }}
                   />
                 ) : (
-                  <span className={styles.dayTileDash}>{closed ? '—' : '·'}</span>
+                  <span className={styles.dayTileDash}>{full ? 'Full' : closed ? DAY_TYPE_LABELS[dt.dayType]?.label ?? '—' : '·'}</span>
                 )}
               </label>
             );
@@ -302,8 +475,10 @@ export function EntryDrawer({ dayTypes, existing, duplicateFrom, onSave, onDelet
         {showDayError && <div className={styles.errMsg}>Select which day this task line is for.</div>}
         <div className={controls.hint}>
           {pickMode
-            ? 'Pick one day for this task line — up to 4 hours. Days marked leave, holiday or weekly off are closed for entry. To log this task on another day, save this line first and then use the duplicate (⧉) button.'
-            : 'Maximum 4 hours per day. To log this task on a different day, use the duplicate (⧉) button on the week grid instead.'}
+            ? selectedDay !== null
+              ? `Up to ${maxHoursFor(selectedDay)} h left on this day. A day can hold at most 8 h in total (4 h on a half-day leave).`
+              : 'Pick one day for this task line. Days that are full, on leave, holidays or W-OFF are closed.'
+            : 'A day can hold at most 8 h in total (4 h on a half-day leave). To log this task on another day, type the hours straight into the week grid.'}
         </div>
       </div>
 
@@ -312,6 +487,7 @@ export function EntryDrawer({ dayTypes, existing, duplicateFrom, onSave, onDelet
         <textarea
           className={controls.textarea}
           value={note}
+          maxLength={500}
           onChange={(e) => {
             setNote(e.target.value);
             setShowNoteError(false);
@@ -319,7 +495,7 @@ export function EntryDrawer({ dayTypes, existing, duplicateFrom, onSave, onDelet
           placeholder="Be specific — this is what your lead reads when approving."
         />
         {showNoteError && <div className={styles.errMsg}>Add a description of what you worked on.</div>}
-        <div className={controls.hint}>Required for every line.</div>
+        <div className={controls.hint}>Required for every line · {note.length} / 500 characters</div>
       </div>
 
       <div className={styles.footer}>
@@ -330,7 +506,20 @@ export function EntryDrawer({ dayTypes, existing, duplicateFrom, onSave, onDelet
         {existing && onDelete && (
           <>
             <div style={{ flex: 1 }} />
-            <button className={`${controls.btn} ${controls.dgr}`} onClick={onDelete}>Remove line</button>
+            <button
+              className={`${controls.btn} ${controls.dgr}`}
+              onClick={async () => {
+                const ok = await confirm({
+                  title: 'Remove task line?',
+                  message: "This task line and its hours will be removed from this week. This can't be undone.",
+                  confirmLabel: 'Remove',
+                  danger: true,
+                });
+                if (ok) onDelete?.();
+              }}
+            >
+              Remove line
+            </button>
           </>
         )}
       </div>
