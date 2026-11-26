@@ -32,6 +32,10 @@ import { HolidayCalendarPanel } from '../components/masterdata/HolidayCalendarPa
 import controls from '../styles/controls.module.css';
 import drawerStyles from '../components/timesheet/EntryDrawer.module.css';
 import styles from './MasterData.module.css';
+import { dayMonth } from '../lib/dates';
+
+/** Project List dates: '1 Dec 2026'. */
+const projectDate = (iso: string) => `${dayMonth(iso)} ${iso.slice(0, 4)}`;
 
 type Tab = 'dept' | 'acc' | 'proj' | 'modtask' | 'ptype' | 'res' | 'palloc' | 'hol' | 'woff';
 const TABS: [Tab, string][] = [
@@ -519,7 +523,7 @@ export function MasterDataPage() {
 
             {tab === 'proj' && (
               <RecordsCard count={filteredProjects.length}>
-                <thead><tr><th>Project</th><th>Customer / Internal</th><th>Project type</th><th>Default type</th><th>Bill type</th><th>Customer PO</th><th>Project lead</th><th>Project manager</th><th style={{ textAlign: 'right' }}>Modules</th><th>Status</th><th style={{ width: 150 }} /><th className={styles.editCol} /></tr></thead>
+                <thead><tr><th>Project</th><th>Customer / Internal</th><th>Start – End</th><th>Project type</th><th>Default type</th><th>Bill type</th><th>Customer PO</th><th>Project lead</th><th>Project manager</th><th style={{ textAlign: 'right' }}>Modules</th><th>Status</th><th style={{ width: 150 }} /><th className={styles.editCol} /></tr></thead>
                 <tbody>
                   {filteredProjects.map((p) => (
                     <tr key={p.id}>
@@ -534,6 +538,9 @@ export function MasterDataPage() {
                         )}
                       </td>
                       <td style={{ color: 'var(--slate)' }}>{accName(p.accountId)}</td>
+                      <td style={{ color: 'var(--slate)', whiteSpace: 'nowrap' }}>
+                        {p.startDate ? `${projectDate(p.startDate)} – ${p.endDate ? projectDate(p.endDate) : 'No end'}` : 'Not set'}
+                      </td>
                       <td style={{ color: 'var(--slate)' }}>{p.projectTypeName ?? '—'}</td>
                       <td>{CLASSIFICATION_LABELS[p.defaultBillable]}</td>
                       <td style={{ color: 'var(--slate)' }}>{p.billingType ?? '—'}</td>

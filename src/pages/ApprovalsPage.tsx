@@ -158,7 +158,7 @@ export function ApprovalsPage({ level2, title }: ApprovalsPageProps) {
             {weekQueue.length === 0 ? (
               <div className={styles.table}>
                 <div className={styles.empty}>
-                  <div style={{ fontWeight: 600, marginBottom: 4 }}>Nothing pending for this week</div>
+                  <div style={{ fontWeight: 600, marginBottom: 4 }}>Nothing is pending for this week</div>
                   {otherWeeksCount > 0
                     ? `${otherWeeksCount} timesheet${otherWeeksCount > 1 ? 's are' : ' is'} still pending from another week — use the arrows above to find it.`
                     : 'Nothing is waiting on your approval right now.'}

@@ -50,6 +50,10 @@ export interface ProjectDto {
   projectManagerEmployeeName: string | null;
   deliveryHeadEmployeeId: number | null;
   deliveryHeadEmployeeName: string | null;
+  /** Project dates (yyyy-mm-dd). User stories and hours must fall inside them.
+   * endDate null = no end date yet. Older projects may have no start date. */
+  startDate: string | null;
+  endDate: string | null;
 }
 
 export interface ModuleDto {
@@ -166,6 +170,9 @@ export interface CreateProjectRequest {
   projectLeadEmployeeId?: number | null;
   projectManagerEmployeeId?: number | null;
   deliveryHeadEmployeeId?: number | null;
+  /** Required for a new project. */
+  startDate?: string | null;
+  endDate?: string | null;
 }
 /** projectTypeId is retroactive-classification-only — the backend applies
  * it ONLY when the project currently has no projectTypeId (one created
@@ -186,6 +193,11 @@ export interface UpdateProjectRequest {
   projectLeadEmployeeId?: number | null;
   projectManagerEmployeeId?: number | null;
   deliveryHeadEmployeeId?: number | null;
+  /** Left out = unchanged. */
+  startDate?: string | null;
+  endDate?: string | null;
+  /** True = remove the end date (project has no end date). */
+  clearEndDate?: boolean;
 }
 
 export interface CreateModuleRequest {
@@ -390,6 +402,41 @@ export interface CreateUserStoryRequest {
   projectId: number | null;
   startDate: string;
   endDate: string;
+  /** Set when the name was picked from the manager's project story names. */
+  projectStoryNameId?: number | null;
+}
+
+/** A user story name a manager (or admin) added for a project, so the team
+ * on that project can pick it instead of typing their own. */
+export interface ProjectStoryNameDto {
+  id: number;
+  projectId: number;
+  name: string;
+  isActive: boolean;
+  createdByName: string | null;
+  /** How many employees have made a story from this name. */
+  usedByEmployees: number;
+}
+
+/** A project the signed-in manager/admin can add story names for. */
+export interface ManagedProjectDto {
+  projectId: number;
+  projectName: string;
+  clientName: string;
+  startDate: string | null;
+  endDate: string | null;
+  storyNames: ProjectStoryNameDto[];
+}
+
+export interface CreateProjectStoryNameRequest {
+  projectId: number;
+  name: string;
+}
+
+/** Left out = unchanged. */
+export interface UpdateProjectStoryNameRequest {
+  name?: string;
+  isActive?: boolean;
 }
 
 /** Edit a story's name and dates - the project can't change. */

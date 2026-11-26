@@ -7,6 +7,7 @@ import { Banner } from '../components/timesheet/Banner';
 import { StoryCard } from '../components/userStories/StoryCard';
 import { UserStoryDrawer } from '../components/userStories/UserStoryDrawer';
 import { StoryTaskDrawer } from '../components/userStories/StoryTaskDrawer';
+import { ProjectStoriesPanel } from '../components/userStories/ProjectStoriesPanel';
 import { useUI } from '../components/ui/UIProvider';
 import { useSession } from '../session/SessionContext';
 import { useWeek } from '../hooks/api/useTimesheet';
@@ -16,6 +17,7 @@ import { mondayOf, addDays, toISO, rangesOverlap } from '../lib/dates';
 import type { UserStoryDto, TimeEntryDto } from '../api/types';
 import controls from '../styles/controls.module.css';
 import styles from '../components/userStories/UserStories.module.css';
+import psStyles from '../components/userStories/ProjectStories.module.css';
 
 /** Which stories to show for the selected week: a story shows if its
  * start-end dates overlap the week, or if it already has tasks in that week
@@ -36,7 +38,11 @@ function storiesForWeek(stories: UserStoryDto[], weekEntries: TimeEntryDto[], we
  * timesheet line, so it shows up in My Timesheet for the same week.
  */
 export function UserStoriesPage() {
-  const { employeeCode } = useSession();
+  const { employeeCode, nav, isAdmin } = useSession();
+  // Managers (approvers) and admins also get a Project Stories tab, where they
+  // add story names for their projects.
+  const canManageNames = isAdmin || nav.includes('ap1') || nav.includes('ap2');
+  const [tab, setTab] = useState<'mine' | 'project'>('mine');
   const { openDrawer, closeDrawer, toast, confirm } = useUI();
   const [searchParams] = useSearchParams();
   const [weekStart, setWeekStart] = useState(() => {
@@ -121,49 +127,62 @@ export function UserStoriesPage() {
       <PageHeader title="User Stories" />
 
       <div className="page-content">
-        {(storiesError || weekError) && (
-          <Banner kind="reject">Couldn't load your user stories - check that the backend API is running and reachable.</Banner>
-        )}
-
-        {/* Week, its status and New user story sit at the top right of the page. */}
-        <div className={styles.toolbar}>
-          <WeekNav weekStart={weekStart} onShift={(d) => setWeekStart((w) => addDays(w, d * 7))} />
-          {week && <StatusPill status={week.week.status} />}
-          <button className={`${controls.btn} ${controls.pri}`} onClick={() => openStoryDrawer()}>New User Story</button>
-        </div>
-
-        {week && !editable && (
-          <div className={styles.locked}>This week has been submitted, so tasks can't be added or changed. Recall it from My Timesheet to edit.</div>
-        )}
-
-        {stories && week && visibleStories.length === 0 && (
-          <div className={styles.empty}>
-            <div className={styles.big}>No user story found</div>
+        {canManageNames && (
+          <div className={psStyles.tabs}>
+            <button className={tab === 'mine' ? psStyles.tabOn : ''} onClick={() => setTab('mine')}>My Stories</button>
+            <button className={tab === 'project' ? psStyles.tabOn : ''} onClick={() => setTab('project')}>Project Stories</button>
           </div>
         )}
 
-        <div className={styles.list}>
-          {visibleStories.map((story) => (
-            <StoryCard
-              key={story.id}
-              story={story}
-              tasks={(week?.entries ?? []).filter((e) => e.userStoryId === story.id)}
-              runsThisWeek={rangesOverlap(story.startDate, story.endDate, weekStart, addDays(weekStart, 6))}
-              expanded={expanded.has(story.id)}
-              editable={editable}
-              onToggle={() => toggle(story.id)}
-              onAddTask={() => openAddTask(story.id, story.name)}
-              onEditTask={openEditTask}
-              onEditStory={() => openStoryDrawer(story)}
-              onDeleteStory={() => handleDeleteStory(story)}
-            />
-          ))}
-        </div>
+        {tab === 'project' ? (
+          <ProjectStoriesPanel />
+        ) : (
+          <>
+            {(storiesError || weekError) && (
+              <Banner kind="reject">Couldn't load your user stories - check that the backend API is running and reachable.</Banner>
+            )}
 
-        {visibleStories.length > 0 && (
-          <div className={styles.viewTimesheet}>
-            <Link to={`/?week=${weekStart}`}>View Timesheet →</Link>
-          </div>
+            {/* Week, its status and New user story sit at the top right of the page. */}
+            <div className={styles.toolbar}>
+              <WeekNav weekStart={weekStart} onShift={(d) => setWeekStart((w) => addDays(w, d * 7))} />
+              {week && <StatusPill status={week.week.status} />}
+              <button className={`${controls.btn} ${controls.pri}`} onClick={() => openStoryDrawer()}>New User Story</button>
+            </div>
+
+            {week && !editable && (
+              <div className={styles.locked}>This week has been submitted, so tasks can't be added or changed. Recall it from My Timesheet to edit.</div>
+            )}
+
+            {stories && week && visibleStories.length === 0 && (
+              <div className={styles.empty}>
+                <div className={styles.big}>No user story found</div>
+              </div>
+            )}
+
+            <div className={styles.list}>
+              {visibleStories.map((story) => (
+                <StoryCard
+                  key={story.id}
+                  story={story}
+                  tasks={(week?.entries ?? []).filter((e) => e.userStoryId === story.id)}
+                  runsThisWeek={rangesOverlap(story.startDate, story.endDate, weekStart, addDays(weekStart, 6))}
+                  expanded={expanded.has(story.id)}
+                  editable={editable}
+                  onToggle={() => toggle(story.id)}
+                  onAddTask={() => openAddTask(story.id, story.name)}
+                  onEditTask={openEditTask}
+                  onEditStory={() => openStoryDrawer(story)}
+                  onDeleteStory={() => handleDeleteStory(story)}
+                />
+              ))}
+            </div>
+
+            {visibleStories.length > 0 && (
+              <div className={styles.viewTimesheet}>
+                <Link to={`/?week=${weekStart}`}>View Timesheet →</Link>
+              </div>
+            )}
+          </>
         )}
       </div>
     </>

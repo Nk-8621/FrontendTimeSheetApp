@@ -1,0 +1,134 @@
+/* ---- Project Stories: story names managers add for their projects ---- */
+
+/* My Stories / Project Stories tabs (same look as Master Data and Approvals tabs). */
+.tabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 14px;
+}
+.tabs > button {
+  white-space: nowrap;
+  border: 0;
+  background: none;
+  padding: 8px 11px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+}
+.tabs > button:hover {
+  color: var(--oxideDeep);
+}
+.tabs > button.tabOn {
+  color: var(--oxideDeep);
+  border-bottom-color: var(--oxideDeep);
+}
+
+.intro {
+  font-size: 12px;
+  color: var(--slate);
+  margin-bottom: 12px;
+}
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* One card per project. */
+.card {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--rLg);
+  box-shadow: var(--sh1);
+}
+.cardHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--rule);
+}
+.projectName {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.client {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--oxideDeep);
+  background: var(--oxideTint);
+  border-radius: 999px;
+  padding: 2px 9px;
+  white-space: nowrap;
+}
+.dates {
+  font-size: 11.5px;
+  color: var(--slate);
+}
+.grow {
+  flex: 1;
+}
+
+/* Story name rows inside a project card. */
+.names {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.names li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+}
+.names li + li {
+  border-top: 1px solid var(--rule);
+}
+.nameText {
+  flex: 1;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.closed .nameText {
+  color: var(--slate);
+  font-weight: 500;
+  text-decoration: line-through;
+}
+.meta {
+  font-size: 11px;
+  color: var(--slate);
+  white-space: nowrap;
+}
+.noNames {
+  padding: 10px 14px;
+  font-size: 12px;
+  color: var(--slate);
+}
+
+/* ---- Inside the New User Story form ---- */
+.projectDates {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--oxideDeep);
+  margin-top: 4px;
+}
+.pickBox {
+  margin-top: 8px;
+}
+.pickTitle {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ink2);
+}
+.picked {
+  background: var(--oxideTint) !important;
+  box-shadow: inset 3px 0 0 var(--oxide);
+}

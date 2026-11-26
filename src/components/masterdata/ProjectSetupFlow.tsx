@@ -85,6 +85,8 @@ export function ProjectSetupFlow({ onDone, onSwitchToClassicForm }: ProjectSetup
   const [projectLeadEmployeeId, setProjectLeadEmployeeId] = useState<number | ''>('');
   const [projectManagerEmployeeId, setProjectManagerEmployeeId] = useState<number | ''>('');
   const [deliveryHeadEmployeeId, setDeliveryHeadEmployeeId] = useState<number | ''>('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [projectError, setProjectError] = useState('');
   const [projectSaving, setProjectSaving] = useState(false);
 
@@ -154,6 +156,14 @@ export function ProjectSetupFlow({ onDone, onSwitchToClassicForm }: ProjectSetup
       setProjectError('Go back and pick a Customer/Internal account first.');
       return;
     }
+    if (!startDate) {
+      setProjectError("Enter the project's start date.");
+      return;
+    }
+    if (endDate && endDate < startDate) {
+      setProjectError("The end date can't be before the start date.");
+      return;
+    }
     setProjectSaving(true);
     setProjectError('');
     const shared = {
@@ -166,6 +176,8 @@ export function ProjectSetupFlow({ onDone, onSwitchToClassicForm }: ProjectSetup
       projectLeadEmployeeId: projectLeadEmployeeId === '' ? null : projectLeadEmployeeId,
       projectManagerEmployeeId: projectManagerEmployeeId === '' ? null : projectManagerEmployeeId,
       deliveryHeadEmployeeId: deliveryHeadEmployeeId === '' ? null : deliveryHeadEmployeeId,
+      startDate,
+      endDate: endDate || null,
     };
     try {
       if (projectId === '') {
@@ -178,7 +190,10 @@ export function ProjectSetupFlow({ onDone, onSwitchToClassicForm }: ProjectSetup
         setProjectId(created.id);
         setSavedAccountId(accountId);
       } else {
-        await mutations.updateProject.mutateAsync({ id: projectId, body: { ...shared, code: code.trim().toUpperCase() } });
+        await mutations.updateProject.mutateAsync({
+          id: projectId,
+          body: { ...shared, code: code.trim().toUpperCase(), clearEndDate: !endDate },
+        });
       }
       setProjectDone(true);
       setSection('modules');
@@ -301,6 +316,16 @@ export function ProjectSetupFlow({ onDone, onSwitchToClassicForm }: ProjectSetup
         <div className={controls.field}>
           <label>Project code <span className={controls.req}>*</span></label>
           <input className={controls.textInput} value={code} onChange={(e) => setCode(e.target.value)} placeholder="e.g. NML-P2" />
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className={controls.field}>
+            <label>Start Date <span className={controls.req}>*</span></label>
+            <input type="date" className={controls.textInput} value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+          </div>
+          <div className={controls.field}>
+            <label>End Date</label>
+            <input type="date" className={controls.textInput} value={endDate} min={startDate || undefined} onChange={(e) => setEndDate(e.target.value)} />
+          </div>
         </div>
         <div className={controls.field}>
           <label>Project Tech</label>

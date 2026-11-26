@@ -31,6 +31,9 @@ interface ProjectRow {
   projectLeadEmployeeId?: number | null;
   projectManagerEmployeeId?: number | null;
   deliveryHeadEmployeeId?: number | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  clearEndDate?: boolean;
 }
 
 interface ProjectDrawerProps {
@@ -87,6 +90,8 @@ export function ProjectDrawer({ existing, departments, accounts, projectTypes, e
   const [projectLeadEmployeeId, setProjectLeadEmployeeId] = useState<number | ''>(existing?.projectLeadEmployeeId ?? '');
   const [projectManagerEmployeeId, setProjectManagerEmployeeId] = useState<number | ''>(existing?.projectManagerEmployeeId ?? '');
   const [deliveryHeadEmployeeId, setDeliveryHeadEmployeeId] = useState<number | ''>(existing?.deliveryHeadEmployeeId ?? '');
+  const [startDate, setStartDate] = useState(existing?.startDate ?? '');
+  const [endDate, setEndDate] = useState(existing?.endDate ?? '');
   const [error, setError] = useState('');
 
   const accountsForDept = departmentId !== '' ? accounts.filter((a) => a.departmentId === departmentId) : [];
@@ -153,6 +158,19 @@ export function ProjectDrawer({ existing, departments, accounts, projectTypes, e
       setError('Project name and project code are both required.');
       return;
     }
+    // Start date is required for a new project (older projects may not have one yet).
+    if (!existing && !startDate) {
+      setError("Enter the project's start date.");
+      return;
+    }
+    if (endDate && !startDate) {
+      setError('Enter a start date before setting an end date.');
+      return;
+    }
+    if (startDate && endDate && endDate < startDate) {
+      setError("The end date can't be before the start date.");
+      return;
+    }
     if (existing) {
       if (accountId === '') {
         setError('Customer/Internal account is required.');
@@ -186,6 +204,10 @@ export function ProjectDrawer({ existing, departments, accounts, projectTypes, e
       projectLeadEmployeeId: projectLeadEmployeeId === '' ? null : projectLeadEmployeeId,
       projectManagerEmployeeId: projectManagerEmployeeId === '' ? null : projectManagerEmployeeId,
       deliveryHeadEmployeeId: deliveryHeadEmployeeId === '' ? null : deliveryHeadEmployeeId,
+      startDate: startDate || null,
+      endDate: endDate || null,
+      // Editing: an emptied end date means "no end date".
+      clearEndDate: existing ? !endDate && existing.endDate !== null : undefined,
     };
     const baseCode = code.trim().toUpperCase();
 
@@ -284,6 +306,20 @@ export function ProjectDrawer({ existing, departments, accounts, projectTypes, e
             Will create: {matchingDepartmentIds.map((id) => codeForDept(code.trim().toUpperCase(), id)).join(', ')}
           </div>
         )}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div className={controls.field}>
+          <label htmlFor="projectStart">Start Date {!existing && <span className={controls.req}>*</span>}</label>
+          <input id="projectStart" type="date" className={controls.textInput} value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+        </div>
+        <div className={controls.field}>
+          <label htmlFor="projectEnd">End Date</label>
+          <input id="projectEnd" type="date" className={controls.textInput} value={endDate} min={startDate || undefined} onChange={(e) => setEndDate(e.target.value)} />
+        </div>
+      </div>
+      <div className={controls.hint} style={{ marginTop: -6, marginBottom: 12 }}>
+        User stories and hours on this project must fall between these dates. Leave End Date empty if it isn't known yet.
       </div>
 
       <div className={controls.field}>
