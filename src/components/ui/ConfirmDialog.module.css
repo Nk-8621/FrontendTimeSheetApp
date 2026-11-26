@@ -2,7 +2,7 @@
 .overlay {
   position: fixed;
   inset: 0;
-  z-index: 60;
+  z-index: 90;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -35,13 +35,13 @@
 }
 .title {
   margin: 2px 0 6px;
-  font-size: 16px;
+  font-size: var(--fs-lg);
   font-weight: 600;
   color: var(--ink);
 }
 .message {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--fs-base);
   line-height: 1.5;
   color: var(--ink2);
   overflow-wrap: anywhere;
@@ -53,36 +53,46 @@
   margin-top: 20px;
 }
 .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: var(--btnH);
+  padding: 0 var(--btnPadX);
   font-family: var(--sans);
-  font-size: 12.5px;
+  font-size: var(--fs-base);
   font-weight: 600;
-  padding: 7px 16px;
-  border-radius: var(--r);
+  border-radius: var(--rBtn);
   border: 1px solid var(--ruleStrong);
   background: var(--paper);
-  color: var(--ink2);
+  color: var(--ink);
+  box-shadow: var(--shBtn);
   cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
 }
 .btn:hover {
-  background: var(--canvas);
+  background: var(--hover);
+  border-color: var(--oxide);
 }
 .btn:focus-visible {
   outline: 2px solid var(--oxideMid);
   outline-offset: 1px;
 }
 .primary {
-  background: var(--oxide);
-  border-color: var(--oxide);
-  color: #fff;
+  background: var(--btnPri);
+  border-color: var(--btnPri);
+  color: var(--btnPriInk);
 }
 .primary:hover {
-  background: #1d5480;
+  background: var(--btnPriHover);
+  border-color: var(--btnPriHover);
 }
 .danger {
-  background: var(--clay);
-  border-color: var(--clay);
-  color: #fff;
+  background: var(--claySolid);
+  border-color: var(--claySolid);
+  color: var(--onPrimary);
 }
 .danger:hover {
-  background: #8a2219;
+  background: var(--claySolidHover);
+  border-color: var(--claySolidHover);
 }

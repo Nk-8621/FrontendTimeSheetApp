@@ -9,6 +9,7 @@ import { useUI } from '../components/ui/UIProvider';
 import { approvalsApi } from '../api/approvals';
 import { dayMonth, addDays, mondayOf, toISO } from '../lib/dates';
 import controls from '../styles/controls.module.css';
+import { Icon } from '../components/ui/Icon';
 import kpiStyles from '../components/timesheet/KpiStrip.module.css';
 import styles from '../components/approvals/ApprovalQueue.module.css';
 
@@ -79,7 +80,7 @@ export function ApprovalsPage({ level2, title }: ApprovalsPageProps) {
 
   return (
     <>
-      <PageHeader title={title} />
+      <PageHeader title={title} subtitle={level2 ? 'Timesheets approved at Level 1, waiting for your final approval.' : 'Timesheets submitted by your team, waiting for your review.'} />
       <div className="page-content">
         {isError && <Banner kind="reject">Couldn't load the approval queue — check that the backend API is reachable.</Banner>}
 
@@ -95,7 +96,7 @@ export function ApprovalsPage({ level2, title }: ApprovalsPageProps) {
               Returned by Level 2{returned && returned.length > 0 ? ` (${returned.length})` : ''}
             </button>
             {/* Kept on both tabs (hidden on Returned) so the tabs line doesn't move when switching. */}
-            <div style={{ marginLeft: 'auto', alignSelf: 'center', paddingBottom: 6, visibility: showReturned ? 'hidden' : 'visible' }}>
+            <div style={{ marginLeft: 'auto', alignSelf: 'center', visibility: showReturned ? 'hidden' : 'visible' }}>
               <WeekNav weekStart={selectedWeek} onShift={shiftWeek} />
             </div>
           </div>
@@ -109,7 +110,7 @@ export function ApprovalsPage({ level2, title }: ApprovalsPageProps) {
         {showReturned && (
           <>
             {returnedError && <Banner kind="reject">Couldn't load the returned timesheets — check that the backend API is reachable.</Banner>}
-            <p style={{ fontSize: 12, color: 'var(--slate)', margin: '0 0 10px' }}>
+            <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--slate)', margin: '0 0 10px' }}>
               Timesheets you approved that Level 2 sent back to the employee. Once the employee fixes and resubmits, they move back to Pending.
             </p>
             {returned && returned.length === 0 && (
@@ -131,19 +132,19 @@ export function ApprovalsPage({ level2, title }: ApprovalsPageProps) {
           <>
             <div className={kpiStyles.kpis}>
               <div className={`${kpiStyles.kpi} ${kpiStyles.w}`}>
-                <div className={kpiStyles.k}>Awaiting you</div>
+                <div className={kpiStyles.k}><span className={kpiStyles.tile}><Icon name="hourglass" /></span>Awaiting you</div>
                 <div className={kpiStyles.v}>{weekQueue.length}</div>
                 <div className={kpiStyles.d}>this week{otherWeeksCount > 0 ? ` — ${queue.length} total across all weeks` : ''}</div>
               </div>
               <div className={`${kpiStyles.kpi} ${kpiStyles.a}`}>
                 <div className={kpiStyles.v}>{totalHours.toFixed(1)}<small> h</small></div>
-                <div className={kpiStyles.k} style={{ order: -1, marginBottom: 3 }}>Hours in queue</div>
+                <div className={kpiStyles.k} style={{ order: -1, marginBottom: 3 }}><span className={kpiStyles.tile}><Icon name="clock" /></span>Hours in queue</div>
                 <div className={kpiStyles.d}>{pctBillable}% billable · {pctPartialBillable}% partial</div>
               </div>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 9 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--slate)' }}>
+              <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--slate)' }}>
                 {dayMonth(selectedWeek)} – {dayMonth(addDays(selectedWeek, 6))}
               </div>
               <div style={{ flex: 1 }} />

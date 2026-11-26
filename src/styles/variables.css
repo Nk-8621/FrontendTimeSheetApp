@@ -1,51 +1,316 @@
+/*
+ * Design tokens - Carbynetech Timesheet design system.
+ *
+ * Visual direction: clean neutral SaaS dashboard (light grey app frame,
+ * page content in one white rounded panel, grouped sidebar, black primary
+ * buttons, purple accent for data / focus / selection), adapted to
+ * Carbynetech branding (teal avatar, Carbynetech logo).
+ *
+ * Variants on <html> (lib/theme.ts, chosen from the profile menu):
+ *   data-theme="dark"            Display mode -> Dark
+ *   data-accent="teal" | "blue"  Theme color  -> Carbynetech teal / Blue
+ *
+ * Components only use these variables. Names kept from earlier themes:
+ *   --canvas app frame / sidebar   --paper   panels & cards
+ *   --paperAlt subtle fills        --raised  table heads, segments
+ *   --hover   hover fill           --ink..--slate2 text, strong -> faint
+ *   --rule / --ruleStrong borders  --oxide   accent (theme colour)
+ */
 :root {
-  --ink: #151A21;
-  /* Text greys - darkened for readability (were #39424E / #616B77 / #748092). */
-  --ink2: #1F2933;
-  --slate: #4A5563;
-  --slate2: #5B6676;
-  --rule: #E2E7ED;
-  --ruleStrong: #C8D1DA;
-  --canvas: #F1F4F8;
+  color-scheme: light;
+
+  /* Surfaces */
+  --canvas: #F4F4F6;
   --paper: #FFFFFF;
+  --paperAlt: #FAFAFB;
+  --raised: #F6F6F8;
+  --hover: #F4F4F6;
+  --overlay: rgba(24, 24, 27, 0.40);
 
-  --oxide: #17456B;
-  --oxideDeep: #0D2C45;
-  --oxideTint: #E7EEF5;
-  --oxideMid: #3C6E96;
+  /* Text */
+  --ink: #18181B;
+  --ink2: #3F3F46;
+  --slate: #6E6E78;
+  --slate2: #A1A1AA;
+  --onPrimary: #FFFFFF;
 
-  --amber: #9C5D00;
-  --amberTint: #FCF2E1;
-  --amberLine: #E8C58A;
+  /* Borders */
+  --rule: #D8DEE7;      /* card / table / divider borders - light blue-grey */
+  --ruleStrong: #C2CAD6; /* input / control borders */
 
-  --verd: #0C6E5B;
-  --verdTint: #E2F1ED;
-  --verdLine: #8FC9BC;
+  /* Accent (theme colour) - purple */
+  --oxide: #7C5CFC;
+  --oxideHover: #6A48F0;
+  --oxideTint: #F2EEFF;
+  --oxideMid: #9B83FD;
+  --oxideLine: #DAD0FE;
+  --oxideDeep: #18181B;
+  --link: #6544EE;
+  --teal: #1FA9B5;
+  --avatar: #1FA9B5; /* Carbynetech teal */
 
-  --clay: #A32A1F;
-  --clayTint: #FBE9E7;
-  --clayLine: #E3ADA6;
+  /* Primary action button (dark, like the reference "Create campaign") */
+  --btnPri: #1C1C21;
+  --btnPriHover: #000000;
+  --btnPriInk: #FFFFFF;
 
-  --violet: #544080;
-  --violetTint: #EDEAF6;
-  --violetLine: #BEB3DC;
+  /* App chrome */
+  --rail: var(--canvas);
+  --railActive: #E9E9EC;
+  --railHover: #EEEEF1;
+  --railInk: #4A4A53;
+  --railInkOn: #18181B;
+  --railLine: #D8DEE7;
+  --railLabel: #9C9CA6;
 
-  --r: 3px;
-  --rLg: 5px;
+  /* Status: text / tint / border / solid */
+  --amber: #B54708;
+  --amberTint: #FFF8EB;
+  --amberLine: #FEDF89;
+  --amberSolid: #F79009;
 
-  --sh1: 0 1px 2px rgba(21, 26, 33, 0.06);
-  --sh2: 0 4px 14px rgba(21, 26, 33, 0.10), 0 1px 3px rgba(21, 26, 33, 0.06);
-  --sh3: 0 18px 50px rgba(13, 44, 69, 0.20);
+  --verd: #067647;
+  --verdTint: #ECFDF3;
+  --verdLine: #ABEFC6;
+  --verdSolid: #17B26A;
+  --verdSolidHover: #079455;
 
-  /* TYPOGRAPHY (Nov 2026): Inter for everything. Numbers (--mono) use Inter
-     too - global.css turns on tabular figures so hours still line up. */
-  --mono: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --clay: #B42318;
+  --clayTint: #FEF3F2;
+  --clayLine: #FECDCA;
+  --clayStrong: #912018;
+  --claySolid: #D92D20;
+  --claySolidHover: #B42318;
+
+  --violet: #6544EE;
+  --violetTint: #F2EEFF;
+  --violetLine: #DAD0FE;
+
+  --info: #175CD3;
+  --infoTint: #EFF8FF;
+  --infoLine: #B2DDFF;
+
+  /* Billing classification - same colour everywhere (grid, KPIs, bars) */
+  --billable: #17B26A;
+  --billableTint: #ECFDF3;
+  --billableInk: #067647;
+  --partial: #2E90FA;
+  --partialTint: #EFF8FF;
+  --partialInk: #175CD3;
+  --nonbill: #A1A1AA;
+  --nonbillTint: #F4F4F5;
+  --nonbillInk: #52525B;
+
+  /* KPI icon tiles */
+  --tilePurple: #7C5CFC;
+  --tileOrange: #F79009;
+  --tileBlue: #2E90FA;
+  --tileGreen: #17B26A;
+  --tileGrey: #71717A;
+
+  /* Day-type swatches */
+  --leaveA: #FEF3F2;
+  --leaveB: #FDE4E1;
+  --leaveHalfB: #FFF9F8;
+  --holidayA: #FFF8EB;
+  --holidayB: #FDECC8;
+  --woffA: #F6F6F8;
+  --woffB: #ECECEF;
+  --heat3: #CFC2FE;
+  --heat2: #ECE6FF;
+  --heat1: #FFF3D6;
+  --heat0: #F6F6F8;
+
+  /* Shape */
+  --r: 8px;      /* inputs, chips, small controls */
+  --rBtn: 10px;  /* buttons */
+  --rLg: 12px;   /* cards */
+  --rXl: 16px;   /* page panel, dialogs */
+  --rPill: 999px;
+
+  --sh1: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --sh2: 0 12px 32px rgba(16, 24, 40, 0.10), 0 2px 6px rgba(16, 24, 40, 0.05);
+  --sh3: 0 24px 64px rgba(16, 24, 40, 0.18);
+  --shHover: 0 6px 16px rgba(16, 24, 40, 0.07);
+  --shBtn: 0 1px 2px rgba(16, 24, 40, 0.06);
+
+  /* Type: Inter, one scale for the whole app */
   --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --mono: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
-  /* Two deliberate heading sizes, used consistently instead of one weight
-     doing both jobs: page titles (PageHeader) vs. section/drawer labels
-     (drawer heads, accordion section titles, card headings). Everything
-     smaller than this stays on the existing ad hoc 10.5–13px body scale. */
-  --fsPageTitle: 19px;
-  --fsSectionTitle: 15px;
+  --fs-2xs: 11px;   /* badges, tiny captions */
+  --fs-xs: 12px;    /* meta text, pills, section labels */
+  --fs-sm: 13px;    /* secondary text, table headers, small buttons */
+  --fs-base: 14px;  /* body, table cells, inputs, buttons, nav */
+  --fs-md: 15px;    /* card titles, emphasised body */
+  --fs-lg: 16px;    /* drawer section titles */
+  --fs-xl: 18px;    /* drawer titles */
+  --fs-kpi: 26px;   /* KPI values */
+  --fsPageTitle: 20px;
+  --fsSectionTitle: 17px;
+
+  --icon-sm: 16px;
+  --icon-md: 18px;
+  --icon-lg: 20px;
+
+  /* Buttons - one size system everywhere */
+  --btnH: 36px;
+  --btnHSm: 30px;
+  --btnPadX: 14px;
+  --btnPadXSm: 10px;
+
+  /* Layout */
+  --sideW: 216px;
+  --headH: 64px;
+}
+
+/* Theme colour: Carbynetech teal */
+:root[data-accent='teal'] {
+  --oxide: #1FA9B5;
+  --oxideHover: #178E99;
+  --oxideTint: #E8F7F8;
+  --oxideMid: #4FC0CA;
+  --oxideLine: #B3E3E8;
+  --link: #128591;
+  --violet: #128591;
+  --violetTint: #E8F7F8;
+  --violetLine: #B3E3E8;
+  --tilePurple: #1FA9B5;
+  --heat3: #B3E3E8;
+  --heat2: #E8F7F8;
+}
+
+/* Theme colour: Blue */
+:root[data-accent='blue'] {
+  --oxide: #2E6BEF;
+  --oxideHover: #1F57D6;
+  --oxideTint: #EEF3FE;
+  --oxideMid: #5B8BF3;
+  --oxideLine: #C5D6FB;
+  --link: #1F57D6;
+  --violet: #1F57D6;
+  --violetTint: #EEF3FE;
+  --violetLine: #C5D6FB;
+  --tilePurple: #2E6BEF;
+  --heat3: #C5D6FB;
+  --heat2: #EEF3FE;
+}
+
+/* Display mode: Dark */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --canvas: #0F0F12;
+  --paper: #17171B;
+  --paperAlt: #1B1B20;
+  --raised: #1E1E24;
+  --hover: #222229;
+  --overlay: rgba(0, 0, 0, 0.6);
+
+  --ink: #F4F4F5;
+  --ink2: #D4D4D8;
+  --slate: #A1A1AA;
+  --slate2: #74747E;
+
+  --rule: #2E2E37;
+  --ruleStrong: #3E3E48;
+
+  --oxide: #8B70FF;
+  --oxideHover: #7A5CFF;
+  --oxideTint: rgba(139, 112, 255, 0.16);
+  --oxideMid: #A894FF;
+  --oxideLine: rgba(139, 112, 255, 0.40);
+  --oxideDeep: #26262D;
+  --link: #B4A3FF;
+
+  --btnPri: #F4F4F5;
+  --btnPriHover: #FFFFFF;
+  --btnPriInk: #18181B;
+
+  --railActive: #212128;
+  --railHover: #1A1A20;
+  --railInk: #B4B4BC;
+  --railInkOn: #FFFFFF;
+  --railLine: #222228;
+  --railLabel: #6E6E78;
+
+  --amber: #FDB022;
+  --amberTint: rgba(253, 176, 34, 0.12);
+  --amberLine: rgba(253, 176, 34, 0.38);
+  --amberSolid: #DC6803;
+
+  --verd: #47CD89;
+  --verdTint: rgba(71, 205, 137, 0.12);
+  --verdLine: rgba(71, 205, 137, 0.38);
+  --verdSolid: #079455;
+  --verdSolidHover: #067647;
+
+  --clay: #F97066;
+  --clayTint: rgba(249, 112, 102, 0.12);
+  --clayLine: rgba(249, 112, 102, 0.38);
+  --clayStrong: #FDA29B;
+  --claySolid: #D92D20;
+  --claySolidHover: #B42318;
+
+  --violet: #B4A3FF;
+  --violetTint: rgba(139, 112, 255, 0.14);
+  --violetLine: rgba(139, 112, 255, 0.38);
+
+  --billableTint: rgba(23, 178, 106, 0.14);
+  --billableInk: #47CD89;
+  --partialTint: rgba(46, 144, 250, 0.14);
+  --partialInk: #84CAFF;
+  --nonbill: #74747E;
+  --nonbillTint: rgba(255, 255, 255, 0.06);
+  --nonbillInk: #D4D4D8;
+
+  --info: #84CAFF;
+  --infoTint: rgba(46, 144, 250, 0.12);
+  --infoLine: rgba(46, 144, 250, 0.38);
+
+  --leaveA: rgba(249, 112, 102, 0.18);
+  --leaveB: rgba(249, 112, 102, 0.08);
+  --leaveHalfB: rgba(249, 112, 102, 0.03);
+  --holidayA: rgba(253, 176, 34, 0.18);
+  --holidayB: rgba(253, 176, 34, 0.08);
+  --woffA: rgba(255, 255, 255, 0.06);
+  --woffB: rgba(255, 255, 255, 0.02);
+  --heat3: rgba(139, 112, 255, 0.45);
+  --heat2: rgba(139, 112, 255, 0.20);
+  --heat1: rgba(253, 176, 34, 0.16);
+  --heat0: #1E1E24;
+
+  --sh1: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --sh2: 0 12px 32px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.3);
+  --sh3: 0 24px 64px rgba(0, 0, 0, 0.6);
+  --shHover: 0 6px 16px rgba(0, 0, 0, 0.35);
+  --shBtn: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+:root[data-theme='dark'][data-accent='teal'] {
+  --oxide: #2EC4D1;
+  --oxideHover: #1FA9B5;
+  --oxideTint: rgba(46, 196, 209, 0.14);
+  --oxideMid: #5FD3DD;
+  --oxideLine: rgba(46, 196, 209, 0.40);
+  --link: #6FDDE6;
+  --violet: #6FDDE6;
+  --violetTint: rgba(46, 196, 209, 0.14);
+  --violetLine: rgba(46, 196, 209, 0.38);
+  --heat3: rgba(46, 196, 209, 0.45);
+  --heat2: rgba(46, 196, 209, 0.20);
+}
+
+:root[data-theme='dark'][data-accent='blue'] {
+  --oxide: #528BFF;
+  --oxideHover: #2E6BEF;
+  --oxideTint: rgba(82, 139, 255, 0.16);
+  --oxideMid: #84A9FF;
+  --oxideLine: rgba(82, 139, 255, 0.40);
+  --link: #9DB9FF;
+  --violet: #9DB9FF;
+  --violetTint: rgba(82, 139, 255, 0.14);
+  --violetLine: rgba(82, 139, 255, 0.38);
+  --heat3: rgba(82, 139, 255, 0.45);
+  --heat2: rgba(82, 139, 255, 0.20);
 }

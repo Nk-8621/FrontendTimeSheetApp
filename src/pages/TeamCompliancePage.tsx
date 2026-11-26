@@ -11,6 +11,7 @@ import { downloadCsv } from '../lib/csv';
 import type { TeamComplianceRowDto } from '../api/types';
 import controls from '../styles/controls.module.css';
 import queueStyles from '../components/approvals/ApprovalQueue.module.css';
+import { Icon } from '../components/ui/Icon';
 import kpiStyles from '../components/timesheet/KpiStrip.module.css';
 import styles from './TeamCompliance.module.css';
 
@@ -81,14 +82,14 @@ function TeamComplianceRow({ row, weekStart }: TeamComplianceRowProps) {
       >
         <td style={{ padding: '9px 14px', borderTop: '1px solid var(--rule)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 23, height: 23, borderRadius: '50%', background: 'var(--oxideTint)', color: 'var(--oxide)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9.5, fontWeight: 700, flexShrink: 0 }}>{initials}</div>
+            <div style={{ width: 23, height: 23, borderRadius: '50%', background: 'var(--oxideTint)', color: 'var(--link)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--fs-2xs)', fontWeight: 700, flexShrink: 0 }}>{initials}</div>
             <div>
               <div style={{ fontWeight: 600 }}>{row.fullName}</div>
-              <div style={{ fontSize: 10.5, color: 'var(--slate)' }}>{row.designation}</div>
+              <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--slate)' }}>{row.designation}</div>
             </div>
           </div>
         </td>
-        <td style={{ padding: '9px 14px', borderTop: '1px solid var(--rule)', fontSize: 11, color: 'var(--slate)' }}>{row.departmentName}</td>
+        <td style={{ padding: '9px 14px', borderTop: '1px solid var(--rule)', fontSize: 'var(--fs-xs)', color: 'var(--slate)' }}>{row.departmentName}</td>
         {row.dailyHours.map((h, i) => {
           const leaveHalf = row.dailyLeaveHalf[i];
           return (
@@ -110,11 +111,11 @@ function TeamComplianceRow({ row, weekStart }: TeamComplianceRowProps) {
           {row.totalHours ? (
             <>
               <div className={styles.bar}>
-                <i style={{ width: `${pctBill}%`, background: 'var(--oxide)', display: 'block', height: '100%' }} />
-                <i style={{ width: `${pctPartial}%`, background: 'var(--violet)', display: 'block', height: '100%' }} />
-                <i style={{ width: `${pctNon}%`, background: 'var(--slate2, #C7CEDA)', display: 'block', height: '100%' }} />
+                <i style={{ width: `${pctBill}%`, background: 'var(--billable)', display: 'block', height: '100%' }} />
+                <i style={{ width: `${pctPartial}%`, background: 'var(--partial)', display: 'block', height: '100%' }} />
+                <i style={{ width: `${pctNon}%`, background: 'var(--nonbill)', display: 'block', height: '100%' }} />
               </div>
-              <div className="num" style={{ fontSize: 10, color: 'var(--slate)', marginTop: 2 }}>{pctBill}% billable · {pctPartial}% partial</div>
+              <div className="num" style={{ fontSize: 'var(--fs-2xs)', color: 'var(--slate)', marginTop: 2 }}>{pctBill}% billable · {pctPartial}% partial</div>
             </>
           ) : <span style={{ color: 'var(--slate2)' }}>-</span>}
         </td>
@@ -122,9 +123,9 @@ function TeamComplianceRow({ row, weekStart }: TeamComplianceRowProps) {
       </tr>
       {isOpen && (
         <tr>
-          <td colSpan={COLUMN_COUNT} style={{ padding: '10px 14px', background: '#FAFBFD', borderTop: '1px solid var(--rule)' }}>
-            {isDetailLoading && <div style={{ fontSize: 12, color: 'var(--slate)' }}>Loading detail...</div>}
-            {detail && detail.lines.length === 0 && <div style={{ fontSize: 12, color: 'var(--slate)' }}>No task lines logged this week.</div>}
+          <td colSpan={COLUMN_COUNT} style={{ padding: '10px 14px', background: 'var(--paperAlt)', borderTop: '1px solid var(--rule)' }}>
+            {isDetailLoading && <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--slate)' }}>Loading detail...</div>}
+            {detail && detail.lines.length === 0 && <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--slate)' }}>No task lines logged this week.</div>}
             {detail && detail.lines.length > 0 && <WeekDetailTable item={detail} />}
           </td>
         </tr>
@@ -181,7 +182,7 @@ export function TeamCompliancePage() {
 
   return (
     <>
-      <PageHeader title="Team Compliance" />
+      <PageHeader title="Team Compliance" subtitle="Who has logged and submitted their hours for the selected week." />
       <div className="page-content">
         {/* Week picker sits below the header, same as User Stories. */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
@@ -194,27 +195,27 @@ export function TeamCompliancePage() {
           <>
             <div className={kpiStyles.kpis}>
               <div className={`${kpiStyles.kpi} ${kpiStyles.a}`}>
-                <div className={kpiStyles.k}>Team hours logged</div>
+                <div className={kpiStyles.k}><span className={kpiStyles.tile}><Icon name="clock" /></span>Team hours logged</div>
                 <div className={kpiStyles.v}>{totalHours.toFixed(0)}<small> / {totalCapacity.toFixed(0)}</small></div>
                 <div className={kpiStyles.d}>{pctOfCapacity}% of capacity — {elapsedDays} of 7 days elapsed</div>
               </div>
               <div className={`${kpiStyles.kpi} ${kpiStyles.g}`}>
-                <div className={kpiStyles.k}>Billable share</div>
+                <div className={kpiStyles.k}><span className={kpiStyles.tile}><Icon name="coins" /></span>Billable share</div>
                 <div className={kpiStyles.v}>{pctBillable}<small>%</small></div>
                 <div className={kpiStyles.d}>{totalBillable.toFixed(0)} h billable of {totalHours.toFixed(0)} h</div>
               </div>
               <div className={`${kpiStyles.kpi} ${kpiStyles.p}`}>
-                <div className={kpiStyles.k}>Partial billable share</div>
+                <div className={kpiStyles.k}><span className={kpiStyles.tile}><Icon name="halfCircle" /></span>Partial billable share</div>
                 <div className={kpiStyles.v}>{pctPartialBillable}<small>%</small></div>
                 <div className={kpiStyles.d}>{totalPartialBillable.toFixed(0)} h partial of {totalHours.toFixed(0)} h</div>
               </div>
               <div className={`${kpiStyles.kpi} ${submittedCount === rows.length ? kpiStyles.g : kpiStyles.w}`}>
-                <div className={kpiStyles.k}>Submitted</div>
+                <div className={kpiStyles.k}><span className={kpiStyles.tile}><Icon name="send" /></span>Submitted</div>
                 <div className={kpiStyles.v}>{submittedCount}<small> / {rows.length}</small></div>
                 <div className={kpiStyles.d}>weeks sent for approval</div>
               </div>
               <div className={`${kpiStyles.kpi} ${kpiStyles.r}`}>
-                <div className={kpiStyles.k}>Nothing logged</div>
+                <div className={kpiStyles.k}><span className={kpiStyles.tile}><Icon name="inbox" /></span>Nothing logged</div>
                 <div className={kpiStyles.v}>{zeroLogged.length}</div>
                 <div className={kpiStyles.d}>of {rows.length} in scope</div>
               </div>
@@ -240,18 +241,18 @@ export function TeamCompliancePage() {
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr>
-                    <th style={{ textAlign: 'left', padding: '10px 14px', fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--slate)', borderBottom: '1px solid var(--ruleStrong)' }}>Resource</th>
-                    <th style={{ textAlign: 'left', padding: '10px 14px', fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--slate)', borderBottom: '1px solid var(--ruleStrong)' }}>Department</th>
+                    <th style={{ textAlign: 'left', padding: '10px 14px', fontSize: 'var(--fs-sm)', fontWeight: 500, color: 'var(--slate)', background: 'var(--paperAlt)', borderBottom: '1px solid var(--rule)' }}>Resource</th>
+                    <th style={{ textAlign: 'left', padding: '10px 14px', fontSize: 'var(--fs-sm)', fontWeight: 500, color: 'var(--slate)', background: 'var(--paperAlt)', borderBottom: '1px solid var(--rule)' }}>Department</th>
                     {DAY_NAMES.map((d, i) => (
-                      <th key={d} style={{ width: 44, textAlign: 'center', padding: '10px 4px', fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--slate)', borderBottom: '1px solid var(--ruleStrong)' }}>
+                      <th key={d} style={{ width: 44, textAlign: 'center', padding: '10px 4px', fontSize: 'var(--fs-sm)', fontWeight: 500, color: 'var(--slate)', background: 'var(--paperAlt)', borderBottom: '1px solid var(--rule)' }}>
                         {d}
-                        <div className="num" style={{ fontWeight: 400, fontSize: 9, color: 'var(--slate2)' }}>{Number(days[i].slice(-2))}</div>
+                        <div className="num" style={{ fontWeight: 400, fontSize: 'var(--fs-2xs)', color: 'var(--slate2)' }}>{Number(days[i].slice(-2))}</div>
                       </th>
                     ))}
-                    <th style={{ textAlign: 'right', padding: '10px 14px', fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--slate)', borderBottom: '1px solid var(--ruleStrong)' }}>Logged</th>
-                    <th style={{ textAlign: 'right', padding: '10px 14px', fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--slate)', borderBottom: '1px solid var(--ruleStrong)' }}>Cap.</th>
-                    <th style={{ width: 112, textAlign: 'left', padding: '10px 14px', fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--slate)', borderBottom: '1px solid var(--ruleStrong)' }}>Billable split</th>
-                    <th style={{ textAlign: 'left', padding: '10px 14px', fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--slate)', borderBottom: '1px solid var(--ruleStrong)' }}>Status</th>
+                    <th style={{ textAlign: 'right', padding: '10px 14px', fontSize: 'var(--fs-sm)', fontWeight: 500, color: 'var(--slate)', background: 'var(--paperAlt)', borderBottom: '1px solid var(--rule)' }}>Logged</th>
+                    <th style={{ textAlign: 'right', padding: '10px 14px', fontSize: 'var(--fs-sm)', fontWeight: 500, color: 'var(--slate)', background: 'var(--paperAlt)', borderBottom: '1px solid var(--rule)' }}>Cap.</th>
+                    <th style={{ width: 112, textAlign: 'left', padding: '10px 14px', fontSize: 'var(--fs-sm)', fontWeight: 500, color: 'var(--slate)', background: 'var(--paperAlt)', borderBottom: '1px solid var(--rule)' }}>Billable split</th>
+                    <th style={{ textAlign: 'left', padding: '10px 14px', fontSize: 'var(--fs-sm)', fontWeight: 500, color: 'var(--slate)', background: 'var(--paperAlt)', borderBottom: '1px solid var(--rule)' }}>Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -269,15 +270,15 @@ export function TeamCompliancePage() {
                 </tbody>
               </table>
               <div className={styles.legend}>
-                <span><i className={styles.sw} style={{ background: '#C3DCEC' }} /> 8 h+</span>
-                <span><i className={styles.sw} style={{ background: '#DCE9F2' }} /> 4-8 h</span>
-                <span><i className={styles.sw} style={{ background: '#FCF2E1' }} /> under 4 h</span>
-                <span><i className={styles.sw} style={{ background: '#F1F4F8' }} /> nothing logged</span>
-                <span><i className={styles.sw} style={{ background: 'repeating-linear-gradient(45deg,#FBE9E7 0 4px,#F5D9D6 4px 8px)' }} /> Leave</span>
-                <span><i className={styles.sw} style={{ background: 'repeating-linear-gradient(45deg,#FBE9E7 0 4px,#FCF7F6 4px 8px)' }} /> Half-day leave</span>
+                <span><i className={styles.sw} style={{ background: 'var(--heat3)' }} /> 8 h+</span>
+                <span><i className={styles.sw} style={{ background: 'var(--heat2)' }} /> 4-8 h</span>
+                <span><i className={styles.sw} style={{ background: 'var(--heat1)' }} /> under 4 h</span>
+                <span><i className={styles.sw} style={{ background: 'var(--heat0)' }} /> nothing logged</span>
+                <span><i className={styles.sw} style={{ background: 'repeating-linear-gradient(45deg,var(--leaveA) 0 4px,var(--leaveB) 4px 8px)' }} /> Leave</span>
+                <span><i className={styles.sw} style={{ background: 'repeating-linear-gradient(45deg,var(--leaveA) 0 4px,var(--leaveHalfB) 4px 8px)' }} /> Half-day leave</span>
                 <span><i className={styles.sw} style={{ background: 'var(--violetTint)', border: '1px solid var(--violetLine)' }} /> WFH</span>
                 <span><i className={styles.sw} style={{ background: 'var(--verdTint)', border: '1px solid var(--verdLine)' }} /> On Duty</span>
-                <span><i className={styles.sw} style={{ background: 'repeating-linear-gradient(45deg,#FCF2E1 0 4px,#F6E7CB 4px 8px)' }} /> Holiday</span>
+                <span><i className={styles.sw} style={{ background: 'repeating-linear-gradient(45deg,var(--holidayA) 0 4px,var(--holidayB) 4px 8px)' }} /> Holiday</span>
               </div>
             </div>
           </>

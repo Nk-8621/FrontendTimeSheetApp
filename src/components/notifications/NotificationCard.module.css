@@ -4,30 +4,39 @@
   gap: 14px;
   background: var(--paper);
   border: 1px solid var(--rule);
-  border-left: 3px solid var(--ruleStrong);
   border-radius: var(--rLg);
   box-shadow: var(--sh1);
   padding: 14px 16px;
   margin-bottom: 8px;
 }
 .card.unread {
-  background: #FBFCFE;
+  background: var(--paperAlt);
 }
-.card.info { border-left-color: var(--oxide); }
-.card.warn { border-left-color: var(--amber); }
-.card.risk { border-left-color: var(--clay); }
+/* Severity as a small dot before the text (same card style as everywhere). */
+.card::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  margin-top: 7px;
+  border-radius: 50%;
+  background: var(--slate2);
+  flex: none;
+}
+.card.info::before { background: var(--oxide); }
+.card.warn::before { background: var(--amberSolid); }
+.card.risk::before { background: var(--claySolid); }
 
 .body {
   flex: 1;
   min-width: 0;
 }
 .title {
-  font-size: 13.5px;
+  font-size: var(--fs-md);
   font-weight: 700;
   margin-bottom: 3px;
 }
 .message {
-  font-size: 12.5px;
+  font-size: var(--fs-base);
   color: var(--ink2);
   line-height: 1.5;
 }
@@ -35,17 +44,17 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 10.5px;
+  font-size: var(--fs-xs);
   color: var(--slate);
   margin-top: 6px;
 }
 .broadcastTag {
-  font-size: 9.5px;
+  font-size: var(--fs-2xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   background: var(--oxideTint);
-  color: var(--oxide);
+  color: var(--link);
   padding: 2px 7px;
   border-radius: 999px;
 }
@@ -54,8 +63,8 @@
   background: none;
   border: 1px solid var(--ruleStrong);
   border-radius: var(--r);
-  color: var(--oxide);
-  font-size: 11px;
+  color: var(--link);
+  font-size: var(--fs-xs);
   font-weight: 600;
   padding: 6px 10px;
   cursor: pointer;

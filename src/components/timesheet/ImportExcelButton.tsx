@@ -77,7 +77,7 @@ export function ImportExcelButton({ employeeCode, weekStart }: ImportExcelButton
       />
       <button
         type="button"
-        className={`${controls.lnk} ${isAdmin ? '' : controls.lnkOff}`}
+        className={`${controls.btn} ${controls.sm} ${isAdmin ? '' : controls.lnkOff}`}
         disabled={importMutation.isPending}
         onClick={() => {
           if (!isAdmin) { confirm(EXCEL_UNDER_DEVELOPMENT); return; }

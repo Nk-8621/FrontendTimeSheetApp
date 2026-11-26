@@ -1,29 +1,77 @@
 .wkNav {
-  display: flex;
-  align-items: center;
-  gap: 1px;
+  display: inline-flex;
+  align-items: stretch;
+  height: var(--btnH);
   border: 1px solid var(--ruleStrong);
-  border-radius: var(--r);
+  border-radius: var(--rBtn);
   overflow: hidden;
   background: var(--paper);
+  box-shadow: var(--shBtn);
 }
 .wkNav button {
+  display: grid;
+  place-items: center;
+  width: 34px;
   border: 0;
   background: var(--paper);
-  padding: 5px 9px;
-  color: var(--ink2);
-  font-weight: 600;
+  color: var(--slate);
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
 }
 .wkNav button:hover {
-  background: var(--oxideTint);
+  background: var(--hover);
+  color: var(--ink);
+}
+.wkNav button svg {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
 }
 .lbl {
-  padding: 5px 11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 12px;
   border-left: 1px solid var(--rule);
   border-right: 1px solid var(--rule);
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--ink2);
   white-space: nowrap;
-  min-width: 172px;
-  text-align: center;
+  min-width: 190px;
+}
+.lbl svg {
+  width: 15px;
+  height: 15px;
+  color: var(--slate);
+}
+/* The label is a button that opens the week calendar. */
+.wkNav button.lbl {
+  display: inline-flex;
+  width: auto;
+  border: 0;
+  border-left: 1px solid var(--rule);
+  border-right: 1px solid var(--rule);
+  background: var(--paper);
+  color: var(--ink2);
+  font-family: var(--sans);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  cursor: pointer;
+}
+.wkNav button.lbl:hover,
+.wkNav button.lblOpen {
+  background: var(--oxideTint);
+  color: var(--ink);
+}
+.lblOpen svg {
+  color: var(--link);
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }

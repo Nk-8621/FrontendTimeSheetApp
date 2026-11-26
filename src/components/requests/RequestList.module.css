@@ -1,17 +1,17 @@
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12px;
+  font-size: var(--fs-sm);
 }
 .table th {
   text-align: left;
-  font-size: 11px;
+  font-size: var(--fs-sm);
   font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  letter-spacing: 0;
+  text-transform: none;
   color: var(--slate);
   padding: 6px 10px;
-  border-bottom: 1px solid var(--ruleStrong);
+  border-bottom: 1px solid var(--rule);
 }
 .table td {
   padding: 8px 10px;
@@ -23,7 +23,7 @@
 }
 .note {
   color: var(--slate);
-  font-size: 11px;
+  font-size: var(--fs-xs);
 }
 .actions {
   display: flex;
@@ -34,5 +34,9 @@
   padding: 28px 12px;
   text-align: center;
   color: var(--slate);
-  font-size: 12.5px;
+  font-size: var(--fs-base);
+}
+
+.table tbody tr:hover > td {
+  background: var(--hover);
 }

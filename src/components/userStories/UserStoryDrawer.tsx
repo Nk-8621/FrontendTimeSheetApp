@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { DatePicker } from '../ui/DatePicker';
 import { useEmployeeProjectAllocations } from '../../hooks/api/useEmployees';
 import { useMasterDataLookup } from '../../hooks/api/useMasterDataLookup';
 import { useCreateUserStory, useUpdateUserStory, useUserStories } from '../../hooks/api/useUserStories';
@@ -188,10 +189,8 @@ export function UserStoryDrawer({ employeeCode, existing, weekStart, onSaved, on
       <div className={styles.dateRow}>
         <div className={controls.field}>
           <label htmlFor="storyStart">Start Date <span className={controls.req}>*</span></label>
-          <input
+          <DatePicker rangeStart={startDate || undefined} rangeEnd={endDate || undefined}
             id="storyStart"
-            type="date"
-            className={controls.textInput}
             value={startDate}
             min={minStart}
             onChange={(e) => changeStartDate(e.target.value)}
@@ -201,10 +200,8 @@ export function UserStoryDrawer({ employeeCode, existing, weekStart, onSaved, on
         </div>
         <div className={controls.field}>
           <label htmlFor="storyEnd">End Date <span className={controls.req}>*</span></label>
-          <input
+          <DatePicker rangeStart={startDate || undefined} rangeEnd={endDate || undefined}
             id="storyEnd"
-            type="date"
-            className={controls.textInput}
             value={endDate}
             min={startDate || undefined}
             onChange={(e) => { setEndDate(e.target.value); setServerError(''); }}

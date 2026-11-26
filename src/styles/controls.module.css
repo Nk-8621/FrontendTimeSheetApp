@@ -1,22 +1,39 @@
 .btn {
   font-family: var(--sans);
-  font-size: 12px;
+  font-size: var(--fs-base);
   font-weight: 500;
-  padding: 5px 11px;
-  border-radius: var(--r);
+  line-height: 1.2;
+  min-height: var(--btnH);
+  padding: 0 var(--btnPadX);
+  justify-content: center;
+  border-radius: var(--rBtn);
   border: 1px solid var(--ruleStrong);
   background: var(--paper);
-  color: var(--ink2);
+  color: var(--ink);
+  box-shadow: var(--shBtn);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
   white-space: nowrap;
-  transition: background 0.12s ease, border-color 0.12s ease;
+  text-decoration: none;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease, box-shadow 0.12s ease;
 }
 .btn:hover {
-  border-color: var(--slate2);
-  background: #fafcfe;
+  border-color: var(--ruleStrong);
+  background: var(--hover);
+}
+.btn svg {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  flex: none;
+}
+.btn:active:not(:disabled) {
+  filter: brightness(0.96);
+}
+.btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--oxideTint), 0 0 0 1px var(--oxide);
 }
 .btn:disabled {
   opacity: 0.42;
@@ -26,36 +43,40 @@
   background: var(--paper);
   border-color: var(--ruleStrong);
 }
+.pri:disabled:hover {
+  background: var(--btnPri);
+  border-color: var(--btnPri);
+}
 
 .pri {
-  background: var(--oxide);
-  border-color: var(--oxide);
-  color: #fff;
-  font-weight: 600;
+  background: var(--btnPri);
+  border-color: var(--btnPri);
+  color: var(--btnPriInk);
+  font-weight: 500;
 }
 .pri:hover:not(:disabled) {
-  background: #1d5480;
-  border-color: #1d5480;
+  background: var(--btnPriHover);
+  border-color: var(--btnPriHover);
 }
 
 .ok {
-  background: var(--verd);
-  border-color: var(--verd);
-  color: #fff;
-  font-weight: 600;
+  background: var(--verdSolid);
+  border-color: var(--verdSolid);
+  color: #FFFFFF;
+  font-weight: 500;
 }
 /* Must set its own background - otherwise .btn:hover's near-white background
    wins and the white "Approve" text disappears on hover. */
 .ok:hover:not(:disabled) {
-  background: #0A5E4E;
-  border-color: #0A5E4E;
+  background: var(--verdSolidHover);
+  border-color: var(--verdSolidHover);
 }
 
 .dgr {
   background: var(--paper);
   border-color: var(--clayLine);
   color: var(--clay);
-  font-weight: 600;
+  font-weight: 500;
 }
 .dgr:hover:not(:disabled) {
   background: var(--clayTint);
@@ -64,8 +85,9 @@
 .gh {
   border-color: transparent;
   background: transparent;
-  color: var(--oxide);
-  font-weight: 600;
+  box-shadow: none;
+  color: var(--link);
+  font-weight: 500;
 }
 .gh:hover {
   background: var(--oxideTint);
@@ -80,9 +102,9 @@
   border: 0;
   background: none;
   font-family: var(--sans);
-  font-size: 12px;
+  font-size: var(--fs-sm);
   font-weight: 600;
-  color: var(--oxide);
+  color: var(--link);
   white-space: nowrap;
   cursor: pointer;
 }
@@ -98,14 +120,15 @@
   opacity: 0.5;
 }
 .lnk svg {
-  width: 13px;
-  height: 13px;
+  width: 14px;
+  height: 14px;
   flex: none;
 }
 
 .sm {
-  padding: 3px 8px;
-  font-size: 11px;
+  min-height: var(--btnHSm);
+  padding: 0 var(--btnPadXSm);
+  font-size: var(--fs-sm);
 }
 
 .select,
@@ -113,17 +136,21 @@
 .textarea {
   width: 100%;
   border: 1px solid var(--ruleStrong);
-  border-radius: var(--r);
-  padding: 7px 9px;
-  font-size: 12.5px;
+  border-radius: var(--rBtn);
+  min-height: 38px;
+  padding: 8px 12px;
+  font-size: var(--fs-base);
   background: var(--paper);
   color: var(--ink);
+  box-shadow: var(--shBtn);
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
 }
 .select:focus,
 .textInput:focus,
 .textarea:focus {
   outline: none;
-  border-color: var(--oxideMid);
+  border-color: var(--oxide);
+  box-shadow: 0 0 0 3px var(--oxideTint);
 }
 .select:disabled,
 .textInput:disabled {
@@ -142,8 +169,8 @@
 }
 .field label {
   display: block;
-  font-size: 11px;
-  font-weight: 600;
+  font-size: var(--fs-sm);
+  font-weight: 500;
   color: var(--ink2);
   margin-bottom: 4px;
 }
@@ -151,7 +178,7 @@
   color: var(--clay);
 }
 .hint {
-  font-size: 11.5px;
+  font-size: var(--fs-sm);
   color: var(--slate);
   margin-top: 3px;
 }
@@ -162,14 +189,36 @@
   margin-bottom: 22px;
 }
 :global(.center-box) .field label {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   margin-bottom: 7px;
 }
 :global(.center-box) .textInput,
 :global(.center-box) .select {
   padding: 10px 12px;
-  font-size: 13.5px;
+  font-size: var(--fs-md);
 }
 :global(.center-box) .hint {
-  font-size: 12px;
+  font-size: var(--fs-sm);
+}
+
+/* Dropdowns: one chevron style in both themes. */
+.select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 36px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238299A8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  cursor: pointer;
+}
+.select:hover:not(:disabled),
+.textInput:hover:not(:disabled):not(:focus),
+.textarea:hover:not(:disabled):not(:focus) {
+  border-color: var(--slate2);
+}
+.btn svg {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  flex: none;
 }

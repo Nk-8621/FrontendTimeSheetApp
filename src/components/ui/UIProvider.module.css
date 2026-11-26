@@ -1,11 +1,11 @@
 .scrim {
   position: fixed;
   inset: 0;
-  background: rgba(13, 20, 30, 0.42);
+  background: var(--overlay);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.18s ease;
-  z-index: 40;
+  z-index: 80;
 }
 .scrim.on {
   opacity: 1;
@@ -21,14 +21,21 @@
   max-width: 92vw;
   background: var(--paper);
   box-shadow: var(--sh3);
-  transform: translateX(100%);
-  transition: transform 0.22s ease;
-  z-index: 41;
+  border-left: 1px solid var(--rule);
+  /* Quick fade in place - no sliding. */
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.16s ease, visibility 0s linear 0.16s;
+  z-index: 81;
   display: flex;
   flex-direction: column;
 }
 .drawer.on {
-  transform: translateX(0);
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition: opacity 0.16s ease, visibility 0s;
 }
 
 /* Reserved for a guided, multi-section flow (e.g. project setup) that needs
@@ -38,11 +45,13 @@
   width: 760px;
 }
 
-/* Opened in the middle of the screen (Add / Edit Task, New / Edit User Story)
-   instead of sliding in from the right. Fades and grows in slightly. The
+/* Opened in the middle of the screen (Add / Edit Task, New / Edit User Story).
+   Fades in place with a barely-visible scale - no movement across the
+   screen. The
    roomier field spacing and right-aligned buttons inside it come from the
    "center-box" rules in controls.module.css and UserStories.module.css. */
 .drawer.center {
+  border-radius: var(--rXl) !important;
   top: 50%;
   left: 50%;
   right: auto;
@@ -51,13 +60,9 @@
   max-height: 88vh;
   width: 1060px;
   max-width: 92vw;
-  border-radius: var(--rLg);
-  opacity: 0;
-  pointer-events: none;
-  /* POP-OUT (Nov 2026): closed = shrunk into the button that opened it
-     (--pop-x / --pop-y are set in UIProvider.tsx from the click). */
-  transform: translate(calc(-50% + var(--pop-x, 0px)), calc(-50% + var(--pop-y, 0px))) scale(0.05);
-  transition: opacity 0.2s ease, transform 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+  border: 1px solid var(--rule);
+  transform: translate(-50%, -50%) scale(0.98);
+  transition: opacity 0.16s ease, transform 0.16s ease, visibility 0s linear 0.16s;
 }
 /* Short forms (Master Data): same box, narrower, only as tall as the form. */
 .drawer.center.small {
@@ -65,9 +70,8 @@
   min-height: 0;
 }
 .drawer.center.on {
-  opacity: 1;
-  pointer-events: auto;
   transform: translate(-50%, -50%) scale(1);
+  transition: opacity 0.16s ease, transform 0.16s ease, visibility 0s;
 }
 .drawer.center .head {
   padding: 20px 28px;
@@ -97,20 +101,26 @@
   font-weight: 700;
 }
 .sub {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   color: var(--slate);
   margin-top: 2px;
 }
 .closeBtn {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid transparent;
+  border-radius: var(--r);
   background: none;
-  border: none;
   font-size: 20px;
   line-height: 1;
   color: var(--slate);
-  padding: 2px 4px;
 }
 .closeBtn:hover {
   color: var(--ink);
+  background: var(--hover);
+  border-color: var(--rule);
 }
 
 .body {
@@ -132,18 +142,35 @@
   bottom: 22px;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--ink);
-  color: #fff;
-  font-size: 12.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--ruleStrong);
+  font-size: var(--fs-base);
   font-weight: 500;
-  padding: 10px 18px;
+  padding: 10px 16px;
   border-radius: var(--rLg);
   box-shadow: var(--sh2);
-  z-index: 50;
+  z-index: 95;
+  animation: toastIn 0.16s ease-out;
 }
-.toast.ok {
-  background: var(--verd);
+.toast::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--oxide);
+  flex: none;
 }
-.toast.bad {
-  background: var(--clay);
+.toast.ok::before {
+  background: var(--verdSolid);
+}
+.toast.bad::before {
+  background: var(--claySolid);
+}
+@keyframes toastIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }

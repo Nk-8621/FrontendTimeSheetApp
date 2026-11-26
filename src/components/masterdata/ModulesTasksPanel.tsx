@@ -54,8 +54,8 @@ export function ModulesTasksPanel({ projects, modules, tasks, mutations }: Modul
               fontWeight: 700,
               textTransform: 'uppercase',
               letterSpacing: 0.6,
-              fontSize: 13,
-              color: 'var(--oxide)',
+              fontSize: 'var(--fs-base)',
+              color: 'var(--link)',
             }}
           >
             Project type: {selectedProject.projectTypeName}

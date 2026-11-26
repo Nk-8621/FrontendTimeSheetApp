@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { DatePicker } from '../ui/DatePicker';
 import type { DayTypeRequestType } from '../../api/types';
 import { toISO, parseISO } from '../../lib/dates';
 import controls from '../../styles/controls.module.css';
@@ -90,9 +91,7 @@ export function NewRequestDrawer({ onSave, onCancel }: NewRequestDrawerProps) {
     <div>
       <div className={controls.field}>
         <label>Date <span className={controls.req}>*</span></label>
-        <input
-          type="date"
-          className={controls.textInput}
+        <DatePicker
           value={date}
           min={earliestDate}
           onChange={(e) => { setDate(e.target.value); setShowDateError(false); }}

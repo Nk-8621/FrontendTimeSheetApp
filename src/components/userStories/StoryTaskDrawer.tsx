@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Banner } from '../timesheet/Banner';
 import { useWeek, useTimesheetMutations } from '../../hooks/api/useTimesheet';
 import { useUserStories } from '../../hooks/api/useUserStories';
 import { useUI } from '../ui/UIProvider';
@@ -88,9 +90,13 @@ export function StoryTaskDrawer({ employeeCode, weekStart, defaultStoryId, entry
   function setDayHours(i: number, raw: string) {
     let v = parseFloat(raw);
     if (Number.isNaN(v) || v < 0) v = 0;
-    v = Math.min(v, maxFor(i));
+    const max = maxFor(i);
+    const capped = v > max;
+    v = Math.min(v, max);
     setHours((h) => h.map((x, idx) => (idx === i ? v : x)));
-    setError('');
+    // Typed more than the day has room for: the value is capped (same rule as
+    // before) - say so instead of silently changing the number.
+    setError(capped ? `${DAY_NAMES[i]} has ${max} h left for this task (a day holds at most ${dayEntryLimit(week!.dayTypes[i])} h).` : '');
   }
 
   function showError(err: unknown, fallback: string) {
@@ -194,6 +200,23 @@ export function StoryTaskDrawer({ employeeCode, weekStart, defaultStoryId, entry
         />
       </div>
 
+      {(() => {
+        // Working days this task could use (inside the story, not W-OFF / holiday / leave).
+        const openDays = week.dayTypes
+          .map((dt, i) => ({ dt, i }))
+          .filter(({ dt, i }) => dt.capacityHours > 0 && !isOutside(selectedStory, i));
+        const allFull = openDays.length > 0 && openDays.every(({ i }) => maxFor(i) === 0 && hours[i] === 0);
+        if (!allFull) return null;
+        return (
+          <Banner kind="warn">
+            <b>No hours left this week.</b> Every working day already has its full hours on other tasks
+            ({openDays.map(({ i }) => `${DAY_NAMES[i]} ${usedByOthers[i]} h`).join(', ')}).
+            A day holds at most 8 h, so to log time on this task, first reduce hours on another task.{' '}
+            <Link to={`/?week=${weekStart}`}>Open this week in My Timesheet</Link>
+          </Banner>
+        );
+      })()}
+
       <div className={controls.field}>
         <label>Hours <span className={controls.req}>*</span></label>
         <div className={styles.days}>
@@ -217,12 +240,18 @@ export function StoryTaskDrawer({ employeeCode, weekStart, defaultStoryId, entry
                   value={hours[i] ? String(hours[i]) : ''}
                   placeholder={closed || outside ? '–' : '0'}
                   disabled={locked}
+                  title={
+                    !locked ? undefined
+                      : closed || isWeekOff ? `${DAY_NAMES[i]} is ${DAY_TYPE_LABELS[dt.dayType]?.label ?? 'not a working day'} - no hours can be logged`
+                      : outside ? `${DAY_NAMES[i]} is outside this story's dates`
+                      : `${DAY_NAMES[i]} is full: ${usedByOthers[i]} h already logged on other tasks (a day holds at most ${dayEntryLimit(dt)} h)`
+                  }
                   onChange={(e) => setDayHours(i, e.target.value)}
                 />
                 {/* A closed day shows its own label (W-OFF / Holiday / Leave) -
                     checked before "outside" so a weekend after the story ends
                     still reads W-OFF. */}
-                <div className={styles.left}>{closed || isWeekOff ? DAY_TYPE_LABELS[dt.dayType]?.label ?? 'off' : outside ? 'No story added' : full ? 'full' : `${leftAfterTyping}h left`}</div>
+                <div className={styles.left}>{closed || isWeekOff ? DAY_TYPE_LABELS[dt.dayType]?.label ?? 'off' : outside ? 'No story added' : full ? `Day full · ${usedByOthers[i]} h used` : `${leftAfterTyping}h left`}</div>
                 {/* DAY STATUS (Nov 2026): only on days the employee can change
                     (not W-OFF, holidays or KEKA / requested leave). */}
                 {editable && dt.canChange && (

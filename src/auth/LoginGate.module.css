@@ -1,108 +1,301 @@
-.devBanner {
-  background: var(--amberTint);
-  color: #7A4A00;
-  font-size: 11.5px;
-  font-weight: 600;
-  text-align: center;
-  padding: 6px 12px;
-  border-bottom: 1px solid var(--amberLine);
-}
+/* ===== Sign-in page (matches the reference): team photo filling the left
+   ~65%, full-height white panel on the right ~35% ===== */
 
 .screen {
+  display: grid;
+  grid-template-columns: minmax(0, 65fr) minmax(380px, 35fr);
+  height: 100vh;
   min-height: 100vh;
+  overflow: hidden;
+  background: #FFFFFF;
+}
+
+/* ---- Left: background image fills the section top to bottom ---- */
+.photoSide {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #0B1838;
+}
+.photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 40% center; /* keeps the sun and skyline in view at any width */
+}
+
+/* ---- Right: solid white panel, top to bottom ----
+   Always white (also in dark mode), so it carries its own light colours. */
+.formSide {
+  --paper: #FFFFFF;
+  --ink: #18181B;
+  --ink2: #3F3F46;
+  --slate: #6E6E78;
+  --slate2: #A1A1AA;
+  --rule: #D8DEE7;
+  --ruleStrong: #C2CAD6;
+  --hover: #F4F4F6;
+  --btnPri: #1C1C21;
+  --btnPriHover: #000000;
+  --btnPriInk: #FFFFFF;
+  --clay: #B42318;
+  --clayTint: #FEF3F2;
+  --clayLine: #FECDCA;
+  color-scheme: light;
+
   display: flex;
   align-items: center;
-  justify-content: center;
-  background: var(--oxideDeep);
+  height: 100%;
+  min-height: 0;
+  padding: 40px clamp(32px, 4vw, 76px);
+  background: #FFFFFF;
+  color: var(--ink);
+  overflow-y: auto;
+}
+
+/* Logo, heading, form and footer as one block, centred vertically. */
+.panelInner {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  margin: auto 0;
+}
+.panelTop {
+  margin-bottom: 44px;
+}
+.logo {
+  display: block;
+  height: 80px;
+  width: auto;
+  object-fit: contain;
 }
 
 .card {
-  background: var(--paper);
-  border-radius: var(--rLg);
-  box-shadow: var(--sh3);
-  padding: 48px 40px;
-  width: 560px;
-  text-align: center;
+  display: flex;
+  flex-direction: column;
 }
 
-.brand {
-  font-size: 13px;
+.heading {
+  margin-bottom: 30px;
+}
+.heading h1 {
+  margin: 0 0 10px;
+  font-size: 30px;
   font-weight: 700;
-  letter-spacing: 0.2em;
-  color: var(--oxide);
-  margin-bottom: 18px;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  color: var(--ink);
 }
-
-.card h1 {
-  font-size: 18px;
-  margin: 0 0 8px;
-}
-
-.card p {
-  font-size: 12.5px;
+.heading p {
+  margin: 0;
+  font-size: var(--fs-md);
   color: var(--slate);
-  margin: 0 0 22px;
-}
-
-.signInBtn {
-  width: 100%;
-  background: #2F2F2F;
-  color: #fff;
-  border: none;
-  border-radius: var(--r);
-  padding: 11px 0;
-  font-size: 13.5px;
-  font-weight: 600;
-  cursor: pointer;
-}
-.signInBtn:hover {
-  background: #1f1f1f;
+  line-height: 1.55;
 }
 
 .field {
-  text-align: left;
-  margin-bottom: 14px;
+  margin-bottom: 20px;
 }
 .field label {
   display: block;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--slate);
-  margin-bottom: 5px;
+  margin-bottom: 8px;
+  font-size: var(--fs-base);
+  font-weight: 500;
+  color: var(--ink2);
 }
-.field input {
-  width: 100%;
-  border: 1px solid var(--ruleStrong);
-  border-radius: var(--r);
-  padding: 9px 11px;
-  font-size: 13px;
-  background: var(--canvas);
+.inputWrap {
+  position: relative;
 }
-.field input:focus {
-  outline: none;
-  border-color: var(--oxideMid);
-  background: var(--paper);
-}
-.errMsg {
-  background: var(--clayTint, #FBE9E7);
-  color: var(--clay);
-  font-size: 12px;
-  border-radius: var(--r);
-  padding: 8px 11px;
-  margin-bottom: 14px;
-  text-align: left;
-}
-.hint {
-  font-size: 11px;
-  color: var(--slate2, #9AA5B1);
-  margin-top: 16px;
-}
-.screenFooter {
+.inputIcon {
   position: absolute;
-  bottom: 20px;
-  left: 0;
-  right: 0;
-  text-align: center;
-  font-size: 10px;
-  color: #6E88A0; /* lighter tone, since this sits on the dark background, not inside the white card */
+  left: 16px;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  transform: translateY(-50%);
+  color: var(--slate2);
+  pointer-events: none;
+}
+.inputWrap input {
+  width: 100%;
+  height: 50px;
+  padding: 0 48px 0 46px;
+  border: 1px solid var(--ruleStrong);
+  border-radius: 12px;
+  background: #FFFFFF;
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: var(--fs-lg);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+.inputWrap input:hover {
+  border-color: var(--slate2);
+}
+.inputWrap input:focus {
+  outline: none;
+  border-color: var(--oxide);
+  box-shadow: 0 0 0 4px var(--oxideTint);
+}
+.inputWrap:focus-within .inputIcon {
+  color: var(--link);
+}
+.pwToggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--slate);
+  cursor: pointer;
+}
+.pwToggle:hover {
+  background: var(--hover);
+  color: var(--ink);
+}
+.pwToggle:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--oxideMid);
+}
+.pwToggle svg {
+  width: 19px;
+  height: 19px;
+}
+
+.signInBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 50px;
+  margin-top: 14px;
+  border: 1px solid var(--btnPri);
+  border-radius: 12px;
+  background: var(--btnPri);
+  color: var(--btnPriInk);
+  font-family: var(--sans);
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.08);
+  transition: background 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+}
+.signInBtn svg {
+  width: 18px;
+  height: 18px;
+}
+.signInBtn:hover:not(:disabled) {
+  background: var(--btnPriHover);
+  box-shadow: 0 6px 16px rgba(16, 24, 40, 0.16);
+}
+.signInBtn:active:not(:disabled) {
+  filter: brightness(0.92);
+}
+.signInBtn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px var(--oxideTint), 0 0 0 1px var(--oxide);
+}
+.signInBtn:disabled {
+  opacity: 0.75;
+  cursor: progress;
+}
+.spinner {
+  width: 15px;
+  height: 15px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.errMsg {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 18px;
+  padding: 10px 12px;
+  border: 1px solid var(--clayLine);
+  border-radius: var(--rLg);
+  background: var(--clayTint);
+  color: var(--clay);
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+}
+.errMsg svg {
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+  flex: none;
+}
+
+.foot {
+  margin-top: 64px;
+  font-size: var(--fs-sm);
+  color: var(--slate2);
+}
+
+/* ---- Shorter screens: tighten vertical spacing so it all fits ---- */
+@media (max-height: 760px) and (min-width: 861px) {
+  .panelTop { margin-bottom: 28px; }
+  .logo { height: 64px; }
+  .heading { margin-bottom: 22px; }
+  .foot { margin-top: 36px; }
+}
+
+/* ---- Narrower desktops: keep the form roomy ---- */
+@media (max-width: 1200px) {
+  .screen {
+    grid-template-columns: minmax(0, 60fr) minmax(380px, 40fr);
+  }
+}
+
+/* ---- Tablets and phones: whole photo on top, white panel below ---- */
+@media (max-width: 860px) {
+  .screen {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-content: start;
+    overflow-y: auto; /* the app locks body scrolling, so this page scrolls itself */
+  }
+  .photoSide {
+    height: auto;
+  }
+  .photo {
+    height: auto;
+    object-fit: contain;
+  }
+  .formSide {
+    height: auto;
+    padding: 32px 20px 28px;
+    justify-content: center;
+  }
+  .panelInner {
+    max-width: 440px;
+  }
+  .panelTop {
+    margin-bottom: 28px;
+  }
+  .logo {
+    height: 60px;
+  }
+  .heading h1 {
+    font-size: 26px;
+  }
+  .foot {
+    margin-top: 32px;
+  }
 }

@@ -20,13 +20,13 @@
 }
 .heading {
   margin: 0 0 8px;
-  font-size: 17px;
+  font-size: var(--fs-xl);
 }
 .text {
   margin: 0 auto;
   max-width: 560px;
   color: var(--slate);
-  font-size: 13.5px;
+  font-size: var(--fs-md);
   line-height: 1.6;
 }
 .tag {
@@ -35,8 +35,8 @@
   padding: 4px 12px;
   border-radius: 12px;
   background: var(--oxideTint);
-  color: var(--oxide);
-  font-size: 11.5px;
+  color: var(--link);
+  font-size: var(--fs-sm);
   font-weight: 700;
   letter-spacing: 0.03em;
 }

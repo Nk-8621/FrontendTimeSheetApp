@@ -14,12 +14,12 @@ const dayMonth = (iso: string) => {
 export function DayTypesCard({ dayTypes }: DayTypesCardProps) {
   return (
     <Card title="Day types" sub="Leave & holiday are read-only sources">
-      <table style={{ margin: '-6px 0', fontSize: 11.5, color: 'var(--slate2)' }}>
+      <table style={{ margin: '-6px 0', fontSize: 'var(--fs-sm)', color: 'var(--slate2)' }}>
         <tbody>
           {dayTypes.map((dt, i) => (
             <tr key={dt.date}>
               <td style={{ width: 74 }} className="num">{dayMonth(dt.date)}</td>
-              <td style={{ width: 34, color: 'var(--slate)', fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              <td style={{ width: 34, color: 'var(--slate)', fontSize: 'var(--fs-xs)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 {DAY_NAMES[i]}
               </td>
               <td>

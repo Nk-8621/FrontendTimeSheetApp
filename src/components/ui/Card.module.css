@@ -3,23 +3,27 @@
   border: 1px solid var(--rule);
   border-radius: var(--rLg);
   box-shadow: var(--sh1);
+  overflow: hidden;
 }
 .cardHd {
-  padding: 11px 14px;
+  min-height: 58px;
+  padding: 12px 18px;
   border-bottom: 1px solid var(--rule);
   display: flex;
   align-items: center;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 8px 10px;
 }
 .cardHd h3 {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--fs-md);
   font-weight: 600;
+  letter-spacing: -0.01em;
 }
 .sub {
-  font-size: 11px;
+  font-size: var(--fs-sm);
   color: var(--slate);
 }
 .cardBd {
-  padding: 14px;
+  padding: 16px 18px;
 }

@@ -23,7 +23,7 @@ export function WeekDetailTable({ item }: { item: ApprovalQueueItemDto }) {
           {DAY_NAMES.map((d, i) => (
             <th key={d} style={{ width: 52 }}>
               {d}
-              <div style={{ fontWeight: 400, fontSize: 9, color: 'var(--slate2)' }}>{DAY_TYPE_LABELS[item.dayTypes[i]?.dayType ?? '']?.label ?? item.dayTypes[i]?.dayType}</div>
+              <div style={{ fontWeight: 400, fontSize: 'var(--fs-2xs)', color: 'var(--slate2)' }}>{DAY_TYPE_LABELS[item.dayTypes[i]?.dayType ?? '']?.label ?? item.dayTypes[i]?.dayType}</div>
             </th>
           ))}
           <th style={{ textAlign: 'right' }}>Total</th>
@@ -35,29 +35,29 @@ export function WeekDetailTable({ item }: { item: ApprovalQueueItemDto }) {
           return (
             <tr key={idx}>
               <td>
-                <div style={{ fontSize: 10.5, color: 'var(--slate)' }}>{line.departmentCode} › {line.accountName}</div>
-                <div style={{ fontWeight: 600, fontSize: 11.5 }}>{line.projectName}</div>
+                <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--slate)' }}>{line.departmentCode} › {line.accountName}</div>
+                <div style={{ fontWeight: 600, fontSize: 'var(--fs-sm)' }}>{line.projectName}</div>
               </td>
               <td>
                 {/* Only what the employee worked on. Older lines with no text fall back to the task name. */}
                 {line.note || line.taskName ? (
-                  <div style={{ fontSize: 11.5, fontWeight: 500 }}>{line.note || line.taskName}</div>
+                  <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 500 }}>{line.note || line.taskName}</div>
                 ) : (
-                  <div style={{ fontSize: 10.5, color: 'var(--clay)' }}>No description</div>
+                  <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--clay)' }}>No description</div>
                 )}
               </td>
               <td>
                 <span className={styles.ft}>
                   {CLASSIFICATION_SHORT_LABELS[line.classification]}
                 </span>
-                {line.billingCategory && <div style={{ fontSize: 9, color: 'var(--slate2)', marginTop: 2 }}>{line.billingCategory}</div>}
+                {line.billingCategory && <div style={{ fontSize: 'var(--fs-2xs)', color: 'var(--slate2)', marginTop: 2 }}>{line.billingCategory}</div>}
               </td>
               {line.hoursByDay.map((v, i) => {
                 const dayCap = item.dayTypes[i]?.capacityHours ?? 0;
                 const mismatch = dayCap === 0 && v > 0;
                 return (
                   <td key={i} className={mismatch ? styles.capMismatch : ''} style={{ textAlign: 'center' }}>
-                    {fmtH(v) || <span style={{ color: '#D3DAE2' }}>·</span>}
+                    {fmtH(v) || <span style={{ color: 'var(--slate2)' }}>·</span>}
                   </td>
                 );
               })}
@@ -74,7 +74,7 @@ export function WeekDetailTable({ item }: { item: ApprovalQueueItemDto }) {
             return (
               <td key={i} style={{ textAlign: 'center', color: t < cap ? 'var(--amber)' : undefined }}>
                 {fmtH(t) || '—'}
-                <div style={{ fontSize: 9, fontWeight: 400, color: 'var(--slate2)' }}>/{cap}</div>
+                <div style={{ fontSize: 'var(--fs-2xs)', fontWeight: 400, color: 'var(--slate2)' }}>/{cap}</div>
               </td>
             );
           })}

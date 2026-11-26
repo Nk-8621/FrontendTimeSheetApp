@@ -1,0 +1,310 @@
+/* Header row on the grey frame, above the page panel. */
+.bar {
+  grid-area: top;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: var(--headH);
+  padding: 0 16px 0 4px;
+  background: var(--canvas);
+  color: var(--ink);
+  position: relative;
+  z-index: 60;
+}
+
+/* Breadcrumb: section › page */
+.crumbs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: var(--fs-base);
+  white-space: nowrap;
+}
+.crumbIcon {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  color: var(--slate2);
+  flex: none;
+}
+.crumbGroup {
+  color: var(--slate);
+}
+.crumbLink {
+  text-decoration: none;
+  border-radius: 6px;
+  padding: 2px 4px;
+  margin: -2px -4px;
+}
+.crumbLink:hover {
+  color: var(--ink);
+  background: var(--railHover);
+}
+.crumbSep {
+  width: 14px;
+  height: 14px;
+  color: var(--slate2);
+  flex: none;
+}
+.crumbPage {
+  color: var(--ink);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.spacer {
+  flex: 1;
+}
+
+/* Square outlined icon button (bell / menu), like the reference header. */
+.iconBtn {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--rBtn);
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  color: var(--ink2);
+  display: grid;
+  place-items: center;
+  text-decoration: none;
+  box-shadow: var(--shBtn);
+  transition: background 0.12s ease, border-color 0.12s ease;
+  flex: none;
+}
+.iconBtn:hover {
+  background: var(--hover);
+  border-color: var(--ruleStrong);
+  color: var(--ink);
+}
+.iconBtn svg {
+  width: 18px;
+  height: 18px;
+}
+.menuBtn {
+  display: none;
+}
+/* Logo in the header - only on small screens, where the sidebar is hidden. */
+.mLogo {
+  display: none;
+  flex: none;
+  border-radius: 8px;
+}
+.mLogoImg {
+  height: 38px;
+}
+.dot {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--claySolid);
+  color: #fff;
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 0 0 2px var(--canvas);
+}
+
+.whoWrap {
+  position: relative;
+}
+.who {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  transition: box-shadow 0.12s ease;
+}
+.who:hover,
+.who.open {
+  box-shadow: 0 0 0 3px var(--oxideTint);
+}
+.avatar,
+.menuAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--avatar);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1px var(--ruleStrong);
+}
+.menuAvatar {
+  width: 44px;
+  height: 44px;
+  font-size: var(--fs-md);
+}
+
+/* Profile panel */
+.menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 272px;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: var(--rLg);
+  box-shadow: var(--sh2);
+  overflow: hidden;
+  z-index: 70;
+}
+.menuInfo {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid var(--rule);
+}
+.menuWho {
+  min-width: 0;
+}
+.menuName {
+  font-size: var(--fs-base);
+  font-weight: 600;
+  line-height: 1.3;
+}
+.menuDesig {
+  font-size: var(--fs-sm);
+  color: var(--slate);
+  line-height: 1.35;
+}
+.menuId {
+  font-size: var(--fs-xs);
+  color: var(--slate2);
+  margin-top: 2px;
+}
+
+.menuList {
+  padding: 6px;
+}
+.item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 38px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--r);
+  background: none;
+  color: var(--ink2);
+  font-size: var(--fs-base);
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+.item > span {
+  flex: 1;
+}
+.item svg {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  color: var(--slate);
+  flex: none;
+}
+.item:hover,
+.itemOpen {
+  background: var(--hover);
+  color: var(--ink);
+}
+.chev {
+  transition: transform 0.15s ease;
+}
+.itemOpen .chev {
+  transform: rotate(90deg);
+}
+.danger:hover {
+  background: var(--clayTint);
+  color: var(--clay);
+}
+.danger:hover svg {
+  color: var(--clay);
+}
+.sep {
+  height: 1px;
+  margin: 6px 4px;
+  background: var(--rule);
+}
+
+.subList {
+  padding: 2px 0 4px;
+}
+.subItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 34px;
+  padding: 0 10px 0 36px;
+  border: 0;
+  border-radius: var(--r);
+  background: none;
+  color: var(--slate);
+  font-size: var(--fs-sm);
+  text-align: left;
+  cursor: pointer;
+}
+.subItem:hover {
+  background: var(--hover);
+  color: var(--ink);
+}
+.subItem[aria-checked='true'] {
+  color: var(--ink);
+  font-weight: 600;
+}
+.subItem svg {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  color: var(--link);
+}
+.swatchRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+}
+
+@media (max-width: 960px) {
+  .bar {
+    padding: 0 10px;
+  }
+  .menuBtn {
+    display: grid;
+  }
+  .mLogo {
+    display: block;
+  }
+  .crumbIcon {
+    display: none;
+  }
+  .crumbGroup,
+  .crumbSep {
+    display: none;
+  }
+}
+@media (max-width: 960px) and (min-width: 520px) {
+  .crumbGroup,
+  .crumbSep {
+    display: inline;
+  }
+}

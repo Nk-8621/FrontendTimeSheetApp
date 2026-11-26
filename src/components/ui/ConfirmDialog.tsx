@@ -24,9 +24,16 @@ interface ConfirmDialogProps extends ConfirmOptions {
  */
 export function ConfirmDialog({ title, message, confirmLabel = 'OK', danger = false, hideCancel = false, onConfirm, onCancel }: ConfirmDialogProps) {
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onCancel(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    // Capture phase on document: the confirm box is the top-most layer, so
+    // Esc cancels it and nothing underneath (drawer, page) reacts.
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.preventDefault();
+      e.stopPropagation();
+      onCancel();
+    };
+    document.addEventListener('keydown', onKey, true);
+    return () => document.removeEventListener('keydown', onKey, true);
   }, [onCancel]);
 
   return (

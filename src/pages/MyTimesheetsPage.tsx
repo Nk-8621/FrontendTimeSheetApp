@@ -13,7 +13,7 @@ export function MyTimesheetsPage() {
 
   return (
     <>
-      <PageHeader title="All Timesheets" />
+      <PageHeader title="All Timesheets" subtitle="Every week you have logged, with its approval status." />
       <div className="page-content">
         {isError && <Banner kind="reject">Couldn't load your history — check that the backend API is reachable.</Banner>}
 
@@ -49,7 +49,7 @@ export function MyTimesheetsPage() {
                       {w.submittedAt ? new Date(w.submittedAt).toLocaleDateString() : '—'}
                     </td>
                     <td style={{ textAlign: 'right' }}>
-                      <Link to={`/?week=${w.weekStartDate}`} className="num" style={{ color: 'var(--oxide)', fontWeight: 600, fontSize: 12 }}>
+                      <Link to={`/?week=${w.weekStartDate}`} className="num" style={{ color: 'var(--link)', fontWeight: 600, fontSize: 'var(--fs-sm)' }}>
                         View →
                       </Link>
                     </td>
