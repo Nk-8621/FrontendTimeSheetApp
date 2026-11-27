@@ -6,6 +6,14 @@
   padding: 22px 28px 18px;
   border-bottom: 1px solid var(--rule);
 }
+/* Pinned header (sticky prop): stays at the top of the page panel while the
+   page scrolls underneath. Same white as the panel, above the page content. */
+.sticky {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--paper);
+}
 .titles {
   flex: 1 1 260px;
   min-width: 0;

@@ -187,6 +187,7 @@ export function MyTimesheetPage() {
   return (
     <>
       <PageHeader
+        sticky
         title={greeting}
         subtitle={<>Your timesheet for <b style={{ color: 'var(--ink2)', fontWeight: 600 }}>{weekLabel(weekStart)}</b>{weekStart === thisWeek ? ' · this week' : ''}</>}
       >
@@ -222,6 +223,8 @@ export function MyTimesheetPage() {
             {week.week.status === 'Rejected' && (
               <div className="return-gap">
                 <ReturnDetails
+                  key={weekStart}
+                  collapsible
                   title="Returned for corrections"
                   by={week.week.rejectedByName ?? 'your approver'}
                   reason={returnInfo.reason}

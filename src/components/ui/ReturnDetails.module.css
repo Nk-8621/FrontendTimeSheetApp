@@ -27,6 +27,48 @@
 }
 .headText {
   min-width: 0;
+  flex: 1;
+}
+
+/* Collapsed: just the header line. */
+.collapsed {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+/* "Show details / Hide details" button (collapsible boxes only). */
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--ruleStrong);
+  border-radius: var(--r);
+  background: var(--paper);
+  color: var(--ink2);
+  font-family: var(--sans);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  flex: none;
+}
+.toggle:hover {
+  background: var(--hover);
+  color: var(--ink);
+}
+.toggle:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--oxideTint), 0 0 0 1px var(--oxide);
+}
+.toggle svg {
+  width: 15px;
+  height: 15px;
+  transition: transform 0.15s ease;
+}
+.toggleOpen svg {
+  transform: rotate(180deg);
 }
 .title {
   font-size: var(--fs-base);
