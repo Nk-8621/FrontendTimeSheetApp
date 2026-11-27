@@ -373,7 +373,7 @@ export function WeekGrid({
                   title={canSubmit ? undefined : 'Every working day must total exactly its available hours (8 h, or 4 h on a half-day leave) before you can submit'}
                 >
                   <Icon name="send" />
-                  Submit week for approval
+                  Submit
                 </button>
               </div>
             </>

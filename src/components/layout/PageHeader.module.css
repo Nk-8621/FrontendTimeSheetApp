@@ -12,7 +12,9 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  background: var(--paper);
+  background: var(--stickyBg, var(--paper));
+  -webkit-backdrop-filter: var(--glassBlur, none);
+  backdrop-filter: var(--glassBlur, none);
 }
 .titles {
   flex: 1 1 260px;

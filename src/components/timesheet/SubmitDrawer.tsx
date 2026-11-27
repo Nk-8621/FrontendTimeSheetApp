@@ -77,7 +77,7 @@ export function SubmitDrawer({
 
       <div className={styles.footer}>
         <button className={`${controls.btn} ${controls.pri}`} disabled={isLoading || errors.length > 0} onClick={onConfirm}>
-          Submit for approval
+          Submit
         </button>
         <button className={controls.btn} onClick={onCancel}>Cancel</button>
       </div>

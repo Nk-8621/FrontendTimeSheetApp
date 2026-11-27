@@ -1,7 +1,7 @@
 /* ===== Weekly timesheet grid ===== */
 
 .gridWrap {
-  background: var(--paper);
+  background: var(--cardBg, var(--paper));
   border: 1px solid var(--rule);
   border-radius: var(--rLg);
   overflow: hidden;

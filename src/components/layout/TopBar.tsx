@@ -147,15 +147,15 @@ export function TopBar({ onMenu }: { onMenu: () => void }) {
                 onClick={() => setSub((s) => (s === 'display' ? null : 'display'))}
                 aria-expanded={sub === 'display'}
               >
-                <Icon name={theme === 'dark' ? 'moon' : 'sun'} />
+                <Icon name={theme === 'dark' ? 'moon' : theme === 'glass' ? 'palette' : 'sun'} />
                 <span>Display mode</span>
                 <Icon name="chevronRight" className={styles.chev} />
               </button>
               {sub === 'display' && (
                 <div className={styles.subList}>
-                  {(['light', 'dark'] as Theme[]).map((t) => (
+                  {(['light', 'dark', 'glass'] as Theme[]).map((t) => (
                     <button key={t} type="button" role="menuitemradio" aria-checked={theme === t} className={styles.subItem} onClick={() => pickTheme(t)}>
-                      <span>{t === 'light' ? 'Light' : 'Dark'}</span>
+                      <span>{t === 'light' ? 'Light' : t === 'dark' ? 'Dark' : 'Glass'}</span>
                       {theme === t && <Icon name="check" />}
                     </button>
                   ))}

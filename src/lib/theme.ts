@@ -1,9 +1,9 @@
-// Display mode (light / dark) and theme colour (purple / blue). Purely
+// Display mode (light / dark / glass) and theme colour (purple / teal / blue). Purely
 // visual: sets attributes on <html> that swap the CSS variables in
 // styles/variables.css. Defaults match the KEKA reference: light + purple.
 // Choices are remembered per browser.
 
-export type Theme = 'light' | 'dark';
+export type Theme = 'light' | 'dark' | 'glass';
 export type Accent = 'purple' | 'teal' | 'blue';
 
 const THEME_KEY = 'cbt_theme';
@@ -26,7 +26,8 @@ function write(key: string, value: string) {
 }
 
 export function getTheme(): Theme {
-  return read(THEME_KEY) === 'dark' ? 'dark' : 'light';
+  const t = read(THEME_KEY);
+  return t === 'dark' || t === 'glass' ? t : 'light';
 }
 
 export function getAccent(): Accent {
@@ -35,7 +36,8 @@ export function getAccent(): Accent {
 }
 
 export function applyTheme(theme: Theme) {
-  if (theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+  // GLASS (Nov 2026): frosted panels over a gradient of the theme colour.
+  if (theme === 'dark' || theme === 'glass') document.documentElement.setAttribute('data-theme', theme);
   else document.documentElement.removeAttribute('data-theme');
   write(THEME_KEY, theme);
 }

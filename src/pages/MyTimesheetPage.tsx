@@ -134,7 +134,7 @@ export function MyTimesheetPage() {
   function handleSubmit() {
     if (!week) return;
     openDrawer({
-      title: 'Submit week for approval',
+      title: 'Submit',
       body: (
         <SubmitDrawer
           employeeCode={employeeCode}

@@ -1,7 +1,7 @@
 .box {
   border: 1px solid var(--rule);
   border-radius: var(--rLg);
-  background: var(--paperAlt);
+  background: var(--cardBg, var(--paperAlt));
   padding: 14px 16px;
 }
 

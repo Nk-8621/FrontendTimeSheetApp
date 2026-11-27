@@ -27,11 +27,12 @@
   --hover: #F4F4F6;
   --overlay: rgba(24, 24, 27, 0.40);
 
-  /* Text */
-  --ink: #18181B;
-  --ink2: #3F3F46;
-  --slate: #6E6E78;
-  --slate2: #A1A1AA;
+  /* Text - darkened one step (Nov 2026) so text reads crisp, not faded,
+     on standard laptop screens. Dark mode is unchanged. */
+  --ink: #111113;
+  --ink2: #27272A;
+  --slate: #52525B;
+  --slate2: #85858F;
   --onPrimary: #FFFFFF;
 
   /* Borders */
@@ -58,10 +59,10 @@
   --rail: var(--canvas);
   --railActive: #E9E9EC;
   --railHover: #EEEEF1;
-  --railInk: #4A4A53;
+  --railInk: #36363E;
   --railInkOn: #18181B;
   --railLine: #D8DEE7;
-  --railLabel: #9C9CA6;
+  --railLabel: #7A7A84;
 
   /* Status: text / tint / border / solid */
   --amber: #B54708;
@@ -313,4 +314,48 @@
   --violetLine: rgba(82, 139, 255, 0.38);
   --heat3: rgba(82, 139, 255, 0.45);
   --heat2: rgba(82, 139, 255, 0.20);
+}
+
+/* =====================================================================
+ * GLASS (Nov 2026) - Display mode -> Glass in the profile menu.
+ * Light theme underneath; the app frame becomes see-through over a
+ * gradient of the theme colour (light at the top-left, deepening to the
+ * bottom-right), and the page panel, cards and sticky header are frosted
+ * white. Tables, inputs, pop-ups and calendars keep solid backgrounds so
+ * text stays crisp. Uses only --chromeBg / --panelBg / --cardBg /
+ * --stickyBg / --glassBlur, which no other theme sets.
+ * ===================================================================== */
+:root[data-theme='glass'] {
+  color-scheme: light;
+
+  /* Colour grading behind the glass - purple (default theme colour) */
+  --gradA: #F6F2FF;
+  --gradB: #E1D6FF;
+  --gradC: #BBA6FF;
+
+  --chromeBg: transparent;
+  --rail: transparent;
+  --panelBg: rgba(255, 255, 255, 0.66);
+  --cardBg: rgba(255, 255, 255, 0.80);
+  --stickyBg: rgba(255, 255, 255, 0.78);
+  --glassBlur: blur(18px) saturate(150%);
+  --glassEdge: rgba(255, 255, 255, 0.75);
+
+  --railActive: rgba(255, 255, 255, 0.70);
+  --railHover: rgba(255, 255, 255, 0.45);
+  --railLine: rgba(255, 255, 255, 0.60);
+
+  --sh1: 0 1px 2px rgba(16, 24, 40, 0.05), 0 8px 24px rgba(40, 30, 90, 0.06);
+}
+:root[data-theme='glass'][data-accent='teal'] {
+  --gradA: #EFFBFC;
+  --gradB: #CBEEF1;
+  --gradC: #8DD3DA;
+  --sh1: 0 1px 2px rgba(16, 24, 40, 0.05), 0 8px 24px rgba(20, 90, 100, 0.07);
+}
+:root[data-theme='glass'][data-accent='blue'] {
+  --gradA: #F1F5FF;
+  --gradB: #D3E0FF;
+  --gradC: #9FBAF5;
+  --sh1: 0 1px 2px rgba(16, 24, 40, 0.05), 0 8px 24px rgba(30, 60, 140, 0.07);
 }
