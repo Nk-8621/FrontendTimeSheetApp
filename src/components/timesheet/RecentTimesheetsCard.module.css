@@ -71,3 +71,17 @@
 .table tbody tr:hover > td {
   background: var(--hover);
 }
+
+/* COMPACT LAYOUT (Nov 2026): short laptop screens - see styles/global.css. */
+@media (max-height: 820px) and (min-width: 961px) {
+  .table th {
+    padding: 5px 14px;
+  }
+  .table td {
+    padding: 3px 14px;
+  }
+  .viewBtn {
+    width: 28px;
+    height: 28px;
+  }
+}

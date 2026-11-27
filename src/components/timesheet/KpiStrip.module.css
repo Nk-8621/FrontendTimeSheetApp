@@ -120,3 +120,39 @@
     font-size: 22px;
   }
 }
+
+/* COMPACT LAYOUT (Nov 2026): short laptop screens such as 1366 x 768,
+   where the browser leaves only ~640 px of height. Desktop widths only;
+   larger screens and phones are unchanged. Spacing only - no content hidden. */
+@media (max-height: 820px) and (min-width: 961px) {
+  .kpis {
+    margin-bottom: 12px;
+  }
+  .kpi {
+    min-height: 0;
+    padding: 8px 14px 8px;
+  }
+  .tile {
+    width: 22px;
+    height: 22px;
+    border-radius: 7px;
+  }
+  .tile svg {
+    width: 13px;
+    height: 13px;
+  }
+  .k {
+    font-size: var(--fs-sm);
+  }
+  .v {
+    margin-top: 4px;
+    font-size: var(--fs-kpi);
+  }
+  .d,
+  .v + .d {
+    margin-top: 3px;
+    padding-top: 0;
+    border-top: 0;
+    font-size: var(--fs-xs);
+  }
+}

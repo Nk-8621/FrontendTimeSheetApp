@@ -194,12 +194,15 @@ export function WeekGrid({
                         {r.userStoryId !== null && r.userStoryId !== undefined ? (
                           // Task added under a user story: story on top, task name below.
                           <div className={styles.hcell}>
-                            <div className={styles.hpath}>
+                            <div
+                              className={styles.hpath}
+                              title={`${r.userStoryName ?? ''}${r.userStoryStartDate && r.userStoryEndDate ? ` · ${rangeLabel(r.userStoryStartDate, r.userStoryEndDate)}` : ''}`}
+                            >
                               <Icon name="stories" className={styles.storyIcon} />
                               <b>{r.userStoryName}</b>
                               {r.userStoryStartDate && r.userStoryEndDate && <> · {rangeLabel(r.userStoryStartDate, r.userStoryEndDate)}</>}
                             </div>
-                            <div className={styles.htask}>{r.note}</div>
+                            <div className={styles.htask} title={r.note ?? undefined}>{r.note}</div>
                           </div>
                         ) : (
                           // Older line (Add task line / Excel import): Module › Task + description.

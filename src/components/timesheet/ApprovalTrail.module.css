@@ -43,3 +43,10 @@
   font-size: var(--fs-sm);
   color: var(--slate);
 }
+
+/* COMPACT LAYOUT (Nov 2026): short laptop screens - see styles/global.css. */
+@media (max-height: 820px) and (min-width: 961px) {
+  .ev {
+    padding-bottom: 9px;
+  }
+}

@@ -568,3 +568,89 @@ button.bt:hover {
     flex: 1;
   }
 }
+
+/* COMPACT LAYOUT (Nov 2026): short laptop screens such as 1366 x 768,
+   where the browser leaves only ~640 px of height. Desktop widths only;
+   larger screens and phones are unchanged. Spacing only - no content hidden. */
+@media (max-height: 820px) and (min-width: 961px) {
+  .cardHd {
+    min-height: 0;
+    padding: 6px 14px;
+  }
+  .wk th {
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+  .legendBar {
+    padding: 6px 14px;
+  }
+  .legend {
+    gap: 4px 12px;
+  }
+  .gridFoot {
+    padding: 7px 14px;
+  }
+  .dayHd .inner {
+    padding-top: 6px;
+  }
+  .dd {
+    font-size: var(--fs-md);
+    line-height: 1.2;
+  }
+  .dtBtn {
+    margin-top: 4px;
+    padding: 1px 4px;
+  }
+  .capBar {
+    margin: 5px 8px 4px;
+  }
+  .subRow td {
+    padding: 6px 12px !important;
+  }
+
+  /* Compact task rows: story + dates on one line and the task name on one
+     line (full text on hover), tighter cells and hour boxes. */
+  .wk td {
+    padding: 5px 12px;
+  }
+  /* Keep the first column at its normal width: without this, one-line text
+     would widen the table and push the edit column off the right edge. */
+  .hier {
+    max-width: 1px;
+  }
+  .hcell {
+    gap: 1px;
+  }
+  .hpath {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.35;
+  }
+  .hpath .storyIcon {
+    display: inline-block;
+    vertical-align: -2px;
+    margin-right: 5px;
+  }
+  .htask {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.3;
+  }
+  .hr {
+    padding: 4px !important;
+  }
+  .hr input {
+    height: 30px;
+  }
+  .bt {
+    height: 22px;
+  }
+  .totRow td,
+  .capRow td {
+    padding-top: 5px;
+    padding-bottom: 5px;
+  }
+}

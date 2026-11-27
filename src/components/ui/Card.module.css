@@ -27,3 +27,14 @@
 .cardBd {
   padding: 16px 18px;
 }
+
+/* COMPACT LAYOUT (Nov 2026): short laptop screens - see styles/global.css. */
+@media (max-height: 820px) and (min-width: 961px) {
+  .cardHd {
+    min-height: 0;
+    padding: 7px 14px;
+  }
+  .cardBd {
+    padding: 10px 14px;
+  }
+}

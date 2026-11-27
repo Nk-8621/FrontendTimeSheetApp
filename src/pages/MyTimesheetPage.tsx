@@ -220,7 +220,7 @@ export function MyTimesheetPage() {
         {week && (
           <>
             {week.week.status === 'Rejected' && (
-              <div style={{ marginBottom: 20 }}>
+              <div className="return-gap">
                 <ReturnDetails
                   title="Returned for corrections"
                   by={week.week.rejectedByName ?? 'your approver'}

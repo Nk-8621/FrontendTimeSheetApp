@@ -191,3 +191,40 @@ input, select, textarea, option {
 :root[data-theme='dark'] .brand-logo .brand-logo-dark {
   display: block;
 }
+
+/* Gap under the "Returned for corrections" box on My Timesheet. */
+.return-gap {
+  margin-bottom: 20px;
+}
+
+/* COMPACT LAYOUT (Nov 2026): short laptop screens such as 1366 x 768,
+   where the browser leaves only ~640 px of height. Desktop widths only;
+   larger screens and phones are unchanged. Spacing only - no content hidden. */
+@media (max-height: 820px) and (min-width: 961px) {
+  :root {
+    --headH: 52px;
+    /* Denser type scale, close to the earlier design's 13 px body text. */
+    --fs-2xs: 10.5px;
+    --fs-xs: 11.5px;
+    --fs-sm: 12px;
+    --fs-base: 13px;
+    --fs-md: 14px;
+    --fs-lg: 15px;
+    --fs-xl: 17px;
+    --fs-kpi: 21px;
+    --fsPageTitle: 18px;
+    --fsSectionTitle: 16px;
+    --btnH: 32px;
+    --btnHSm: 28px;
+    --btnPadX: 12px;
+  }
+  .main-column {
+    margin: 0 12px 10px 0;
+  }
+  .page-content {
+    padding: 14px 22px 28px;
+  }
+  .return-gap {
+    margin-bottom: 14px;
+  }
+}

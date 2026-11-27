@@ -132,3 +132,21 @@
     pointer-events: auto;
   }
 }
+
+/* COMPACT LAYOUT (Nov 2026): short laptop screens such as 1366 x 768,
+   where the browser leaves only ~640 px of height. Desktop widths only;
+   larger screens and phones are unchanged. Spacing only - no content hidden. */
+@media (max-height: 820px) and (min-width: 961px) {
+  .logoTile {
+    height: 44px;
+  }
+  .section {
+    padding: 5px 0;
+  }
+  .label {
+    padding: 3px 10px 4px;
+  }
+  .item {
+    height: 31px;
+  }
+}
