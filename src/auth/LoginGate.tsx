@@ -1,13 +1,19 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useMsal, useIsAuthenticated } from '@azure/msal-react';
 import { InteractionStatus } from '@azure/msal-browser';
-import { isAzureConfigured, loginRequest } from './authConfig';
+import { isAzureConfigured, isDevLogin, loginRequest } from './authConfig';
+import { DevLoginGate } from './DevLoginGate';
 import { storeAuth, setAccessTokenGetter } from '../api/authBridge';
 import { employeesApi } from '../api/employees';
 import { ApiError } from '../api/httpClient';
 import styles from './LoginGate.module.css';
 
 export function LoginGate({ children }: { children: ReactNode }) {
+  // Local dry-run testing only - never true in a production build.
+  if (isDevLogin) {
+    return <DevLoginGate>{children}</DevLoginGate>;
+  }
+
   if (!isAzureConfigured()) {
     return <NotConfiguredScreen />;
   }

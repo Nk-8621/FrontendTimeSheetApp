@@ -2,6 +2,8 @@ import { createContext, useContext, useState, type ReactNode } from 'react';
 import { useMsal } from '@azure/msal-react';
 import { getStoredAuth, clearStoredAuth, setAccessTokenGetter } from '../api/authBridge';
 import { useAccessProfile, useEmployee } from '../hooks/api/useEmployees';
+import { isDevLogin } from '../auth/authConfig';
+import { devSwitchUser } from '../auth/DevLoginGate';
 
 const FALLBACK_NAV = ['notif']; // shown only while the access profile is still loading
 
@@ -28,6 +30,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const roleLabel = employee ? `${employee.fullName} — ${employee.designation}` : employeeCode;
 
   function logout() {
+    // Test login (local dry run): "Sign out" goes back to the employee picker.
+    if (isDevLogin) {
+      devSwitchUser();
+      return;
+    }
     clearStoredAuth();
     setAccessTokenGetter(null);
     // Ends the Microsoft/Entra session too (not just this app's local

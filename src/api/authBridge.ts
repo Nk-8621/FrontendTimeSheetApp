@@ -46,8 +46,26 @@ export function setAccessTokenGetter(getter: (() => Promise<string | null>) | nu
   accessTokenGetter = getter;
 }
 
+// ---- DRY-RUN TEST LOGIN (local `npm run dev` only, see auth/DevLoginGate.tsx) ----
+// Per-tab employee code sent as X-Dev-Employee-Code instead of a Microsoft token.
+const DEV_CODE_KEY = 'meridian_dev_employee_code';
+
+export function getDevEmployeeCode(): string | null {
+  if (!import.meta.env.DEV) return null;
+  return sessionStorage.getItem(DEV_CODE_KEY);
+}
+
+export function setDevEmployeeCode(code: string | null) {
+  if (code) sessionStorage.setItem(DEV_CODE_KEY, code);
+  else sessionStorage.removeItem(DEV_CODE_KEY);
+}
+
 /** Builds the Authorization header for the next request. */
 export async function getAuthHeaders(): Promise<Record<string, string>> {
+  if (import.meta.env.DEV && import.meta.env.VITE_DEV_LOGIN === 'true') {
+    const devCode = getDevEmployeeCode();
+    if (devCode) return { 'X-Dev-Employee-Code': devCode };
+  }
   if (accessTokenGetter) {
     const token = await accessTokenGetter();
     if (token) return { Authorization: `Bearer ${token}` };

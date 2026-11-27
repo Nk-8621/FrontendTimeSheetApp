@@ -2,3 +2,5 @@ node_modules
 dist
 .DS_Store
 
+# Local-only env overrides (e.g. the dry-run test login)
+*.local

@@ -13,6 +13,10 @@ const redirectUri = (import.meta.env.VITE_AZURE_REDIRECT_URI as string | undefin
  * your Carbynetech tenant, then set VITE_AZURE_CLIENT_ID, VITE_AZURE_TENANT_ID,
  * and VITE_AZURE_REDIRECT_URI in .env (see .env.example).
  */
+/** DRY-RUN TEST LOGIN: true only under `npm run dev` with VITE_DEV_LOGIN=true
+ * (.env.development.local). Always false in a production build. */
+export const isDevLogin = import.meta.env.DEV && import.meta.env.VITE_DEV_LOGIN === 'true';
+
 export function isAzureConfigured(): boolean {
   return Boolean(clientId && tenantId);
 }
