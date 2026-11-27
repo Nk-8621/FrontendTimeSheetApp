@@ -1,5 +1,5 @@
 .classicLink {
-  font-size: 11.5px;
+  font-size: var(--fs-sm);
   color: var(--slate);
   background: var(--canvas);
   border: 1px solid var(--rule);
@@ -11,9 +11,9 @@
   background: none;
   border: none;
   padding: 0;
-  color: var(--oxide);
+  color: var(--link);
   font-weight: 600;
-  font-size: 11.5px;
+  font-size: var(--fs-sm);
   cursor: pointer;
   text-decoration: underline;
 }
@@ -58,16 +58,16 @@
   background: var(--canvas);
   border: 1px solid var(--ruleStrong);
   color: var(--slate);
-  font-size: 12px;
+  font-size: var(--fs-sm);
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .badgeDone {
-  background: var(--verd);
-  border-color: var(--verd);
-  color: #fff;
+  background: var(--verdSolid);
+  border-color: var(--verdSolid);
+  color: var(--onPrimary);
 }
 
 .sectionTitle {
@@ -79,7 +79,7 @@
 .sectionSummary {
   flex: 1;
   text-align: right;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--slate);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -89,7 +89,7 @@
 .chev {
   flex: none;
   color: var(--slate2);
-  font-size: 12px;
+  font-size: var(--fs-sm);
 }
 
 .sectionBody {
@@ -98,9 +98,9 @@
 }
 
 .reviewTree {
-  font-size: 13px;
+  font-size: var(--fs-base);
   color: var(--ink2);
-  background: #FAFBFD;
+  background: var(--paperAlt);
   border: 1px solid var(--rule);
   border-radius: var(--r);
   padding: 12px 14px;

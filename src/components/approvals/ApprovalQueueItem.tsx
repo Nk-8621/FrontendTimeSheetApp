@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { ReturnDetails } from '../ui/ReturnDetails';
 import type { ApprovalQueueItemDto } from '../../api/types';
 import { useApprovalMutations } from '../../hooks/api/useApprovals';
 import { useUI } from '../ui/UIProvider';
@@ -69,6 +70,19 @@ export function ApprovalQueueItem({ item, level2, readOnly = false }: ApprovalQu
     });
   }
 
+  // Esc collapses this expanded card (after any drawer / calendar on top has
+  // handled it). Only one card collapses per key press.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || e.defaultPrevented) return;
+      e.preventDefault();
+      setOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [open]);
+
   const returned = splitReturnReason(item.returnReason);
   const isBusy = mutations.approveLevel1.isPending || mutations.approveLevel2.isPending || mutations.reject.isPending;
   const pctBillable = item.totalHours ? Math.round((item.billableHours / item.totalHours) * 100) : 0;
@@ -94,24 +108,24 @@ export function ApprovalQueueItem({ item, level2, readOnly = false }: ApprovalQu
           <div className={styles.mt}>{item.designation} · {item.departmentName}</div>
         </div>
         <div style={{ minWidth: 150 }}>
-          <div style={{ fontSize: 11.5, fontWeight: 600 }}>{dayMonth(item.weekStartDate)} – {dayMonth(addDays(item.weekStartDate, 6))}</div>
+          <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 600 }}>{dayMonth(item.weekStartDate)} – {dayMonth(addDays(item.weekStartDate, 6))}</div>
           <div className={styles.mt}>Submitted {item.submittedAt ? new Date(item.submittedAt).toLocaleDateString() : '—'}</div>
         </div>
         <div style={{ minWidth: 96 }}>
-          <div className="num" style={{ fontSize: 15, fontWeight: 600 }}>{item.totalHours.toFixed(1)} h</div>
+          <div className="num" style={{ fontSize: 'var(--fs-lg)', fontWeight: 600 }}>{item.totalHours.toFixed(1)} h</div>
           <div className={styles.mt}>{item.projectCount} project{item.projectCount !== 1 ? 's' : ''} · {item.lineCount} lines</div>
         </div>
         <div style={{ minWidth: 120 }}>
           <div className={styles.bar}>
-            <i style={{ width: `${item.totalHours ? (item.billableHours / item.totalHours) * 100 : 0}%`, background: 'var(--oxide)', display: 'block', height: '100%' }} />
-            <i style={{ width: `${item.totalHours ? (item.partialBillableHours / item.totalHours) * 100 : 0}%`, background: 'var(--violet)', display: 'block', height: '100%' }} />
-            <i style={{ width: `${item.totalHours ? (item.nonBillableHours / item.totalHours) * 100 : 0}%`, background: 'var(--slate2, #C7CEDA)', display: 'block', height: '100%' }} />
+            <i style={{ width: `${item.totalHours ? (item.billableHours / item.totalHours) * 100 : 0}%`, background: 'var(--billable)', display: 'block', height: '100%' }} />
+            <i style={{ width: `${item.totalHours ? (item.partialBillableHours / item.totalHours) * 100 : 0}%`, background: 'var(--partial)', display: 'block', height: '100%' }} />
+            <i style={{ width: `${item.totalHours ? (item.nonBillableHours / item.totalHours) * 100 : 0}%`, background: 'var(--nonbill)', display: 'block', height: '100%' }} />
           </div>
           <div className={`${styles.mt} num`}>{pctBillable}% billable</div>
         </div>
         <div style={{ flex: 1 }} />
         {readOnly ? (
-          <span className={styles.returnedTag}>Waiting for employee</span>
+          <span className={styles.returnedTag}><i className={styles.tagDot} />Waiting for employee</span>
         ) : (
           <>
             <button className={`${controls.btn} ${controls.ok} ${controls.sm}`} disabled={isBusy} onClick={(e) => { e.stopPropagation(); handleApprove(); }}>
@@ -126,9 +140,12 @@ export function ApprovalQueueItem({ item, level2, readOnly = false }: ApprovalQu
 
       {readOnly && (
         <div className={styles.returnedRow}>
-          <div><b>Returned by {item.returnedByName ?? 'Level 2'}</b></div>
-          <div><b>Reason:</b> {returned.reason || 'No reason given'}</div>
-          {returned.comments && <div><b>Comments:</b> {returned.comments}</div>}
+          <ReturnDetails
+            title="Returned to employee"
+            by={item.returnedByName ?? 'Level 2'}
+            reason={returned.reason}
+            comments={returned.comments}
+          />
         </div>
       )}
 

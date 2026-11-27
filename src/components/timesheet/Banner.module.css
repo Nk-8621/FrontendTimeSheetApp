@@ -1,28 +1,41 @@
 .banner {
-  background: var(--oxideTint);
-  border: 1px solid #C6DAE9;
-  border-left: 3px solid var(--oxide);
-  border-radius: var(--r);
-  padding: 9px 12px;
-  font-size: 11.5px;
-  color: var(--oxideDeep);
-  margin-bottom: 14px;
   display: flex;
-  gap: 9px;
   align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 11px 14px;
+  border: 1px solid var(--oxideLine);
+  border-radius: var(--rLg);
+  background: var(--oxideTint);
+  color: var(--ink);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
 }
 .banner b {
   font-weight: 600;
 }
+.icon {
+  width: 17px;
+  height: 17px;
+  margin-top: 1px;
+  flex: none;
+  color: var(--link);
+}
+.text {
+  min-width: 0;
+  flex: 1;
+}
 .w {
   background: var(--amberTint);
   border-color: var(--amberLine);
-  border-left-color: var(--amber);
-  color: #7A4A00;
+}
+.w .icon {
+  color: var(--amber);
 }
 .r {
   background: var(--clayTint);
   border-color: var(--clayLine);
-  border-left-color: var(--clay);
-  color: #7E2018;
+}
+.r .icon {
+  color: var(--clay);
 }

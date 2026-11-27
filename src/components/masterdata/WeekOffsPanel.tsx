@@ -236,7 +236,7 @@ export function WeekOffsPanel() {
                   <Fragment key={c.id}>
                     <tr onClick={() => toggleRow(c.id)} style={{ cursor: 'pointer' }} title={isOpen ? 'Hide employees' : 'Show employees'}>
                       <td>
-                        <span style={{ display: 'inline-block', width: 14, fontSize: 10, color: 'var(--slate)' }}>{isOpen ? '▼' : '▶'}</span>
+                        <span style={{ display: 'inline-block', width: 14, fontSize: 'var(--fs-2xs)', color: 'var(--slate)' }}>{isOpen ? '▼' : '▶'}</span>
                         <b>{c.clientName}</b>
                       </td>
                       <td style={{ fontWeight: 600 }}>{c.weekOffDays.join(', ')}</td>
@@ -249,15 +249,15 @@ export function WeekOffsPanel() {
                       </td>
                     </tr>
                     {isOpen && c.employees.length === 0 && (
-                      <tr style={{ background: '#F7F9FC' }}>
+                      <tr style={{ background: 'var(--paperAlt)' }}>
                         <td colSpan={6} style={{ paddingLeft: 36, color: 'var(--slate)' }}>No employees yet - use Add Employees.</td>
                       </tr>
                     )}
                     {isOpen && c.employees.map((e) => (
-                      <tr key={`${c.id}-${e.id}`} style={{ background: '#F7F9FC' }}>
+                      <tr key={`${c.id}-${e.id}`} style={{ background: 'var(--paperAlt)' }}>
                         <td style={{ paddingLeft: 36 }}>
                           <div style={{ fontWeight: 500 }}>{e.employeeName}</div>
-                          <div style={{ fontSize: 10.5, color: 'var(--slate)' }}>{e.employeeCode}</div>
+                          <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--slate)' }}>{e.employeeCode}</div>
                         </td>
                         <td style={{ color: 'var(--slate)' }}>{e.createdByName ? `Added by ${e.createdByName}` : ''}</td>
                         <td className="num">{showDate(e.effectiveFrom)}</td>

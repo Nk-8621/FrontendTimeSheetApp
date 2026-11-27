@@ -62,11 +62,11 @@ export function ProjectAllocationList({ projects, value, onChange, maxHeight = 2
         const checked = Boolean(allocation);
         const categoryOptions = allocation ? CATEGORY_OPTIONS[allocation.classification] : [];
         return (
-          <div key={p.id} style={{ padding: '5px 0', borderBottom: '1px solid var(--rule, #EEF1F6)' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, cursor: 'pointer' }}>
+          <div key={p.id} style={{ padding: '5px 0', borderBottom: '1px solid var(--rule)' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--fs-base)', cursor: 'pointer' }}>
               <input type="checkbox" checked={checked} onChange={() => toggle(p.id)} />
               {p.name} <span style={{ color: 'var(--slate)' }}>[{p.code}]</span>
-              {!p.isActive && <span style={{ color: 'var(--clay)', fontSize: 11 }}>inactive</span>}
+              {!p.isActive && <span style={{ color: 'var(--clay)', fontSize: 'var(--fs-xs)' }}>inactive</span>}
             </label>
 
             {allocation && (

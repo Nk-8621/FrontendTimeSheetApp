@@ -8,7 +8,7 @@ export function NotificationsPage() {
 
   return (
     <>
-      <PageHeader title="Notifications" />
+      <PageHeader title="Notifications" subtitle="Updates about your timesheets and approvals." />
       <div className="page-content">
         <Banner kind="warn"><b>Under development:</b> notifications aren't sent yet. This page will show them once the feature is ready.</Banner>
 

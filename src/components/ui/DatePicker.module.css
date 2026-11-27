@@ -1,0 +1,321 @@
+/* ---- Trigger (looks like the app's text inputs) ---- */
+.trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--ruleStrong);
+  border-radius: var(--rBtn);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: var(--fs-base);
+  text-align: left;
+  box-shadow: var(--shBtn);
+  cursor: pointer;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+.trigger:hover:not(:disabled) {
+  border-color: var(--slate2);
+}
+.trigger:focus-visible,
+.triggerOpen {
+  outline: none;
+  border-color: var(--oxide);
+  box-shadow: 0 0 0 3px var(--oxideTint);
+}
+.trigger:disabled {
+  background: var(--canvas);
+  color: var(--slate2);
+  cursor: not-allowed;
+}
+.trigIcon {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  color: var(--slate);
+  flex: none;
+}
+.trigVal {
+  flex: 1;
+  min-width: 0;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.trigPh {
+  flex: 1;
+  color: var(--slate2);
+}
+.trigChev {
+  width: 15px;
+  height: 15px;
+  color: var(--slate);
+  flex: none;
+  transition: transform 0.15s ease;
+}
+.triggerOpen .trigChev {
+  transform: rotate(180deg);
+}
+
+/* ---- Popover (fixed, rendered into <body>, above drawers and dialogs) ---- */
+.pop {
+  position: fixed;
+  z-index: 2000;
+  animation: popIn 0.14s ease-out;
+}
+.popUp {
+  animation-name: popInUp;
+}
+.popInner {
+  border-radius: var(--rXl);
+  overscroll-behavior: contain;
+}
+@keyframes popIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes popInUp {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ---- Calendar panel ---- */
+.cal {
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: var(--rXl);
+  box-shadow: var(--sh2);
+  padding: 14px;
+  font-family: var(--sans);
+}
+
+.head {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 88px 34px;
+  gap: 8px;
+  align-items: center;
+}
+.navBtn {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--ruleStrong);
+  border-radius: var(--rBtn);
+  background: var(--raised);
+  color: var(--ink2);
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.navBtn:hover {
+  background: var(--hover);
+  border-color: var(--slate2);
+  color: var(--ink);
+}
+.navBtn svg {
+  width: 16px;
+  height: 16px;
+}
+.selWrap {
+  position: relative;
+  display: block;
+  min-width: 0;
+}
+.sel {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  height: 34px;
+  padding: 0 26px 0 10px;
+  border: 1px solid var(--ruleStrong);
+  border-radius: var(--rBtn);
+  background: var(--raised);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: var(--fs-base);
+  font-weight: 500;
+  cursor: pointer;
+  text-overflow: ellipsis;
+}
+.sel:hover {
+  border-color: var(--slate2);
+}
+.sel:focus-visible {
+  outline: none;
+  border-color: var(--oxide);
+  box-shadow: 0 0 0 3px var(--oxideTint);
+}
+.selChev {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  transform: translateY(-50%);
+  color: var(--slate);
+  pointer-events: none;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  row-gap: 3px;
+  margin-top: 10px;
+}
+.wd {
+  display: grid;
+  place-items: center;
+  height: 26px;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--slate);
+}
+.wkndHd {
+  color: var(--slate2);
+}
+
+.day {
+  position: relative;
+  height: 34px;
+  margin: 0 2px;
+  border: 0;
+  border-radius: var(--rBtn);
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: var(--fs-md);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background 0.1s ease, color 0.1s ease;
+}
+.day:hover:not(:disabled) {
+  background: var(--hover);
+}
+.day:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--oxideMid);
+}
+/* Weekends: soft tinted cell */
+.wknd {
+  background: var(--raised);
+  color: var(--ink2);
+}
+/* Days of the previous / next month */
+.outside {
+  color: var(--slate2);
+  font-weight: 400;
+}
+.wknd.outside {
+  background: transparent;
+}
+/* Today: ring in the theme colour */
+.today {
+  color: var(--link);
+  box-shadow: inset 0 0 0 2px var(--oxide);
+}
+/* Range (selected week, or a from-to period) */
+.inRange {
+  margin: 0;
+  border-radius: 0;
+  background: var(--oxideTint);
+  color: var(--ink);
+}
+.inRange.rangeStart {
+  border-radius: var(--rBtn) 0 0 var(--rBtn);
+}
+.inRange.rangeEnd {
+  border-radius: 0 var(--rBtn) var(--rBtn) 0;
+}
+.inRange.rangeStart,
+.inRange.rangeEnd {
+  background: var(--oxideLine);
+}
+.inRange.rangeStart.rangeEnd {
+  border-radius: var(--rBtn);
+}
+/* Selected day: filled, with an outer ring like the reference */
+.day.day.selected,
+.day.day.selected:hover:not(:disabled) {
+  margin: 0 2px;
+  border-radius: var(--rBtn);
+  background: var(--oxide);
+  color: #FFFFFF;
+  font-weight: 700;
+  box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px var(--oxideMid), 0 6px 14px var(--oxideLine);
+  z-index: 1;
+}
+.day:disabled {
+  color: var(--slate2);
+  opacity: 0.4;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--rule);
+}
+.legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-sm);
+  color: var(--slate);
+}
+.todayDot,
+.wkndDot {
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+  flex: none;
+}
+.todayDot {
+  box-shadow: inset 0 0 0 2px var(--oxide);
+}
+.wkndDot {
+  margin-left: 8px;
+  background: var(--ruleStrong);
+}
+.footBtns {
+  display: flex;
+  gap: 8px;
+}
+.footBtn {
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--ruleStrong);
+  border-radius: var(--rBtn);
+  background: var(--raised);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: var(--fs-base);
+  font-weight: 500;
+  cursor: pointer;
+}
+.footBtn:hover:not(:disabled) {
+  background: var(--hover);
+  border-color: var(--slate2);
+}
+.footBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

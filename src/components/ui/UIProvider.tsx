@@ -57,7 +57,15 @@ export function UIProvider({ children }: { children: ReactNode }) {
     return () => document.removeEventListener('pointerdown', onPointerDown, true);
   }, []);
 
+  // Unsaved-changes tracking: any typing / selection / date pick inside the
+  // open drawer marks it dirty, so Esc or a click outside asks first.
+  const dirty = useRef(false);
+  const drawerOpen = useRef(false);
+  const confirmOpen = useRef(false);
+
   const openDrawer = useCallback((opts: DrawerOptions) => {
+    dirty.current = false;
+    drawerOpen.current = true;
     lastSize.current = opts.size ?? 'normal';
     const box = drawerRef.current;
     if (isCentered(opts.size) && box) {
@@ -77,8 +85,10 @@ export function UIProvider({ children }: { children: ReactNode }) {
     }
   }, []);
   const closeDrawer = useCallback(() => {
+    // Content stays until the fade-out ends (onTransitionEnd clears it).
+    drawerOpen.current = false;
+    dirty.current = false;
     setDrawer(null);
-    if (!isCentered(lastSize.current)) setContent(null);
   }, []);
 
   const toast = useCallback((message: string, kind?: 'ok' | 'bad') => {
@@ -88,22 +98,65 @@ export function UIProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const confirm = useCallback((opts: ConfirmOptions) => {
+    confirmOpen.current = true;
     setConfirmOpts(opts);
     return new Promise<boolean>((resolve) => { confirmResolve.current = resolve; });
   }, []);
   const closeConfirm = useCallback((ok: boolean) => {
+    confirmOpen.current = false;
     confirmResolve.current?.(ok);
     confirmResolve.current = null;
     setConfirmOpts(null);
   }, []);
   const confirmYes = useCallback(() => closeConfirm(true), [closeConfirm]);
+
+  /** Close the drawer from Esc / a click outside: asks first if the form
+   * inside has unsaved changes. (Save / Cancel buttons call closeDrawer.) */
+  const requestCloseDrawer = useCallback(async () => {
+    if (!drawerOpen.current) return;
+    if (dirty.current) {
+      const discard = await confirm({
+        title: 'Discard changes?',
+        message: 'You have unsaved changes in this form. Close it and discard them?',
+        confirmLabel: 'Discard',
+        danger: true,
+      });
+      if (!discard) return;
+    }
+    closeDrawer();
+  }, [confirm, closeDrawer]);
+
+  // Mark the drawer dirty on any input inside it.
+  useEffect(() => {
+    const el = drawerRef.current;
+    if (!el) return;
+    const mark = () => { if (drawerOpen.current) dirty.current = true; };
+    el.addEventListener('input', mark, true);
+    el.addEventListener('change', mark, true);
+    return () => {
+      el.removeEventListener('input', mark, true);
+      el.removeEventListener('change', mark, true);
+    };
+  }, []);
+
+  // Esc closes the open drawer / centred form (after anything on top of it -
+  // calendar, confirm box, inline edit - has had its turn and claimed the key).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || e.defaultPrevented || confirmOpen.current || !drawerOpen.current) return;
+      e.preventDefault();
+      void requestCloseDrawer();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [requestCloseDrawer]);
   const confirmNo = useCallback(() => closeConfirm(false), [closeConfirm]);
 
   return (
     <UIContext.Provider value={{ openDrawer, closeDrawer, toast, confirm }}>
       {children}
 
-      <div className={`${styles.scrim} ${drawer ? styles.on : ''}`} onClick={closeDrawer} />
+      <div className={`${styles.scrim} ${drawer ? styles.on : ''}`} onClick={() => void requestCloseDrawer()} />
       <aside
         ref={drawerRef}
         className={`${styles.drawer} ${lastSize.current === 'wide' ? styles.wide : ''} ${isCentered(lastSize.current) ? `${styles.center} center-box` : ''} ${lastSize.current === 'centerSmall' ? styles.small : ''} ${drawer && shown ? styles.on : ''}`}

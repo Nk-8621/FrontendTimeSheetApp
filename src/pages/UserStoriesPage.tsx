@@ -124,7 +124,7 @@ export function UserStoriesPage() {
 
   return (
     <>
-      <PageHeader title="User Stories" />
+      <PageHeader title="User Stories" subtitle="Your stories and tasks for the week — hours you log in My Timesheet are booked against these tasks." />
 
       <div className="page-content">
         {canManageNames && (

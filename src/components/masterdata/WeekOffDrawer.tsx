@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { DatePicker } from '../ui/DatePicker';
 import { WEEK_DAY_SHORT } from '../../api/types';
 import type {
   AssignEmployeesRequest, ClientWeekOffDto, EmployeeWeekOffDto, SaveClientWeekOffRequest,
@@ -19,11 +20,11 @@ function DateRange({ from, to, onFrom, onTo }: { from: string; to: string; onFro
       <div style={{ display: 'flex', gap: 10 }}>
         <div className={controls.field} style={{ flex: 1 }}>
           <label>From <span className={controls.req}>*</span></label>
-          <input className={controls.textInput} type="date" value={from} onChange={(e) => onFrom(e.target.value)} />
+          <DatePicker rangeStart={from || undefined} rangeEnd={to || undefined} value={from} onChange={(e) => onFrom(e.target.value)} />
         </div>
         <div className={controls.field} style={{ flex: 1 }}>
           <label>To</label>
-          <input className={controls.textInput} type="date" value={to} onChange={(e) => onTo(e.target.value)} />
+          <DatePicker rangeStart={from || undefined} rangeEnd={to || undefined} value={to} onChange={(e) => onTo(e.target.value)} />
         </div>
       </div>
       <div className={controls.hint} style={{ marginTop: -6, marginBottom: 12 }}>Leave To empty if there is no end date.</div>
@@ -176,9 +177,9 @@ export function AssignEmployeesDrawer({ client, options, onSave, onCancel }: Ass
           style={{ marginBottom: 6 }}
         />
         <div style={{ maxHeight: 220, overflowY: 'auto', border: '1px solid var(--rule)', borderRadius: 4, padding: '4px 8px' }}>
-          {choices.length === 0 && <div style={{ color: 'var(--slate)', fontSize: 12, padding: 6 }}>No Record Found</div>}
+          {choices.length === 0 && <div style={{ color: 'var(--slate)', fontSize: 'var(--fs-sm)', padding: 6 }}>No Record Found</div>}
           {choices.map((o) => (
-            <label key={o.value} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', fontSize: 12.5, cursor: 'pointer' }}>
+            <label key={o.value} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', fontSize: 'var(--fs-base)', cursor: 'pointer' }}>
               <input type="checkbox" checked={selected.includes(o.value)} onChange={() => toggle(o.value)} />
               {o.label}
             </label>

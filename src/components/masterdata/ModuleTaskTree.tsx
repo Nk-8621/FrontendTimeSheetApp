@@ -282,7 +282,7 @@ export function ModuleTaskTree({
                   value={editValue}
                   autoFocus
                   onChange={(e) => { setEditValue(e.target.value); setEditError(''); }}
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleRenameModule(mod); if (e.key === 'Escape') setEditingModuleId(null); }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleRenameModule(mod); if (e.key === 'Escape') { e.preventDefault(); setEditingModuleId(null); } }}
                 />
                 <button className={`${controls.btn} ${controls.sm}`} onClick={() => handleRenameModule(mod)}>Save</button>
                 <button className={`${controls.btn} ${controls.sm}`} onClick={() => setEditingModuleId(null)}>Cancel</button>
@@ -300,7 +300,7 @@ export function ModuleTaskTree({
 
           <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
             {tasksFor(mod.id).map((t) => (
-              <li key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 0 3px 14px', fontSize: 13 }}>
+              <li key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 0 3px 14px', fontSize: 'var(--fs-base)' }}>
                 {editingTaskId === t.id ? (
                   <>
                     <input
@@ -309,7 +309,7 @@ export function ModuleTaskTree({
                       value={editValue}
                       autoFocus
                       onChange={(e) => { setEditValue(e.target.value); setEditError(''); }}
-                      onKeyDown={(e) => { if (e.key === 'Enter') handleRenameTask(t); if (e.key === 'Escape') setEditingTaskId(null); }}
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleRenameTask(t); if (e.key === 'Escape') { e.preventDefault(); setEditingTaskId(null); } }}
                     />
                     <button className={`${controls.btn} ${controls.sm}`} onClick={() => handleRenameTask(t)}>Save</button>
                     <button className={`${controls.btn} ${controls.sm}`} onClick={() => setEditingTaskId(null)}>Cancel</button>
@@ -324,12 +324,12 @@ export function ModuleTaskTree({
               </li>
             ))}
             {editingTaskId !== null && editError && tasksFor(mod.id).some((t) => t.id === editingTaskId) && (
-              <li style={{ color: 'var(--clay)', fontSize: 12.5, padding: '2px 0 0 14px' }}>{editError}</li>
+              <li style={{ color: 'var(--clay)', fontSize: 'var(--fs-base)', padding: '2px 0 0 14px' }}>{editError}</li>
             )}
             <li style={{ display: 'flex', gap: 6, padding: '5px 0 0 14px' }}>
               <input
                 className={controls.textInput}
-                style={{ flex: 1, fontSize: 12.5 }}
+                style={{ flex: 1, fontSize: 'var(--fs-base)' }}
                 placeholder="Add a task…"
                 list="task-name-suggestions"
                 value={newTaskName[mod.id] ?? ''}

@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react';
+import { DatePicker } from '../ui/DatePicker';
 import type { TimeEntryClassification } from '../../api/types';
 import { ApiError } from '../../api/httpClient';
 import { useUI } from '../ui/UIProvider';
@@ -320,11 +321,11 @@ export function ProjectSetupFlow({ onDone, onSwitchToClassicForm }: ProjectSetup
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <div className={controls.field}>
             <label>Start Date <span className={controls.req}>*</span></label>
-            <input type="date" className={controls.textInput} value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+            <DatePicker rangeStart={startDate || undefined} rangeEnd={endDate || undefined} value={startDate} onChange={(e) => setStartDate(e.target.value)} />
           </div>
           <div className={controls.field}>
             <label>End Date</label>
-            <input type="date" className={controls.textInput} value={endDate} min={startDate || undefined} onChange={(e) => setEndDate(e.target.value)} />
+            <DatePicker rangeStart={startDate || undefined} rangeEnd={endDate || undefined} value={endDate} min={startDate || undefined} onChange={(e) => setEndDate(e.target.value)} />
           </div>
         </div>
         <div className={controls.field}>

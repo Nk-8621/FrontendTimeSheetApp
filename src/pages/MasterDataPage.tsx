@@ -452,7 +452,7 @@ export function MasterDataPage() {
 
   return (
     <>
-      <PageHeader title="Master Data" />
+      <PageHeader title="Master Data" subtitle="Departments, customers, projects, templates, resources, holidays and week-offs." />
       <div className="page-content">
         {isError && <Banner kind="reject">Couldn't load master data — check that the backend API is reachable.</Banner>}
 
@@ -532,7 +532,7 @@ export function MasterDataPage() {
                         {/* Created by an employee via "+ Others" on Add Task Line - still
                             under "Pending Classification" until an admin fixes it up. */}
                         {p.needsReview && (
-                          <div style={{ fontSize: 10.5, fontWeight: 600, color: 'var(--amber)', marginTop: 2 }} title="Created by an employee from Add Task Line — assign the real customer, code and billing type, then untick Needs review.">
+                          <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 600, color: 'var(--amber)', marginTop: 2 }} title="Created by an employee from Add Task Line — assign the real customer, code and billing type, then untick Needs review.">
                             Needs review
                           </div>
                         )}
@@ -699,7 +699,7 @@ function ResourceRow({
     <tr style={{ opacity: employee.isActive ? 1 : 0.55 }}>
       <td>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ width: 23, height: 23, borderRadius: '50%', background: 'var(--oxideTint)', color: 'var(--oxide)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9.5, fontWeight: 700 }}>{employee.initials}</div>
+          <div style={{ width: 23, height: 23, borderRadius: '50%', background: 'var(--oxideTint)', color: 'var(--link)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--fs-2xs)', fontWeight: 700 }}>{employee.initials}</div>
           <b>{employee.fullName}</b>
         </div>
       </td>
@@ -852,9 +852,9 @@ function ProjectAllocationRow({ row }: { row: { projectId: number; projectCode: 
       </tr>
       {expanded && (
         <tr>
-          <td colSpan={3} style={{ background: '#FAFBFD', padding: '10px 14px' }}>
-            {isLoading && <span style={{ fontSize: 11.5, color: 'var(--slate)' }}>Loading…</span>}
-            {allocated && allocated.length === 0 && <span style={{ fontSize: 11.5, color: 'var(--slate)' }}>No employees allocated.</span>}
+          <td colSpan={3} style={{ background: 'var(--paperAlt)', padding: '10px 14px' }}>
+            {isLoading && <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--slate)' }}>Loading…</span>}
+            {allocated && allocated.length === 0 && <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--slate)' }}>No employees allocated.</span>}
             {allocated && allocated.length > 0 && (
               // One employee per line: number, name, code, department.
               <ol style={{ margin: 0, paddingLeft: 22, display: 'flex', flexDirection: 'column', gap: 4 }}>

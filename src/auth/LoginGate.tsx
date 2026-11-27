@@ -5,38 +5,60 @@ import { isAzureConfigured, loginRequest } from './authConfig';
 import { storeAuth, setAccessTokenGetter } from '../api/authBridge';
 import { employeesApi } from '../api/employees';
 import { ApiError } from '../api/httpClient';
+import { Icon } from '../components/ui/Icon';
 import styles from './LoginGate.module.css';
 
+// UI REDESIGN (Nov 2026): sign-in still uses Microsoft (Entra) exactly as
+// before - only the screens are restyled to Sai Kiran's design (decorative
+// picture on the left, white panel with the Carbynetech logo on the right).
+
+/** Microsoft sign-in is the only way in. Renders children only once a
+ * real Entra login has resolved to an active employee. */
 export function LoginGate({ children }: { children: ReactNode }) {
   if (!isAzureConfigured()) {
     return <NotConfiguredScreen />;
   }
-
   return <AzureGate>{children}</AzureGate>;
+}
+
+/** The sign-in page frame: picture on the left, white panel on the right. */
+function SignInFrame({ children }: { children: ReactNode }) {
+  return (
+    <div className={styles.screen}>
+      {/* Left: decorative background (public/login-bg.svg). */}
+      <section className={styles.photoSide} aria-hidden="true">
+        <img className={styles.photo} src="/login-bg.svg" alt="" />
+      </section>
+
+      {/* Right: white sign-in panel. */}
+      <main className={styles.formSide}>
+        <div className={styles.panelInner}>
+          <header className={styles.panelTop}>
+            {/* The panel is always white, so it always uses the original logo. */}
+            <img className={styles.logo} src="/carbynetech-logo.png" alt="Carbynetech - Data to decisions made simpler" />
+          </header>
+          <div className={styles.card}>{children}</div>
+          <footer className={styles.foot}>© {new Date().getFullYear()} Carbynetech India Pvt Ltd</footer>
+        </div>
+      </main>
+    </div>
+  );
 }
 
 function NotConfiguredScreen() {
   return (
-    <div className={styles.screen}>
-      <div className={styles.card}>
-        <div className={styles.brand}>CARBYNETECH TIMESHEET</div>
+    <SignInFrame>
+      <div className={styles.heading}>
         <h1>Microsoft sign-in isn't configured yet</h1>
         <p>
           VITE_AZURE_CLIENT_ID and VITE_AZURE_TENANT_ID still need to be set in .env.
           Contact your admin, or see .env.example for what's needed.
         </p>
       </div>
-    </div>
+    </SignInFrame>
   );
 }
 
-/** Real Microsoft Entra login - the only login path. Once the sign-in
- * redirect completes, this acquires an API access token, resolves this
- * account's employee identity via GET /api/employees/me (which is what
- * actually links this Entra account to an Employee record on first sign-in
- * - see CurrentUserService on the backend), and only then renders children
- * - so everything under here (SessionContext included) can assume a
- * confirmed, resolved identity already exists. */
 function AzureGate({ children }: { children: ReactNode }) {
   const isAuthenticated = useIsAuthenticated();
   const { instance, accounts, inProgress } = useMsal();
@@ -101,41 +123,49 @@ function AzureGate({ children }: { children: ReactNode }) {
 
   if (!isAuthenticated) {
     return (
-      <div className={styles.screen}>
-        <div className={styles.card}>
-          <div className={styles.brand}>CARBYNETECH TIMESHEET</div>
+      <SignInFrame>
+        <div className={styles.heading}>
+          <h1>Welcome back</h1>
           <p>Redirecting you to Microsoft sign-in&hellip;</p>
-          <button className={styles.signInBtn} onClick={() => instance.loginRedirect(loginRequest)}>
-            Click here if you're not redirected automatically
-          </button>
         </div>
-      </div>
+        <button type="button" className={styles.signInBtn} onClick={() => instance.loginRedirect(loginRequest)}>
+          Sign in with Microsoft
+          <Icon name="arrowRight" />
+        </button>
+        <p className={styles.hint}>Click the button if you're not redirected automatically.</p>
+      </SignInFrame>
     );
   }
 
   if (status === 'error') {
     return (
-      <div className={styles.screen}>
-        <div className={styles.card}>
-          <div className={styles.brand}>CARBYNETECH TIMESHEET</div>
+      <SignInFrame>
+        <div className={styles.heading}>
           <h1>Couldn't sign you in</h1>
-          <div className={styles.errMsg}>{error}</div>
-          <button className={styles.signInBtn} onClick={() => instance.logoutRedirect()}>
-            Sign out and try again
-          </button>
         </div>
-      </div>
+        <div className={styles.errMsg} role="alert">
+          <Icon name="alert" />
+          <span>{error}</span>
+        </div>
+        <button type="button" className={styles.signInBtn} onClick={() => instance.logoutRedirect()}>
+          Sign out and try again
+        </button>
+      </SignInFrame>
     );
   }
 
   if (status === 'pending') {
     return (
-      <div className={styles.screen}>
-        <div className={styles.card}>
-          <div className={styles.brand}>CARBYNETECH TIMESHEET</div>
+      <SignInFrame>
+        <div className={styles.heading}>
+          <h1>Welcome back</h1>
           <p>Signing you in&hellip;</p>
         </div>
-      </div>
+        <button type="button" className={styles.signInBtn} disabled>
+          <span className={styles.spinner} aria-hidden="true" />
+          Signing in…
+        </button>
+      </SignInFrame>
     );
   }
 

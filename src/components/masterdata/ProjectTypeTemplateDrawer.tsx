@@ -124,7 +124,7 @@ export function ProjectTypeTemplateDrawer({ projectTypeId, typeName, onClose }: 
                   value={editValue}
                   autoFocus
                   onChange={(e) => setEditValue(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleRenameModule(mod.id); if (e.key === 'Escape') setEditingModuleId(null); }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleRenameModule(mod.id); if (e.key === 'Escape') { e.preventDefault(); setEditingModuleId(null); } }}
                 />
                 <button className={`${controls.btn} ${controls.sm}`} onClick={() => handleRenameModule(mod.id)}>Save</button>
                 <button className={`${controls.btn} ${controls.sm}`} onClick={() => setEditingModuleId(null)}>Cancel</button>
@@ -140,7 +140,7 @@ export function ProjectTypeTemplateDrawer({ projectTypeId, typeName, onClose }: 
 
           <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
             {[...mod.tasks].sort((a, b) => a.sortOrder - b.sortOrder).map((t) => (
-              <li key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 0 3px 14px', fontSize: 13 }}>
+              <li key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 0 3px 14px', fontSize: 'var(--fs-base)' }}>
                 {editingTaskId === t.id ? (
                   <>
                     <input
@@ -149,7 +149,7 @@ export function ProjectTypeTemplateDrawer({ projectTypeId, typeName, onClose }: 
                       value={editValue}
                       autoFocus
                       onChange={(e) => setEditValue(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === 'Enter') handleRenameTask(t.id); if (e.key === 'Escape') setEditingTaskId(null); }}
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleRenameTask(t.id); if (e.key === 'Escape') { e.preventDefault(); setEditingTaskId(null); } }}
                     />
                     <button className={`${controls.btn} ${controls.sm}`} onClick={() => handleRenameTask(t.id)}>Save</button>
                     <button className={`${controls.btn} ${controls.sm}`} onClick={() => setEditingTaskId(null)}>Cancel</button>
@@ -166,7 +166,7 @@ export function ProjectTypeTemplateDrawer({ projectTypeId, typeName, onClose }: 
             <li style={{ display: 'flex', gap: 6, padding: '5px 0 0 14px' }}>
               <input
                 className={controls.textInput}
-                style={{ flex: 1, fontSize: 12.5 }}
+                style={{ flex: 1, fontSize: 'var(--fs-base)' }}
                 placeholder="Add a task…"
                 value={newTaskName[mod.id] ?? ''}
                 onChange={(e) => setNewTaskName((cur) => ({ ...cur, [mod.id]: e.target.value }))}

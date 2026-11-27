@@ -1,4 +1,8 @@
+import { Link } from 'react-router-dom';
 import { Card } from '../ui/Card';
+import { Icon } from '../ui/Icon';
+import { useSession } from '../../session/SessionContext';
+import controls from '../../styles/controls.module.css';
 import { StatusPill } from '../ui/StatusPill';
 import { useTimesheetHistory } from '../../hooks/api/useTimesheet';
 import { dayMonth, addDays } from '../../lib/dates';
@@ -17,13 +21,24 @@ const LAST_WEEKS = 10;
 /** My Timesheet: the employee's last 10 timesheets with their status
  * (the full list is on the All Timesheets page). */
 export function RecentTimesheetsCard({ employeeCode, selectedWeek, onView }: RecentTimesheetsCardProps) {
+  const { nav } = useSession();
   const { data: weeks, isError } = useTimesheetHistory(employeeCode);
   const recent = [...(weeks ?? [])]
     .sort((a, b) => b.weekStartDate.localeCompare(a.weekStartDate))
     .slice(0, LAST_WEEKS);
 
   return (
-    <Card title="All Timesheets" noPad>
+    <Card
+      title="All Timesheets"
+      sub={weeks ? `Last ${Math.min(LAST_WEEKS, recent.length)} weeks` : undefined}
+      noPad
+      headerRight={nav.includes('hist') && (
+        <Link to="/hist" className={`${controls.btn} ${controls.sm}`}>
+          View all
+          <Icon name="arrowRight" />
+        </Link>
+      )}
+    >
       {isError && <div className={styles.empty}>Couldn't load your timesheets.</div>}
       {weeks && recent.length === 0 && <div className={styles.empty}>No timesheets yet.</div>}
       {recent.length > 0 && (
@@ -52,11 +67,7 @@ export function RecentTimesheetsCard({ employeeCode, selectedWeek, onView }: Rec
                       aria-label={`View week of ${dayMonth(w.weekStartDate)}`}
                       onClick={() => onView(w.weekStartDate)}
                     >
-                      {/* Eye icon */}
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                        <circle cx="12" cy="12" r="3" />
-                      </svg>
+                      <Icon name="eye" />
                     </button>
                   </td>
                 </tr>

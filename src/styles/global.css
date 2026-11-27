@@ -15,11 +15,19 @@ body {
   font-family: var(--sans);
   background: var(--canvas);
   color: var(--ink);
-  font-size: 13px;
-  line-height: 1.45;
-  -webkit-font-smoothing: antialiased;
-  /* Equal-width digits, so hours and totals line up in columns. */
+  font-size: var(--fs-base);
+  line-height: 1.5;
   font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5 {
+  color: var(--ink);
+}
+
+a {
+  color: var(--link);
 }
 
 button {
@@ -34,6 +42,16 @@ input, select, textarea {
   color: var(--ink);
 }
 
+/* Native date / select popups follow the theme. */
+input, select, textarea, option {
+  background-color: var(--paper);
+}
+
+::placeholder {
+  color: var(--slate2);
+  opacity: 1;
+}
+
 :focus-visible {
   outline: 2px solid var(--oxideMid);
   outline-offset: 1px;
@@ -44,26 +62,38 @@ input, select, textarea {
   font-variant-numeric: tabular-nums;
 }
 
+/* ---- App shell: sidebar and header sit on the grey frame; each page
+   renders inside one white rounded panel. ---- */
 .app-shell {
   display: grid;
-  grid-template-columns: 76px 1fr;
-  grid-template-rows: 100vh;
+  grid-template-columns: var(--sideW) minmax(0, 1fr);
+  grid-template-rows: var(--headH) minmax(0, 1fr);
+  grid-template-areas:
+    'rail top'
+    'rail main';
   height: 100vh;
   width: 100%;
   overflow: hidden;
+  background: var(--canvas);
 }
 
 .main-column {
+  grid-area: main;
   display: flex;
   flex-direction: column;
   min-width: 0;
   min-height: 0;
-  height: 100%;
+  margin: 0 16px 16px 0;
   overflow-y: auto;
   /* Always keep room for the scrollbar, so the page doesn't shift sideways
      when moving between short and long screens. */
   scrollbar-gutter: stable;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--rXl);
+  box-shadow: var(--sh1);
 }
+
 /* Keep the header and page at their real height. Without this, on a long
    page the browser squeezes them to fit the window, so the header got
    shorter and everything moved when switching between short and long tabs. */
@@ -72,40 +102,29 @@ input, select, textarea {
 }
 
 .page-content {
-  padding: 18px 20px 60px;
+  padding: 20px 28px 48px;
   overflow-x: auto;
 }
 
-/* Light glass — for cards, tables, KPI strips sitting on the light canvas */
-.glass {
-  background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  border: 1px solid var(--glass-border);
-  border-radius: var(--rLg);
-  box-shadow: inset 0 1px 0 var(--glass-highlight), var(--glass-shadow);
+/* Tablets and phones: sidebar slides in from the left (menu button in the header). */
+@media (max-width: 960px) {
+  .app-shell {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'top'
+      'main';
+  }
+  .main-column {
+    margin: 0 8px 8px;
+    border-radius: var(--rLg);
+  }
+  .page-content {
+    padding: 16px 14px 40px;
+  }
 }
 
-.glass-strong {
-  background: var(--glass-bg-strong);
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  border: 1px solid var(--glass-border);
-  border-radius: var(--rLg);
-  box-shadow: inset 0 1px 0 var(--glass-highlight), var(--glass-shadow-deep);
-}
-
-/* Dark glass — for the sidebar and anything sitting on the oxide-deep surface */
-.glass-dark {
-  background: var(--glass-bg-dark);
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  border: 1px solid var(--glass-border-dark);
-  box-shadow: inset 0 1px 0 var(--glass-highlight-dark), var(--glass-shadow-deep);
-}
-
-/* Thin scrollbars everywhere (about half the browser default). */
-::-webkit-scrollbar {                                 /* Chrome, Edge */
+/* Thin scrollbars everywhere. */
+::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
@@ -119,11 +138,56 @@ input, select, textarea {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--slate2);
 }
-/* Firefox has no ::-webkit-scrollbar - it gets its own thin setting.
-   (Kept separate: in Chrome/Edge, scrollbar-width would override the 8px above.) */
 @supports not selector(::-webkit-scrollbar) {
   * {
     scrollbar-width: thin;
     scrollbar-color: var(--ruleStrong) transparent;
   }
+}
+
+/* Two equal cards side by side (e.g. Approval trail + All Timesheets);
+   stacks on narrow screens. */
+.two-col {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+@media (max-width: 1100px) {
+  .two-col {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Respect the OS "reduce motion" setting everywhere. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Carbynetech logo: original in light mode, dark-theme logo in dark mode
+   (components/ui/BrandLogo.tsx). Both files share one size, so the box
+   never changes; only which image is shown. */
+.brand-logo {
+  display: inline-block;
+  line-height: 0;
+}
+.brand-logo img {
+  display: block;
+  height: 100%;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+}
+.brand-logo .brand-logo-dark {
+  display: none;
+}
+:root[data-theme='dark'] .brand-logo .brand-logo-light {
+  display: none;
+}
+:root[data-theme='dark'] .brand-logo .brand-logo-dark {
+  display: block;
 }

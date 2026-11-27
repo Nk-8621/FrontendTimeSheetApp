@@ -14,20 +14,20 @@
 .table th {
   position: sticky;   /* header stays visible while the rows scroll */
   top: 0;
-  background: var(--paper);
+  background: var(--paperAlt);
   text-align: left;
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: var(--fs-sm);
+  letter-spacing: 0;
+  text-transform: none;
   color: var(--slate);
-  font-weight: 600;
+  font-weight: 500;
   padding: 8px 14px;
   border-bottom: 1px solid var(--rule);
 }
 .table td {
   padding: 7px 14px;
   border-bottom: 1px solid var(--rule);
-  font-size: 12px;
+  font-size: var(--fs-sm);
   vertical-align: middle;
 }
 .table tr:last-child td {
@@ -45,21 +45,29 @@
   width: 60px;
 }
 .viewBtn {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 6px;
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
   background: none;
   border: 1px solid transparent;
   border-radius: var(--r);
-  color: var(--oxide);
+  color: var(--link);
+  font-size: var(--fs-base);
   cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
 }
 .viewBtn:hover {
   background: var(--oxideTint);
-  border-color: var(--oxideMid);
+  border-color: var(--oxideLine);
 }
 .empty {
   padding: 14px;
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--slate);
+}
+
+.table tbody tr:hover > td {
+  background: var(--hover);
 }

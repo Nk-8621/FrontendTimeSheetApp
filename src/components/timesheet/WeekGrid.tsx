@@ -1,4 +1,5 @@
 import { Fragment, useLayoutEffect, useRef, useState } from 'react';
+import { useSession } from '../../session/SessionContext';
 import { Link } from 'react-router-dom';
 import type { TimeEntryDto, DayTypeDto } from '../../api/types';
 import { CLASSIFICATION_SHORT_LABELS, DAY_NAMES, DAY_TYPE_LABELS, MAX_HOURS_PER_LINE, dayEntryLimit } from '../../types/meridian';
@@ -8,6 +9,7 @@ import { isWithin, rangeLabel } from '../../lib/dates';
 import { ImportExcelButton } from './ImportExcelButton';
 import { DownloadTemplateButton } from './DownloadTemplateButton';
 import controls from '../../styles/controls.module.css';
+import { Icon } from '../ui/Icon';
 import styles from './WeekGrid.module.css';
 
 interface WeekGridProps {
@@ -68,6 +70,7 @@ export function WeekGrid({
   const dayTotals = days.map((_, i) => sum(rows.map((r) => r.hoursByDay[i] || 0)));
   const grandTotal = sum(dayTotals);
   const todayIso = today();
+  const { nav } = useSession();
 
   // More than 4 task lines: show the first 4 and scroll the rest inside the
   // grid (day header and totals stay fixed). The height is measured from the
@@ -96,12 +99,17 @@ export function WeekGrid({
   return (
     <div className={styles.gridWrap}>
       <div className={styles.cardHd}>
-        <h3>Week grid</h3>
+        <div className={styles.titleBlock}>
+          <h3>Weekly timesheet</h3>
+          <span className={styles.sub}>Hours per task for each day of the week</span>
+        </div>
+        <span className={`${styles.weekSum} ${capTotal && grandTotal >= capTotal ? styles.weekSumDone : ''}`} title="Logged / available hours this week">
+          <b>{fmtH(grandTotal) === '—' ? '0' : fmtH(grandTotal)}</b> / {fmtH(capTotal) === '—' ? '0' : fmtH(capTotal)} h logged
+        </span>
         <div style={{ flex: 1 }} />
         {editable && (
           <>
             <ImportExcelButton employeeCode={employeeCode} weekStart={weekStart} />
-            <span style={{ width: 1, height: 14, background: 'var(--rule)' }} aria-hidden="true" />
             <DownloadTemplateButton />
           </>
         )}
@@ -147,7 +155,7 @@ export function WeekGrid({
                   <div className={styles.empty}>
                     <div className={styles.big}>No tasks logged for this week yet</div>
                     Tasks you add under a user story appear here with their hours.
-                    {editable && (
+                    {editable && nav.includes('stories') && (
                       <div style={{ marginTop: 12 }}>
                         <Link to={`/stories?week=${weekStart}`} className={`${controls.btn} ${controls.pri} ${controls.sm}`}>
                           Add tasks from User Stories →
@@ -168,8 +176,16 @@ export function WeekGrid({
                 <Fragment key={pid}>
                   <tr className={styles.subRow}>
                     <td colSpan={11}>
-                      {deptId !== undefined ? deptName(deptId) : '—'} &nbsp;›&nbsp; {acc?.name} <span style={{ opacity: 0.55 }}>({acc?.accountType})</span> &nbsp;›&nbsp; {proj?.name}{' '}
-                      <span style={{ fontFamily: 'var(--mono)', opacity: 0.6 }}>[{proj?.code}]</span>
+                      <div className={styles.projPath}>
+                        <Icon name="folder" className={styles.projIcon} />
+                        <span className={styles.projMuted}>{deptId !== undefined ? deptName(deptId) : '—'}</span>
+                        <Icon name="chevronRight" className={styles.projSep} />
+                        <span className={styles.projMuted}>{acc?.name}</span>
+                        {acc?.accountType && <span className={styles.projTag}>{acc.accountType}</span>}
+                        <Icon name="chevronRight" className={styles.projSep} />
+                        <span className={styles.projName}>{proj?.name}</span>
+                        {proj?.code && <span className={styles.projCode}>{proj.code}</span>}
+                      </div>
                     </td>
                   </tr>
                   {groups[pid].map((r) => (
@@ -179,7 +195,8 @@ export function WeekGrid({
                           // Task added under a user story: story on top, task name below.
                           <div className={styles.hcell}>
                             <div className={styles.hpath}>
-                              <b>◎ {r.userStoryName}</b>
+                              <Icon name="stories" className={styles.storyIcon} />
+                              <b>{r.userStoryName}</b>
                               {r.userStoryStartDate && r.userStoryEndDate && <> · {rangeLabel(r.userStoryStartDate, r.userStoryEndDate)}</>}
                             </div>
                             <div className={styles.htask}>{r.note}</div>
@@ -232,6 +249,8 @@ export function WeekGrid({
                           blocked ? (t === 'L' ? styles.blocked : styles.blockedH) : '',
                           weeklyOff ? styles.blockedO : t === 'O' ? styles.wknd : '',
                           !editable || (!blocked && !open) ? styles.locked : '',
+                          days[i] === todayIso ? styles.todayCol : '',
+                          r.hoursByDay[i] > 0 ? styles.filled : '',
                         ].join(' ');
                         return (
                           <td key={i} className={cls}>
@@ -239,7 +258,7 @@ export function WeekGrid({
                               type="text"
                               inputMode="decimal"
                               value={fmtH(r.hoursByDay[i]) === '—' ? '' : fmtH(r.hoursByDay[i])}
-                              placeholder="·"
+                              placeholder="–"
                               readOnly={!editable || blocked || !open}
                               tabIndex={blocked || weeklyOff ? -1 : undefined}
                               title={editable && !blocked && !open ? (outsideStory ? 'No story added for this day' : 'No working hours on this day') : undefined}
@@ -263,7 +282,7 @@ export function WeekGrid({
                         {editable && (
                           <>
                            <button className={styles.editBtn} title="Edit task" aria-label={`Edit task ${r.note ?? taskName(r.taskId)}`} onClick={() => onEditLine(r.id)}>
-                              ✎
+                              <Icon name="edit" />
                             </button>
                           </>
                         )}
@@ -280,62 +299,85 @@ export function WeekGrid({
               <td>Daily total</td>
               <td />
               {dayTotals.map((t, i) => (
-                <td key={i} className={`${styles.dt} ${cap[i] && t > cap[i] ? styles.over : cap[i] && t < cap[i] ? styles.short : ''}`}>
-                  {fmtH(t)}
+                <td
+                  key={i}
+                  className={`${styles.dt} ${cap[i] && t > cap[i] ? styles.over : cap[i] && t < cap[i] ? styles.short : cap[i] && t === cap[i] ? styles.done : ''} ${days[i] === todayIso ? styles.todayCol : ''}`}
+                  title={cap[i] ? `${fmtH(t) === '—' ? 0 : fmtH(t)} of ${cap[i]} h` : undefined}
+                >
+                  <span className={styles.dtVal}>{fmtH(t)}</span>
                 </td>
               ))}
               <td className={styles.gt}>{fmtH(grandTotal)}</td>
               <td />
             </tr>
             <tr className={`${styles.totRow} ${styles.capRow}`}>
-              <td style={{ fontWeight: 500, fontSize: 11 }}>Available capacity (after leave / holiday / W-OFF)</td>
+              <td className={styles.capLbl}>Available capacity <span>(after leave / holiday / W-OFF)</span></td>
               <td />
               {cap.map((c, i) => (
-                <td key={i} className={styles.dt} style={{ fontSize: 12, fontWeight: 500, opacity: 0.75 }}>
+                <td key={i} className={`${styles.dt} ${days[i] === todayIso ? styles.todayCol : ''}`}>
                   {c || '—'}
                 </td>
               ))}
-              <td className={styles.gt} style={{ fontSize: 13 }}>{fmtH(capTotal)}</td>
+              <td className={styles.gt}>{fmtH(capTotal)}</td>
               <td />
             </tr>
           </tfoot>
         </table>
       </div>
 
-      <div className={styles.gridFoot}>
+      <div className={styles.legendBar}>
         <div className={styles.legend}>
           <span><i className={`${styles.sw} ${styles.b}`} /> Billable</span>
           <span><i className={`${styles.sw} ${styles.pb}`} /> Partial billable</span>
           <span><i className={`${styles.sw} ${styles.n}`} /> Non-billable</span>
           <span><i className={styles.sw} style={{ background: 'var(--violetTint)', border: '1px solid var(--violetLine)' }} /> WFH</span>
           <span><i className={styles.sw} style={{ background: 'var(--verdTint)', border: '1px solid var(--verdLine)' }} /> On Duty</span>
-          <span><i className={styles.sw} style={{ background: 'repeating-linear-gradient(45deg,#FBE9E7 0 4px,#F5D9D6 4px 8px)' }} /> Leave (Keka or an approved/pending full-day request)</span>
-          <span><i className={styles.sw} style={{ background: 'repeating-linear-gradient(45deg,#FBE9E7 0 4px,#FCF7F6 4px 8px)' }} /> Half-day leave (still open for 4h)</span>
-          <span><i className={styles.sw} style={{ background: 'repeating-linear-gradient(45deg,#FCF2E1 0 4px,#F6E7CB 4px 8px)' }} /> Holiday</span>
-          <span><i className={styles.sw} style={{ background: 'repeating-linear-gradient(45deg,#F1F3F6 0 4px,#E3E7EC 4px 8px)' }} /> W-OFF</span>
+          <span><i className={styles.sw} style={{ background: 'repeating-linear-gradient(45deg,var(--leaveA) 0 4px,var(--leaveB) 4px 8px)' }} /> Leave (Keka or an approved/pending full-day request)</span>
+          <span><i className={styles.sw} style={{ background: 'repeating-linear-gradient(45deg,var(--leaveA) 0 4px,var(--leaveHalfB) 4px 8px)' }} /> Half-day leave (still open for 4h)</span>
+          <span><i className={styles.sw} style={{ background: 'repeating-linear-gradient(45deg,var(--holidayA) 0 4px,var(--holidayB) 4px 8px)' }} /> Holiday</span>
+          <span><i className={styles.sw} style={{ background: 'repeating-linear-gradient(45deg,var(--woffA) 0 4px,var(--woffB) 4px 8px)' }} /> W-OFF</span>
         </div>
-        <div style={{ flex: 1 }} />
-        {editable ? (
-          <>
-            <span
-              style={{ fontSize: 11, color: !canSubmit && submitBlockedReason ? 'var(--amber)' : 'var(--slate)', textAlign: 'right' }}
-              title={!canSubmit && submitBlockedDetails ? submitBlockedDetails : undefined}
-            >
-              {!canSubmit && submitBlockedReason ? submitBlockedReason : 'Saved automatically as draft'}
-            </span>
-           <button
-                className={`${controls.btn} ${controls.pri}`}
-                onClick={onSubmit}
-                disabled={!canSubmit}
-                title={canSubmit ? undefined : 'Every working day must total exactly its available hours (8 h, or 4 h on a half-day leave) before you can submit'}
-              >
-            Submit week for approval
-          </button>
-          </>
-        ) : (
-          canRecall && <button className={controls.btn} onClick={onRecall}>Recall submission</button>
-        )}
       </div>
+
+      {(editable || canRecall) && (
+        <div className={styles.gridFoot}>
+          {editable ? (
+            <>
+              <span
+                className={`${styles.status} ${!canSubmit && submitBlockedReason ? styles.statusWarn : styles.statusOk}`}
+                title={!canSubmit && submitBlockedDetails ? submitBlockedDetails : undefined}
+              >
+                <Icon name={!canSubmit && submitBlockedReason ? 'alert' : 'checkCircle'} />
+                {!canSubmit && submitBlockedReason ? submitBlockedReason : 'Saved automatically as draft'}
+              </span>
+              <div className={styles.actions}>
+                <button
+                  className={`${controls.btn} ${controls.pri}`}
+                  onClick={onSubmit}
+                  disabled={!canSubmit}
+                  title={canSubmit ? undefined : 'Every working day must total exactly its available hours (8 h, or 4 h on a half-day leave) before you can submit'}
+                >
+                  <Icon name="send" />
+                  Submit week for approval
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <span className={`${styles.status} ${styles.statusInfo}`}>
+                <Icon name="info" />
+                Submitted for approval. Recall it to make changes.
+              </span>
+              <div className={styles.actions}>
+                <button className={controls.btn} onClick={onRecall}>
+                  <Icon name="undo" />
+                  Recall submission
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }

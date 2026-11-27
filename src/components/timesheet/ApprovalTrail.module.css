@@ -27,19 +27,19 @@
   background: var(--ruleStrong);
   border: 2px solid var(--paper);
 }
-.ev.ok::before { background: var(--verd); }
-.ev.rj::before { background: var(--clay); }
-.ev.pd::before { background: var(--amber); }
+.ev.ok::before { background: var(--verdSolid); }
+.ev.rj::before { background: var(--claySolid); }
+.ev.pd::before { background: var(--amberSolid); }
 .t {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   font-weight: 600;
 }
 .m {
-  font-size: 10.5px;
+  font-size: var(--fs-xs);
   color: var(--slate);
   font-family: var(--mono);
 }
 .empty {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   color: var(--slate);
 }

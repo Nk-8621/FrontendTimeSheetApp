@@ -1,3 +1,4 @@
+import { Icon } from '../ui/Icon';
 import styles from './KpiStrip.module.css';
 
 interface KpiStripProps {
@@ -25,57 +26,30 @@ export function KpiStrip({ totalHours, capacityHours, billableHours, partialBill
   const pctNonBillable = totalHours ? 100 - pctBillable - pctPartial : 0;
   const pctGap = pct(gap, capacityHours);
 
+  const cards = [
+    { cls: styles.a, icon: 'clock', label: 'Logged this week', value: fmt(totalHours), unit: ` / ${fmt(capacityHours)} h`, pct: pctOfCap, note: 'of available capacity' },
+    { cls: styles.g, icon: 'coins', label: 'Billable', value: fmt(billableHours), unit: 'h', pct: pctBillable, note: 'of logged hours' },
+    { cls: styles.p, icon: 'halfCircle', label: 'Partial billable', value: fmt(partialBillableHours), unit: 'h', pct: pctPartial, note: 'of logged hours' },
+    { cls: '', icon: 'minusCircle', label: 'Non-billable', value: fmt(nonBillable), unit: 'h', pct: pctNonBillable, note: 'of logged hours' },
+    { cls: totalHours < capacityHours ? styles.w : styles.g, icon: 'target', label: 'Gap to capacity', value: fmt(gap), unit: 'h', pct: pctGap, note: 'of capacity still to log' },
+  ];
+
   return (
     <div className={styles.kpis}>
-      <div className={`${styles.kpi} ${styles.a}`}>
-        <div className={styles.k}>Logged this week</div>
-        <div className={styles.v}>
-          {fmt(totalHours)}
-          <small> / {fmt(capacityHours)} h</small>
-          <span className={styles.pct}>{pctOfCap}%</span>
+      {cards.map((c) => (
+        <div key={c.label} className={`${styles.kpi} ${c.cls}`}>
+          <div className={styles.k}>
+            <span className={styles.tile}><Icon name={c.icon} /></span>
+            {c.label}
+          </div>
+          <div className={styles.v}>
+            {c.value}
+            <small>{c.unit}</small>
+            <span className={styles.pct}>{c.pct}%</span>
+          </div>
+          <div className={styles.d}>{c.note}</div>
         </div>
-        <div className={styles.d}>of available capacity</div>
-      </div>
-
-      <div className={`${styles.kpi} ${styles.g}`}>
-        <div className={styles.k}>Billable</div>
-        <div className={styles.v}>
-          {fmt(billableHours)}
-          <small> h</small>
-          <span className={styles.pct}>{pctBillable}%</span>
-        </div>
-        <div className={styles.d}>of logged hours</div>
-      </div>
-
-      <div className={`${styles.kpi} ${styles.p}`}>
-        <div className={styles.k}>Partial billable</div>
-        <div className={styles.v}>
-          {fmt(partialBillableHours)}
-          <small> h</small>
-          <span className={styles.pct}>{pctPartial}%</span>
-        </div>
-        <div className={styles.d}>of logged hours</div>
-      </div>
-
-      <div className={styles.kpi}>
-        <div className={styles.k}>Non-billable</div>
-        <div className={styles.v}>
-          {fmt(nonBillable)}
-          <small> h</small>
-          <span className={styles.pct}>{pctNonBillable}%</span>
-        </div>
-        <div className={styles.d}>of logged hours</div>
-      </div>
-
-      <div className={`${styles.kpi} ${totalHours < capacityHours ? styles.w : styles.g}`}>
-        <div className={styles.k}>Gap to capacity</div>
-        <div className={styles.v}>
-          {fmt(gap)}
-          <small> h</small>
-          <span className={styles.pct}>{pctGap}%</span>
-        </div>
-        <div className={styles.d}>of capacity</div>
-      </div>
+      ))}
     </div>
   );
 }

@@ -1,3 +1,5 @@
+/* ===== Weekly timesheet grid ===== */
+
 .gridWrap {
   background: var(--paper);
   border: 1px solid var(--rule);
@@ -5,26 +7,64 @@
   overflow: hidden;
   box-shadow: var(--sh1);
 }
+
+/* ---- Card header: title, week summary, actions ---- */
 .cardHd {
-  padding: 11px 14px;
+  min-height: 60px;
+  padding: 12px 18px;
   border-bottom: 1px solid var(--rule);
   display: flex;
   align-items: center;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+}
+.titleBlock {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin-right: auto;
 }
 .cardHd h3 {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--fs-md);
   font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
 }
 .sub {
-  font-size: 11px;
+  font-size: var(--fs-sm);
   color: var(--slate);
 }
+/* "32 / 40 h logged" pill */
+.weekSum {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: var(--rPill);
+  background: var(--raised);
+  border: 1px solid var(--rule);
+  font-size: var(--fs-sm);
+  color: var(--slate);
+  white-space: nowrap;
+}
+.weekSum b {
+  color: var(--ink);
+  font-weight: 700;
+}
+.weekSumDone {
+  background: var(--billableTint);
+  border-color: var(--verdLine);
+  color: var(--billableInk);
+}
+.weekSumDone b {
+  color: var(--billableInk);
+}
+
+/* ---- Scroll area (vertical scroll after 4 task lines; sideways on small screens) ---- */
 .gridScroll {
   overflow-x: auto;
-  /* Scrolls up and down once there are more than 4 task lines (max-height is
-     set in WeekGrid.tsx). The day header and the totals stay visible (sticky). */
   overflow-y: auto;
 }
 .wk thead {
@@ -39,222 +79,492 @@
 }
 
 .wk {
-  min-width: 1080px;
+  min-width: 960px;
+  width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  width: 100%;
 }
-.wk th, .wk td {
+.wk th,
+.wk td {
   border-bottom: 1px solid var(--rule);
 }
 .wk th {
   text-align: left;
-  font-size: 11px;
-  letter-spacing: 0.11em;
-  text-transform: uppercase;
+  font-size: var(--fs-sm);
+  font-weight: 500;
   color: var(--slate);
-  font-weight: 600;
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--ruleStrong);
-  background: #FAFBFD;
+  padding: 10px 12px;
+  background: var(--paperAlt);
   white-space: nowrap;
 }
 .wk td {
-  padding: 8px 10px;
+  padding: 8px 12px;
   vertical-align: middle;
+  background: var(--paper);
 }
 .wk tbody tr:last-child td {
   border-bottom: 0;
 }
-.wk tbody tr:hover td {
-  background: #FAFCFE;
+.wk tbody tr[data-task-row]:hover td {
+  background: var(--hover);
 }
 
-.hier { width: 38%; min-width: 330px; }
-.bcol { width: 88px; text-align: center; }
+.hier { width: 36%; min-width: 260px; }
+.bcol { width: 96px; text-align: center !important; }
 .dcol { width: 74px; }
-.tcol { width: 66px; background: #F7F9FC; }
-.acol { width: 64px; }
+.tcol { width: 72px; }
+.acol { width: 48px; }
 .tc { text-align: center; }
 
-/* day column header */
+/* ---- Day header ---- */
 .dayHd {
   padding: 0 !important;
-  background: #FAFBFD;
   border-left: 1px solid var(--rule);
   vertical-align: top;
+  position: relative;
 }
 .dayHd .inner {
-  padding: 6px 4px 0;
+  padding: 9px 4px 0;
   text-align: center;
 }
 .dn {
-  font-size: 9.5px;
-  letter-spacing: 0.1em;
+  font-size: var(--fs-2xs);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--slate);
   font-weight: 600;
 }
 .dd {
   font-family: var(--mono);
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--fs-lg);
+  font-weight: 700;
   color: var(--ink);
-  line-height: 1.15;
+  line-height: 1.25;
 }
-.wknd .dd { color: var(--slate2); }
-.today .dd { color: var(--oxide); }
-.today .inner { box-shadow: inset 0 2px 0 var(--oxide); }
+.wknd .dn,
+.wknd .dd {
+  color: var(--slate2);
+}
+/* Today: accent bar on top + tinted column (header, cells and totals) */
+.dayHd.today {
+  background: var(--oxideTint) !important;
+}
+.dayHd.today::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--oxide);
+}
+.today .dn,
+.today .dd {
+  color: var(--link);
+}
 
+/* Day type label (Working / WFH / Leave / Holiday / W-OFF) */
 .dtBtn {
-  /* Rendered as a <span>, so it must be a block to fill the column and centre
-     under the day and date (an inline span ignores width/margin). */
   display: block;
   box-sizing: border-box;
+  margin: 6px 6px 0;
+  padding: 2px 4px;
+  border: 0;
+  border-radius: var(--rPill);
+  background: var(--raised);
+  color: var(--slate);
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   text-align: center;
   white-space: nowrap;
-  border: 0;
-  border-radius: 2px;
-  padding: 2.5px 4px;
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  /* Small side gap so neighbouring days read as separate labels. */
-  margin: 5px 3px 0;
-  background: #EEF1F5;
-  color: var(--slate);
 }
-.dtBtn:hover { filter: brightness(0.96); }
-.dtBtn:disabled { cursor: not-allowed; }
 .dtBtn.wfh { background: var(--violetTint); color: var(--violet); }
 .dtBtn.od { background: var(--verdTint); color: var(--verd); }
 .dtBtn.lv { background: var(--clayTint); color: var(--clay); }
 .dtBtn.hd { background: var(--amberTint); color: var(--amber); }
 
-.capBar { height: 3px; margin: 0 3px; background: #E7EBF0; }
-.capBar i { display: block; height: 100%; background: var(--oxideMid); transition: width 0.18s; }
-.capBar.full i { background: var(--verd); }
-.capBar.over i { background: var(--clay); }
+/* Day progress (logged vs available) under each day header */
+.capBar {
+  height: 4px;
+  margin: 8px 8px 8px;
+  border-radius: var(--rPill);
+  background: var(--raised);
+  overflow: hidden;
+}
+.capBar i {
+  display: block;
+  height: 100%;
+  border-radius: var(--rPill);
+  background: var(--oxideMid);
+  transition: width 0.18s ease;
+}
+.capBar.full i { background: var(--verdSolid); }
+.capBar.over i { background: var(--claySolid); }
 
-/* hierarchy cell */
-.hcell { display: flex; flex-direction: column; gap: 2px; }
-.hpath { font-size: 10px; color: var(--slate); letter-spacing: 0.01em; }
-.hpath b { color: var(--ink2); font-weight: 600; }
-.htask { font-size: 12.5px; font-weight: 600; color: var(--ink); }
-.hnote { font-size: 10.5px; color: var(--slate); font-style: italic; }
+/* ---- Project group row (Department › Account › Project) ---- */
+.subRow td {
+  padding: 8px 12px !important;
+  background: var(--paperAlt) !important;
+  border-bottom: 1px solid var(--rule);
+}
+.projPath {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: var(--fs-sm);
+  line-height: 1.3;
+}
+.projIcon {
+  width: 15px;
+  height: 15px;
+  color: var(--link);
+  flex: none;
+}
+.projSep {
+  width: 13px;
+  height: 13px;
+  color: var(--slate2);
+  flex: none;
+}
+.projMuted {
+  color: var(--slate);
+}
+.projName {
+  color: var(--ink);
+  font-weight: 600;
+}
+.projTag,
+.projCode {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: var(--rPill);
+  font-size: var(--fs-2xs);
+  font-weight: 500;
+}
+.projTag {
+  background: var(--raised);
+  border: 1px solid var(--rule);
+  color: var(--slate);
+}
+.projCode {
+  background: var(--oxideTint);
+  border: 1px solid var(--oxideLine);
+  color: var(--link);
+  font-family: var(--mono);
+  letter-spacing: 0.02em;
+}
 
-/* billable/non-billable chip */
+/* ---- Task cell ---- */
+.hcell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.hpath {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--fs-xs);
+  color: var(--slate);
+}
+.hpath b {
+  color: var(--ink2);
+  font-weight: 600;
+}
+.storyIcon {
+  width: 13px;
+  height: 13px;
+  color: var(--link);
+  flex: none;
+}
+.htask {
+  font-size: var(--fs-base);
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.35;
+}
+.hnote {
+  font-size: var(--fs-xs);
+  color: var(--slate);
+  font-style: italic;
+}
+
+/* ---- Billing type chip ---- */
 .bt {
   display: inline-flex;
   align-items: center;
-  font-size: 9.5px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  padding: 1.5px 6px;
-  border-radius: 2px;
+  justify-content: center;
+  min-width: 70px;
+  height: 24px;
+  padding: 0 10px;
   border: 1px solid;
-  text-transform: uppercase;
+  border-radius: var(--rPill);
   background: none;
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+button.bt {
   cursor: pointer;
 }
-.bt.b { background: var(--oxide); border-color: var(--oxide); color: #fff; }
-.bt.pb { background: var(--verd); border-color: var(--verd); color: #fff; }
-.bt.n {
-  border-color: var(--ruleStrong);
-  color: var(--slate);
-  background: repeating-linear-gradient(45deg, #F4F6F9 0 3px, #E7EBF0 3px 6px);
+button.bt:hover {
+  filter: brightness(0.97);
 }
+.bt.b { background: var(--billableTint); border-color: var(--billable); color: var(--billableInk); }
+.bt.pb { background: var(--partialTint); border-color: var(--partial); color: var(--partialInk); }
+.bt.n { background: var(--nonbillTint); border-color: var(--ruleStrong); color: var(--nonbillInk); }
 
-/* hour cell */
-.hr { padding: 0 !important; border-left: 1px solid var(--rule); text-align: center; }
+/* ---- Hour cells: quiet input boxes ---- */
+.hr {
+  padding: 6px !important;
+  border-left: 1px solid var(--rule);
+  text-align: center;
+}
 .hr input {
+  display: block;
   width: 100%;
-  height: 37px;
-  border: 0;
+  height: 36px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--r);
   background: transparent;
+  color: var(--ink2);
   text-align: center;
   font-family: var(--mono);
-  font-size: 13px;
+  font-size: var(--fs-md);
   font-weight: 500;
   font-variant-numeric: tabular-nums;
-  padding: 0;
+  transition: border-color 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
+}
+.hr input::placeholder {
+  color: var(--ruleStrong);
+}
+.hr:not(.locked):not(.blocked):not(.blockedH):not(.blockedO) input:hover {
+  border-color: var(--ruleStrong);
+  background: var(--paper);
 }
 .hr input:focus {
-  background: var(--oxideTint);
-  box-shadow: inset 0 0 0 2px var(--oxide);
+  outline: none;
+  border-color: var(--oxide);
+  background: var(--paper);
+  box-shadow: 0 0 0 3px var(--oxideTint);
   position: relative;
   z-index: 2;
-  outline: none;
 }
-.hr input::placeholder { color: #D3DAE2; }
-.hr.locked { background: repeating-linear-gradient(45deg, #F4F6F9 0 4px, #E9EDF2 4px 8px); }
-.hr.locked input { color: var(--slate2); cursor: not-allowed; }
-.hr.wknd { background: #FBFCFD; }
-.hr.blocked { background: repeating-linear-gradient(45deg, #FBEAE8 0 5px, #F6DDDA 5px 10px); }
-.hr.blockedH { background: repeating-linear-gradient(45deg, #FCF2E1 0 5px, #F7E8CD 5px 10px); }
-.hr.blockedO { background: repeating-linear-gradient(45deg, #F1F3F6 0 5px, #E3E7EC 5px 10px); }
-.hr.blocked input, .hr.blockedH input, .hr.blockedO input { cursor: not-allowed; color: transparent; }
-/* Closed days are read-only - clicking one shouldn't look like it selected an editable cell. */
-.hr.blocked input:focus, .hr.blockedH input:focus, .hr.blockedO input:focus { background: transparent; box-shadow: none; }
-
-.rowT {
-  background: #F7F9FC;
-  font-family: var(--mono);
-  font-size: 13px;
-  font-weight: 600;
-  text-align: center;
-  border-left: 1px solid var(--rule);
-}
-
-.totRow td { background: var(--oxideDeep) !important; color: #fff; font-weight: 700; border-bottom: 0; }
-.totRow td.dt { font-family: var(--mono); font-size: 14px; text-align: center; border-left: 1px solid rgba(255, 255, 255, 0.14); }
-.totRow td.dt.short { color: #F0C078; }
-.totRow td.dt.over { color: #FF9B9B; }
-.totRow td.gt { font-family: var(--mono); font-size: 15px; text-align: center; background: var(--oxide) !important; border-left: 1px solid rgba(255, 255, 255, 0.2); }
-/* Capacity row: a lighter shade of the total row. Solid colours (not opacity),
-   so task rows scrolling underneath don't show through. */
-.capRow td { background: #314C61 !important; color: rgba(255, 255, 255, 0.9); }
-.capRow td.gt { background: #3A6181 !important; }
-
-.subRow td {
-  background: #EDF1F5;
-  font-size: 10px;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: var(--oxide);
+/* Hours entered */
+.filled input {
+  color: var(--ink);
   font-weight: 700;
-  padding: 5px 10px;
+}
+.todayCol {
+  background: color-mix(in srgb, var(--oxideTint) 55%, var(--paper)) !important;
+}
+.hr.locked input {
+  color: var(--slate2);
+  cursor: not-allowed;
+}
+.hr.locked:not(.blocked):not(.blockedH):not(.blockedO) {
+  background: var(--paperAlt);
+}
+.hr.wknd {
+  background: var(--paperAlt);
+}
+.hr.blocked { background: repeating-linear-gradient(45deg, var(--leaveA) 0 5px, var(--leaveB) 5px 10px) !important; }
+.hr.blockedH { background: repeating-linear-gradient(45deg, var(--holidayA) 0 5px, var(--holidayB) 5px 10px) !important; }
+.hr.blockedO { background: repeating-linear-gradient(45deg, var(--woffA) 0 5px, var(--woffB) 5px 10px) !important; }
+.hr.blocked input,
+.hr.blockedH input,
+.hr.blockedO input {
+  cursor: not-allowed;
+  color: transparent;
+}
+/* Closed days are read-only - clicking one shouldn't look like it selected a cell. */
+.hr.blocked input:focus,
+.hr.blockedH input:focus,
+.hr.blockedO input:focus {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
 }
 
-.empty { padding: 44px 20px; text-align: center; color: var(--slate); }
-.empty .big { font-size: 14px; font-weight: 600; color: var(--ink2); margin-bottom: 4px; }
+/* Row total */
+.rowT {
+  border-left: 1px solid var(--rule);
+  background: var(--paperAlt) !important;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: var(--fs-md);
+  font-weight: 700;
+  color: var(--ink);
+}
 
-.gridFoot {
-  padding: 9px 12px;
+.editBtn {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--r);
+  color: var(--slate);
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+.editBtn svg {
+  width: 16px;
+  height: 16px;
+}
+.editBtn:hover {
+  background: var(--oxideTint);
+  border-color: var(--oxideLine);
+  color: var(--link);
+}
+.removeCell { width: 30px; text-align: center; }
+
+/* ---- Totals (pinned at the bottom) ---- */
+.totRow td {
+  background: var(--paperAlt) !important;
+  color: var(--ink);
+  font-weight: 600;
+  border-bottom: 0;
+}
+.totRow:first-child td {
+  border-top: 1px solid var(--ruleStrong);
+}
+.totRow td.dt {
+  border-left: 1px solid var(--rule);
+  text-align: center;
+  font-family: var(--mono);
+}
+/* Daily total as a status chip: complete / short / over */
+.dtVal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: var(--rPill);
+  font-size: var(--fs-base);
+  font-weight: 700;
+}
+.done .dtVal { background: var(--billableTint); color: var(--billableInk); }
+.short .dtVal { background: var(--amberTint); color: var(--amber); }
+.over .dtVal { background: var(--clayTint); color: var(--clay); }
+.totRow td.gt {
+  border-left: 1px solid var(--oxideLine);
+  background: var(--oxideTint) !important;
+  color: var(--link);
+  text-align: center;
+  font-family: var(--mono);
+  font-size: var(--fs-lg);
+  font-weight: 700;
+}
+/* Capacity row: quieter */
+.capRow td {
+  background: var(--paper) !important;
+  color: var(--slate);
+  font-weight: 500;
+  font-size: var(--fs-sm);
   border-top: 1px solid var(--rule);
-  background: #FAFBFD;
+}
+.capRow td.gt {
+  font-size: var(--fs-base);
+}
+.capLbl span {
+  color: var(--slate2);
+  font-weight: 400;
+}
+
+/* ---- Empty state ---- */
+.empty {
+  padding: 44px 20px;
+  text-align: center;
+  color: var(--slate);
+}
+.empty .big {
+  font-size: var(--fs-md);
+  font-weight: 600;
+  color: var(--ink2);
+  margin-bottom: 4px;
+}
+
+/* ---- Legend band ---- */
+.legendBar {
+  padding: 10px 18px;
+  border-top: 1px solid var(--rule);
+  background: var(--paperAlt);
+}
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  font-size: var(--fs-xs);
+  color: var(--slate);
+}
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.sw {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex: none;
+}
+.sw.b { background: var(--billable); }
+.sw.pb { background: var(--partial); }
+.sw.n { background: repeating-linear-gradient(45deg, var(--woffB) 0 3px, var(--woffA) 3px 6px); border: 1px solid var(--ruleStrong); }
+
+/* ---- Action bar: status on the left, action on the right ---- */
+.gridFoot {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  padding: 12px 18px;
+  border-top: 1px solid var(--rule);
+  background: var(--paper);
+}
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-sm);
+  min-width: 0;
+}
+.status svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+.statusOk { color: var(--slate); }
+.statusOk svg { color: var(--verdSolid); }
+.statusWarn { color: var(--amber); cursor: help; }
+.statusInfo { color: var(--slate); }
+.statusInfo svg { color: var(--link); }
+.actions {
   display: flex;
   align-items: center;
   gap: 10px;
-  flex-wrap: wrap;
+  margin-left: auto;
 }
 
-.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 10.5px; color: var(--slate); }
-.legend span { display: inline-flex; align-items: center; gap: 5px; }
-.sw { width: 10px; height: 10px; border-radius: 2px; flex: none; }
-.sw.b { background: var(--oxide); }
-.sw.pb { background: var(--verd); }
-.sw.n { background: repeating-linear-gradient(45deg, #B7C3CF 0 3px, #CBD4DE 3px 6px); border: 1px solid var(--ruleStrong); }
-
-.editBtn {
-  padding: 2px 5px;
-  background: none;
-  border: none;
-  color: var(--oxide);
-  cursor: pointer;
-  border-radius: var(--r);
+@media (max-width: 640px) {
+  .actions {
+    width: 100%;
+  }
+  .actions > * {
+    flex: 1;
+  }
 }
-.editBtn:hover { background: var(--oxideTint); }
-
-.removeCell { width: 30px; text-align: center; }

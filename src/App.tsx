@@ -8,6 +8,7 @@ import { MsalRoot } from './auth/MsalRoot';
 import { LoginGate } from './auth/LoginGate';
 import { lazy, Suspense } from 'react';
 import { MyTimesheetPage } from './pages/MyTimesheetPage';
+import { NotFoundPage } from './pages/NotFoundPage';
 
 // Every other screen is downloaded only the first time someone opens it,
 // instead of all screens in one big file up front - My Timesheet (the
@@ -42,8 +43,9 @@ function App() {
       <LoginGate>
         <QueryClientProvider client={queryClient}>
           <SessionProvider>
-            <UIProvider>
-              <BrowserRouter>
+            {/* Router outside UIProvider, so links inside drawers / pop-up forms work. */}
+            <BrowserRouter>
+              <UIProvider>
                 {/* Shown for the moment a screen's file is being downloaded. */}
                 <Suspense fallback={<div className="page-content">Loading…</div>}>
                 <Routes>
@@ -130,11 +132,12 @@ function App() {
                         </ProtectedRoute>
                       }
                     />
+                    <Route path="*" element={<NotFoundPage />} />
                   </Route>
                 </Routes>
                 </Suspense>
-              </BrowserRouter>
-            </UIProvider>
+              </UIProvider>
+            </BrowserRouter>
           </SessionProvider>
         </QueryClientProvider>
       </LoginGate>

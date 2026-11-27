@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useUI } from '../ui/UIProvider';
+import { DatePicker } from '../ui/DatePicker';
 import type { HolidayDto, AccountDto } from '../../api/types';
 import controls from '../../styles/controls.module.css';
 import styles from '../timesheet/EntryDrawer.module.css';
@@ -50,7 +51,7 @@ export function HolidayDrawer({ existing, accounts, onSave, onDelete, onCancel }
     <div>
       <div className={controls.field}>
         <label>Date <span className={controls.req}>*</span></label>
-        <input className={controls.textInput} type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+        <DatePicker value={date} onChange={(e) => setDate(e.target.value)} />
       </div>
       <div className={controls.field}>
         <label>Holiday name <span className={controls.req}>*</span></label>
@@ -72,7 +73,7 @@ export function HolidayDrawer({ existing, accounts, onSave, onDelete, onCancel }
             <option key={a.id} value={a.id}>{a.name}</option>
           ))}
         </select>
-        <div style={{ fontSize: 11, color: 'var(--slate)', marginTop: 4 }}>
+        <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--slate)', marginTop: 4 }}>
           Leave as "All clients" for a normal company-wide holiday. Only pick a client if this holiday should
           apply exclusively to employees staffed on that client's projects.
         </div>

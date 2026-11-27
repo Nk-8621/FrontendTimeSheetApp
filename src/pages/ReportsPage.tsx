@@ -1,4 +1,5 @@
 import { Fragment, useState } from 'react';
+import { DatePicker } from '../components/ui/DatePicker';
 import { PageHeader } from '../components/layout/PageHeader';
 import { Banner } from '../components/timesheet/Banner';
 import { useReportsSummary } from '../hooks/api/useReports';
@@ -9,6 +10,7 @@ import { ApiError } from '../api/httpClient';
 import { useUI } from '../components/ui/UIProvider';
 import type { ReportApprovalStatus, ReportRollupRowDto } from '../api/types';
 import controls from '../styles/controls.module.css';
+import { Icon } from '../components/ui/Icon';
 import kpiStyles from '../components/timesheet/KpiStrip.module.css';
 import styles from './Reports.module.css';
 
@@ -52,7 +54,7 @@ function hoursWithPct(hours: number, total: number) {
   return (
     <>
       {hours.toFixed(1)}
-      <span style={{ color: 'var(--slate2)', fontSize: 11, marginLeft: 4 }}>({pct}%)</span>
+      <span style={{ color: 'var(--slate2)', fontSize: 'var(--fs-xs)', marginLeft: 4 }}>({pct}%)</span>
     </>
   );
 }
@@ -121,7 +123,7 @@ export function ReportsPage() {
 
   return (
     <>
-      <PageHeader title="Reports" />
+      <PageHeader title="Reports" subtitle="Actual hours by department, customer and project for the chosen dates." />
       <div className="page-content">
         <div className={styles.filters}>
           <div className={styles.f}>
@@ -133,11 +135,11 @@ export function ReportsPage() {
           </div>
           <div className={styles.f}>
             <label htmlFor="repFrom">From date</label>
-            <input id="repFrom" type="date" className={controls.textInput} value={fromDate} max={toDate || undefined} onChange={(e) => setFromDate(e.target.value)} />
+            <DatePicker rangeStart={fromDate || undefined} rangeEnd={toDate || undefined} id="repFrom" value={fromDate} max={toDate || undefined} onChange={(e) => setFromDate(e.target.value)} />
           </div>
           <div className={styles.f}>
             <label htmlFor="repTo">To date</label>
-            <input id="repTo" type="date" className={controls.textInput} value={toDate} min={fromDate || undefined} onChange={(e) => setToDate(e.target.value)} />
+            <DatePicker rangeStart={fromDate || undefined} rangeEnd={toDate || undefined} id="repTo" value={toDate} min={fromDate || undefined} onChange={(e) => setToDate(e.target.value)} />
           </div>
           <div className={styles.f}>
             <label>Approval status</label>
@@ -160,27 +162,27 @@ export function ReportsPage() {
           <>
             <div className={kpiStyles.kpis}>
               <div className={`${kpiStyles.kpi} ${kpiStyles.a}`}>
-                <div className={kpiStyles.k}>Actual hours</div>
+                <div className={kpiStyles.k}><span className={kpiStyles.tile}><Icon name="clock" /></span>Actual hours</div>
                 <div className={kpiStyles.v}>{data.actualHours.toFixed(0)}<small> h</small></div>
                 <div className={kpiStyles.d}>{data.taskLineCount} task lines</div>
               </div>
               <div className={`${kpiStyles.kpi} ${kpiStyles.g}`}>
-                <div className={kpiStyles.k}>Billable</div>
+                <div className={kpiStyles.k}><span className={kpiStyles.tile}><Icon name="coins" /></span>Billable</div>
                 <div className={kpiStyles.v}>{data.billableHours.toFixed(0)}<small> h</small></div>
                 <div className={kpiStyles.d}>{data.actualHours ? Math.round((data.billableHours / data.actualHours) * 100) : 0}% of actual</div>
               </div>
               <div className={`${kpiStyles.kpi} ${kpiStyles.p}`}>
-                <div className={kpiStyles.k}>Partial billable</div>
+                <div className={kpiStyles.k}><span className={kpiStyles.tile}><Icon name="halfCircle" /></span>Partial billable</div>
                 <div className={kpiStyles.v}>{data.totalPartialBillableHours.toFixed(0)}<small> h</small></div>
                 <div className={kpiStyles.d}>{data.actualHours ? Math.round((data.totalPartialBillableHours / data.actualHours) * 100) : 0}% of actual</div>
               </div>
               <div className={`${kpiStyles.kpi} ${kpiStyles.w}`}>
-                <div className={kpiStyles.k}>Non-billable</div>
+                <div className={kpiStyles.k}><span className={kpiStyles.tile}><Icon name="minusCircle" /></span>Non-billable</div>
                 <div className={kpiStyles.v}>{data.nonBillableHours.toFixed(0)}<small> h</small></div>
                 <div className={kpiStyles.d}>{data.actualHours ? Math.round((data.nonBillableHours / data.actualHours) * 100) : 0}% of actual</div>
               </div>
               <div className={kpiStyles.kpi}>
-                <div className={kpiStyles.k}>Resources reporting</div>
+                <div className={kpiStyles.k}><span className={kpiStyles.tile}><Icon name="users" /></span>Resources reporting</div>
                 <div className={kpiStyles.v}>{data.resourcesReporting}</div>
                 <div className={kpiStyles.d}>across {data.projectsInScope} projects</div>
               </div>
@@ -224,10 +226,10 @@ export function ReportsPage() {
                           >
                             <td>
                               <div style={{ display: 'flex', gap: 6 }}>
-                                <span style={{ width: 12, fontSize: 10, color: 'var(--slate)', paddingTop: 2 }}>{canOpen ? (isOpen ? '▼' : '▶') : ''}</span>
+                                <span style={{ width: 12, fontSize: 'var(--fs-2xs)', color: 'var(--slate)', paddingTop: 2 }}>{canOpen ? (isOpen ? '▼' : '▶') : ''}</span>
                                 <div>
                                   <div style={{ fontWeight: 600 }}>{r.key}</div>
-                                  {r.subLabel && <div style={{ fontSize: 10.5, color: 'var(--slate)' }}>{r.subLabel}</div>}
+                                  {r.subLabel && <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--slate)' }}>{r.subLabel}</div>}
                                 </div>
                               </div>
                             </td>
@@ -235,13 +237,13 @@ export function ReportsPage() {
                             <td className="num" style={{ textAlign: 'right' }}>{hoursWithPct(r.billableHours, r.totalHours)}</td>
                             <td className="num" style={{ textAlign: 'right' }}>{hoursWithPct(r.partialBillableHours, r.totalHours)}</td>
                             <td className="num" style={{ textAlign: 'right' }}>{hoursWithPct(r.nonBillableHours, r.totalHours)}</td>
-                            <td className="num" style={{ textAlign: 'right', fontWeight: 600, color: 'var(--oxide)' }}>{r.resourceCount}</td>
+                            <td className="num" style={{ textAlign: 'right', fontWeight: 600, color: 'var(--link)' }}>{r.resourceCount}</td>
                           </tr>
                           {isOpen && r.resources?.map((e) => (
-                            <tr key={rowId + e.key + e.subLabel} style={{ background: '#F7F9FC' }}>
+                            <tr key={rowId + e.key + e.subLabel} style={{ background: 'var(--paperAlt)' }}>
                               <td style={{ paddingLeft: 46 }}>
                                 <div style={{ fontWeight: 500 }}>{e.key}</div>
-                                {e.subLabel && <div style={{ fontSize: 10.5, color: 'var(--slate)' }}>{e.subLabel}</div>}
+                                {e.subLabel && <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--slate)' }}>{e.subLabel}</div>}
                               </td>
                               <td className="num" style={{ textAlign: 'right' }}>{e.totalHours.toFixed(1)}</td>
                               <td className="num" style={{ textAlign: 'right' }}>{hoursWithPct(e.billableHours, e.totalHours)}</td>

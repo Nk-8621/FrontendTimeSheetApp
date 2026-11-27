@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { DatePicker } from '../ui/DatePicker';
 import type { AccountDto, DepartmentDto, EmployeeDto, ProjectDto, ProjectTypeDto, TimeEntryClassification } from '../../api/types';
 import controls from '../../styles/controls.module.css';
 import styles from '../timesheet/EntryDrawer.module.css';
@@ -311,11 +312,11 @@ export function ProjectDrawer({ existing, departments, accounts, projectTypes, e
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <div className={controls.field}>
           <label htmlFor="projectStart">Start Date {!existing && <span className={controls.req}>*</span>}</label>
-          <input id="projectStart" type="date" className={controls.textInput} value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+          <DatePicker id="projectStart" rangeStart={startDate || undefined} rangeEnd={endDate || undefined} value={startDate} onChange={(e) => setStartDate(e.target.value)} />
         </div>
         <div className={controls.field}>
           <label htmlFor="projectEnd">End Date</label>
-          <input id="projectEnd" type="date" className={controls.textInput} value={endDate} min={startDate || undefined} onChange={(e) => setEndDate(e.target.value)} />
+          <DatePicker id="projectEnd" rangeStart={startDate || undefined} rangeEnd={endDate || undefined} value={endDate} min={startDate || undefined} onChange={(e) => setEndDate(e.target.value)} />
         </div>
       </div>
       <div className={controls.hint} style={{ marginTop: -6, marginBottom: 12 }}>

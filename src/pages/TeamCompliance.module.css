@@ -1,23 +1,24 @@
 .hc {
+  white-space: nowrap;
   width: 100%;
   text-align: center;
   border-radius: 4px;
   padding: 4px 0;
   font-family: var(--mono);
-  font-size: 11.5px;
+  font-size: var(--fs-sm);
   font-weight: 600;
   color: var(--ink2);
 }
-.hc.z { background: #F1F4F8; color: var(--slate2, #9AA5B1); }
-.hc.lo { background: #FCF2E1; }
-.hc.md { background: #DCE9F2; }
-.hc.hi { background: #C3DCEC; }
+.hc.z { background: var(--heat0); color: var(--slate2, #9AA5B1); }
+.hc.lo { background: var(--heat1); }
+.hc.md { background: var(--heat2); }
+.hc.hi { background: var(--heat3); }
 .hc.lv {
-  background: repeating-linear-gradient(45deg, #FBE9E7 0 4px, #F5D9D6 4px 8px);
+  background: repeating-linear-gradient(45deg, var(--leaveA) 0 4px, var(--leaveB) 4px 8px);
   color: var(--clay);
 }
 .hc.hd {
-  background: repeating-linear-gradient(45deg, #FCF2E1 0 4px, #F6E7CB 4px 8px);
+  background: repeating-linear-gradient(45deg, var(--holidayA) 0 4px, var(--holidayB) 4px 8px);
   color: var(--amber);
 }
 .hc.wfh {
@@ -31,7 +32,7 @@
   color: var(--verd);
 }
 .hc.lh {
-  background: repeating-linear-gradient(45deg, #FBE9E7 0 4px, #FCF7F6 4px 8px);
+  background: repeating-linear-gradient(45deg, var(--leaveA) 0 4px, var(--leaveB) 4px 8px);
   color: var(--clay);
 }
 .hc.split {
@@ -49,11 +50,11 @@
   padding: 4px 0;
 }
 .hc.split .leaf {
-  background: repeating-linear-gradient(45deg, #FBE9E7 0 4px, #F5D9D6 4px 8px);
+  background: repeating-linear-gradient(45deg, var(--leaveA) 0 4px, var(--leaveB) 4px 8px);
   color: var(--clay);
 }
 .hc.split .rest {
-  background: #FCF7F6;
+  background: var(--clayTint);
   color: var(--ink2);
 }
 
@@ -64,8 +65,8 @@
   flex-wrap: wrap;
   padding: 10px 14px;
   border-top: 1px solid var(--rule);
-  background: #FAFBFD;
-  font-size: 11px;
+  background: var(--paperAlt);
+  font-size: var(--fs-xs);
   color: var(--slate);
 }
 .legend span {
@@ -90,4 +91,4 @@
 }
 
 /* W-OFF is 5 letters - a smaller font keeps it inside the day box. */
-.hc.wo { font-size: 9px; letter-spacing: 0; }
+.hc.wo { font-size: var(--fs-2xs); letter-spacing: 0; }

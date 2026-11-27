@@ -51,7 +51,7 @@ function RequestApprovalPageContent() {
 
   return (
     <>
-      <PageHeader title="Request Approval" />
+      <PageHeader title="Request Approval" subtitle="Day-type requests from your team waiting for a decision." />
 
       <div className="page-content">
         {isError && <Banner kind="reject">Couldn't load the request queue — check that the backend API is reachable.</Banner>}

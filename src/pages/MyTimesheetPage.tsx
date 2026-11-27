@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { PageHeader } from '../components/layout/PageHeader';
 import { WeekNav } from '../components/timesheet/WeekNav';
 import { StatusPill } from '../components/ui/StatusPill';
@@ -15,16 +15,18 @@ import { SubmitDrawer } from '../components/timesheet/SubmitDrawer';
 import { useUI } from '../components/ui/UIProvider';
 import { useSession } from '../session/SessionContext';
 import { useWeek, useTimesheetMutations } from '../hooks/api/useTimesheet';
-import { useManager, useSkipManager } from '../hooks/api/useEmployees';
+import { useEmployee, useManager, useSkipManager } from '../hooks/api/useEmployees';
 import { useApprovalMutations } from '../hooks/api/useApprovals';
 import { ApiError } from '../api/httpClient';
 import type { TimeEntryDto } from '../api/types';
-import { mondayOf, addDays, toISO, dayMonth } from '../lib/dates';
+import { mondayOf, addDays, toISO, dayMonth, weekLabel } from '../lib/dates';
+import { Icon } from '../components/ui/Icon';
+import { ReturnDetails } from '../components/ui/ReturnDetails';
 import { splitReturnReason } from '../lib/returnReason';
 import controls from '../styles/controls.module.css';
 
 export function MyTimesheetPage() {
-  const { employeeCode } = useSession();
+  const { employeeCode, nav } = useSession();
   const { openDrawer, closeDrawer, toast } = useUI();
   const [searchParams] = useSearchParams();
   const [weekStart, setWeekStart] = useState(() => {
@@ -34,6 +36,9 @@ export function MyTimesheetPage() {
   const thisWeek = mondayOf(toISO(new Date()));
 
   const { data: week, isError } = useWeek(employeeCode, weekStart);
+  const { data: me } = useEmployee(employeeCode);
+  const hour = new Date().getHours();
+  const greeting = `Good ${hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening'}${me?.fullName ? `, ${me.fullName.split(' ')[0]}` : ''}`;
   const { data: manager } = useManager(employeeCode);
   const skipManagerQuery = useSkipManager(employeeCode);
   const skipManager = skipManagerQuery.data;
@@ -181,39 +186,49 @@ export function MyTimesheetPage() {
 
   return (
     <>
-      <PageHeader title="My Timesheet" />
-
-      <div className="page-content">
+      <PageHeader
+        title={greeting}
+        subtitle={<>Your timesheet for <b style={{ color: 'var(--ink2)', fontWeight: 600 }}>{weekLabel(weekStart)}</b>{weekStart === thisWeek ? ' · this week' : ''}</>}
+      >
         {/* The selected week drives everything below (cards, grid, trail, day
-            types), so its picker sits above all of them - and outside the
+            types), so its picker sits in the page header - outside the
             `week &&` check, so another week can still be picked if this one
             fails to load. */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
-          <WeekNav weekStart={weekStart} onShift={shiftWeek} />
-          {weekStart !== thisWeek && (
-            <button className={`${controls.btn} ${controls.sm}`} onClick={() => setWeekStart(thisWeek)}>This week</button>
-          )}
-          {week && <StatusPill status={week.week.status} />}
-          {week && week.dayTypeRequests
-            .filter((r) => r.status === 'Pending')
-            .map((r) => (
-              <span key={r.id} title={`${r.requestType} requested for ${r.requestDate}`}>
-                <StatusPill status={r.status} labels={DAY_TYPE_REQUEST_STATUS_LABELS} />
-              </span>
-            ))}
-        </div>
+        {week && <StatusPill status={week.week.status} />}
+        {week && week.dayTypeRequests
+          .filter((r) => r.status === 'Pending')
+          .map((r) => (
+            <span key={r.id} title={`${r.requestType} requested for ${r.requestDate}`}>
+              <StatusPill status={r.status} labels={DAY_TYPE_REQUEST_STATUS_LABELS} />
+            </span>
+          ))}
+        {weekStart !== thisWeek && (
+          <button className={controls.btn} onClick={() => setWeekStart(thisWeek)}>This week</button>
+        )}
+        <WeekNav weekStart={weekStart} onShift={shiftWeek} />
+        {nav.includes('stories') && (!week || week.week.status === 'Draft' || week.week.status === 'Rejected') && (
+          <Link to={`/stories?week=${weekStart}`} className={`${controls.btn} ${controls.pri}`} title="Add tasks under your user stories for this week">
+            <Icon name="plus" />
+            Add tasks
+          </Link>
+        )}
+      </PageHeader>
 
+      <div className="page-content">
         {isError && <Banner kind="reject">Couldn't load this week — check that the backend API is running and reachable.</Banner>}
 
         {week && (
           <>
             {week.week.status === 'Rejected' && (
-              <Banner kind="reject">
-                <div><b>Returned by {week.week.rejectedByName ?? 'your approver'}</b></div>
-                <div><b>Reason:</b> {returnInfo.reason || 'No reason given'}</div>
-                {returnInfo.comments && <div><b>Comments:</b> {returnInfo.comments}</div>}
-                <div style={{ marginTop: 4 }}>Please correct the entries and submit again.</div>
-              </Banner>
+              <div style={{ marginBottom: 20 }}>
+                <ReturnDetails
+                  title="Returned for corrections"
+                  by={week.week.rejectedByName ?? 'your approver'}
+                  reason={returnInfo.reason}
+                  comments={returnInfo.comments}
+                  footer="Please correct the entries and submit the week again."
+                />
+              </div>
             )}
 
             <KpiStrip
@@ -243,7 +258,7 @@ export function MyTimesheetPage() {
               onRecall={handleRecall}
             />
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 14 }}>
+            <div className="two-col">
               <ApprovalTrail trail={week.week.trail} leadName={leadName} l2Name={l2Name} skipsLevel1={skipsLevel1} />
               <RecentTimesheetsCard employeeCode={employeeCode} selectedWeek={weekStart} onView={setWeekStart} />
             </div>
