@@ -4,6 +4,7 @@ import { ApiError } from '../../api/httpClient';
 import { masterDataApi } from '../../api/masterData';
 import { useUI } from '../ui/UIProvider';
 import controls from '../../styles/controls.module.css';
+import { EditButton } from '../ui/EditButton';
 import errStyles from '../timesheet/EntryDrawer.module.css';
 
 const MAX_TASKS_ON_CREATE = 6;
@@ -291,7 +292,7 @@ export function ModuleTaskTree({
               <>
                 <b style={{ flex: 1 }}>{mod.name}</b>
                 <span className={controls.hint}>{tasksFor(mod.id).length} task{tasksFor(mod.id).length !== 1 ? 's' : ''}</span>
-                <button style={{ background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => startRenameModule(mod)} title="Rename module" aria-label={`Rename module ${mod.name}`}>✎</button>
+                <EditButton size="sm" label={`Rename module ${mod.name}`} onClick={() => startRenameModule(mod)} />
                 <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--clay)' }} onClick={() => handleDeleteModule(mod)} title="Delete module (only if no hours are logged against it)" aria-label={`Delete module ${mod.name}`}>✕</button>
               </>
             )}
@@ -317,7 +318,7 @@ export function ModuleTaskTree({
                 ) : (
                   <>
                     <span style={{ flex: 1, color: 'var(--slate)' }}>{t.name}</span>
-                    <button style={{ background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => startRenameTask(t)} title="Rename task type" aria-label={`Rename task type ${t.name}`}>✎</button>
+                    <EditButton size="sm" label={`Rename task type ${t.name}`} onClick={() => startRenameTask(t)} />
                     <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--clay)' }} onClick={() => handleDeleteTask(t)} title="Delete task type (only if no hours are logged against it)" aria-label={`Delete task type ${t.name}`}>✕</button>
                   </>
                 )}

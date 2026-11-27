@@ -3,6 +3,7 @@ import { useMasterDataMutations, useProjectTypesWithTemplates } from '../../hook
 import { ApiError } from '../../api/httpClient';
 import { useUI } from '../ui/UIProvider';
 import controls from '../../styles/controls.module.css';
+import { EditButton } from '../ui/EditButton';
 import styles from '../timesheet/EntryDrawer.module.css';
 
 interface ProjectTypeTemplateDrawerProps {
@@ -132,7 +133,7 @@ export function ProjectTypeTemplateDrawer({ projectTypeId, typeName, onClose }: 
             ) : (
               <>
                 <b style={{ flex: 1 }}>{mod.name}</b>
-                <button style={{ background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => { setEditingModuleId(mod.id); setEditValue(mod.name); }} title="Rename module template" aria-label={`Rename module template ${mod.name}`}>✎</button>
+                <EditButton size="sm" label={`Rename module template ${mod.name}`} onClick={() => { setEditingModuleId(mod.id); setEditValue(mod.name); }} />
                 <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--clay)' }} onClick={() => handleDeleteModule(mod.id, mod.name)} title="Remove module template" aria-label={`Remove module template ${mod.name}`}>✕</button>
               </>
             )}
@@ -157,7 +158,7 @@ export function ProjectTypeTemplateDrawer({ projectTypeId, typeName, onClose }: 
                 ) : (
                   <>
                     <span style={{ flex: 1, color: 'var(--slate)' }}>{t.name}</span>
-                    <button style={{ background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => { setEditingTaskId(t.id); setEditValue(t.name); }} title="Rename task template" aria-label={`Rename task template ${t.name}`}>✎</button>
+                    <EditButton size="sm" label={`Rename task template ${t.name}`} onClick={() => { setEditingTaskId(t.id); setEditValue(t.name); }} />
                     <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--clay)' }} onClick={() => handleDeleteTask(t.id, t.name)} title="Remove task template" aria-label={`Remove task template ${t.name}`}>✕</button>
                   </>
                 )}

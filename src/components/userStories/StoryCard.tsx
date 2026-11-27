@@ -3,6 +3,7 @@ import { DAY_NAMES } from '../../types/meridian';
 import { rangeLabel } from '../../lib/dates';
 import controls from '../../styles/controls.module.css';
 import styles from './UserStories.module.css';
+import { EditButton } from '../ui/EditButton';
 
 interface StoryCardProps {
   story: UserStoryDto;
@@ -63,15 +64,7 @@ export function StoryCard({ story, tasks, runsThisWeek, expanded, editable, onTo
         <span>
           <span className={styles.nameRow}>
             <span className={styles.name}>{story.name}</span>
-            <button
-              type="button"
-              className={styles.editBtn}
-              title="Edit story"
-              aria-label={`Edit story ${story.name}`}
-              onClick={(e) => { e.stopPropagation(); onEditStory(); }}
-            >
-              ✎
-            </button>
+            <EditButton size="sm" label={`Edit story ${story.name}`} onClick={(e) => { e.stopPropagation(); onEditStory(); }} />
           </span>
           <span className={styles.meta}>
             <span className={styles.project}>{story.projectName}</span>
@@ -93,7 +86,7 @@ export function StoryCard({ story, tasks, runsThisWeek, expanded, editable, onTo
               </div>
               <span className={styles.taskHours}>{fmtH(sum(t.hoursByDay))} h</span>
               {editable ? (
-                <button type="button" className={styles.editBtn} title="Edit task" aria-label={`Edit task ${t.note ?? ''}`} onClick={() => onEditTask(t.id)}>✎</button>
+                <EditButton size="sm" label={`Edit task ${t.note ?? ''}`} onClick={() => onEditTask(t.id)} />
               ) : <span />}
             </div>
           ))}

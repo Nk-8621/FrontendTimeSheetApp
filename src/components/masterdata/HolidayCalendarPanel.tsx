@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { AccountDto, HolidayDto } from '../../api/types';
 import controls from '../../styles/controls.module.css';
 import styles from './HolidayCalendarPanel.module.css';
+import { EditButton } from '../ui/EditButton';
 
 // HOLIDAY CALENDAR (Nov 2026): Master Data -> Holiday calendar tab.
 // One year at a time, grouped by month. Opens on the current year and on
@@ -135,7 +136,7 @@ export function HolidayCalendarPanel({ holidays, accounts, onAdd, onEdit }: Holi
                             {isCompanyHoliday(h) ? 'Carbynetech' : clientName(h.accountId!)}
                           </span>
                         </span>
-                        <button className={styles.editBtn} onClick={() => onEdit(h)} title="Edit holiday" aria-label={`Edit holiday ${h.name}`}>✎</button>
+                        <EditButton size="sm" label={`Edit holiday ${h.name}`} onClick={() => onEdit(h)} />
                       </div>
                     );
                   })}

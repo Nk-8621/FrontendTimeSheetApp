@@ -77,6 +77,14 @@ input, select, textarea, option {
   background: var(--chromeBg, var(--canvas));
 }
 
+/* SLIDING NAV (trial): collapsed menu keeps a 64px rail; the menu slides
+   open over the page instead of pushing it. */
+@media (min-width: 961px) {
+  .app-shell.nav-collapsed {
+    grid-template-columns: 64px minmax(0, 1fr);
+  }
+}
+
 .main-column {
   grid-area: main;
   display: flex;

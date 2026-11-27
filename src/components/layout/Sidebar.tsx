@@ -14,11 +14,14 @@ interface SidebarProps {
   /** Small screens: whether the slide-in sidebar is showing. */
   open: boolean;
   onClose: () => void;
+  /** SLIDING NAV (trial): icon-only rail that slides open on hover. */
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 /** Grouped sidebar: every page the user can reach (same nav keys from the
  * access profile as before), under its group heading, with pending counts. */
-export function Sidebar({ open, onClose }: SidebarProps) {
+export function Sidebar({ open, onClose, collapsed = false, onToggleCollapse }: SidebarProps) {
   const { nav } = useSession();
 
   const { data: pendingL1 } = usePendingApprovals(false, nav.includes('ap1'));
@@ -56,7 +59,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
   return (
     <>
       <div className={`${styles.scrim} ${open ? styles.scrimOn : ''}`} onClick={onClose} aria-hidden="true" />
-      <aside className={`${styles.side} ${open ? styles.open : ''}`} aria-label="Main navigation">
+      <aside className={`${styles.side} ${open ? styles.open : ''} ${collapsed ? styles.collapsed : ''}`} aria-label="Main navigation">
         <Link to="/" className={styles.brand} aria-label="Carbynetech Timesheet - home">
           <BrandLogo className={styles.logoTile} />
         </Link>
@@ -73,6 +76,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
                     to={pathFor(key)}
                     end={key === 'ts'}
                     className={({ isActive }) => `${styles.item} ${isActive ? styles.on : ''}`}
+                    title={collapsed ? NAV_GROUPS[key].title : undefined}
                   >
                     <Icon name={PAGE_ICON[key]} />
                     <span className={styles.txt}>{NAV_GROUPS[key].title}</span>
@@ -83,6 +87,20 @@ export function Sidebar({ open, onClose }: SidebarProps) {
             </div>
           ))}
         </nav>
+
+        {onToggleCollapse && (
+          <button
+            type="button"
+            className={styles.collapseBtn}
+            onClick={onToggleCollapse}
+            title={collapsed ? 'Keep menu open' : 'Collapse menu'}
+            aria-label={collapsed ? 'Keep menu open' : 'Collapse menu'}
+            aria-pressed={collapsed}
+          >
+            <Icon name={collapsed ? 'chevronRight' : 'chevronLeft'} />
+            <span className={styles.txt}>{collapsed ? 'Keep menu open' : 'Collapse menu'}</span>
+          </button>
+        )}
       </aside>
     </>
   );

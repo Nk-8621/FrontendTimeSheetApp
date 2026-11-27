@@ -12,6 +12,19 @@ export function AppLayout() {
   const navigate = useNavigate();
   // Small screens only: the sidebar slides in over the page.
   const [navOpen, setNavOpen] = useState(false);
+  // SLIDING NAV (trial, Nov 2026): on laptops/desktops the sidebar can be
+  // collapsed to an icon rail that slides open on hover. Remembered per
+  // browser. To remove the feature: drop this state, the `nav-collapsed`
+  // class below and the collapsed/onToggleCollapse props on <Sidebar>.
+  const [navCollapsed, setNavCollapsed] = useState(() => {
+    try { return localStorage.getItem('meridian.navCollapsed') === '1'; } catch { return false; }
+  });
+  const toggleCollapsed = () => {
+    setNavCollapsed((c) => {
+      try { localStorage.setItem('meridian.navCollapsed', c ? '0' : '1'); } catch { /* storage unavailable */ }
+      return !c;
+    });
+  };
 
   // A drawer belongs to the page that opened it - close it when the user
   // goes to another page (changing the week on the same page keeps it open).
@@ -43,8 +56,8 @@ export function AppLayout() {
   }, [navigate]);
 
   return (
-    <div className="app-shell">
-      <Sidebar open={navOpen} onClose={() => setNavOpen(false)} />
+    <div className={`app-shell ${navCollapsed ? 'nav-collapsed' : ''}`}>
+      <Sidebar open={navOpen} onClose={() => setNavOpen(false)} collapsed={navCollapsed} onToggleCollapse={toggleCollapsed} />
       <TopBar onMenu={() => setNavOpen(true)} />
       {/* key={employeeCode} forces a full remount of everything under here
           when the viewing identity changes, so no page can ever show a

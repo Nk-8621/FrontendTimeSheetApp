@@ -94,8 +94,15 @@
 }
 
 .editCol {
-  width: 40px;
+  width: 44px;
   text-align: right;
+  /* Pinned to the right edge so the edit pencil stays visible when a wide
+     table (e.g. Project List) scrolls sideways. */
+  position: sticky;
+  right: 0;
+  z-index: 1;
+  background: var(--cardBg, var(--paper));
+  box-shadow: -1px 0 0 var(--rule);
 }
 .editBtn {
   display: inline-grid;

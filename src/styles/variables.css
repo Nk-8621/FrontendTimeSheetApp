@@ -47,6 +47,15 @@
   --oxideLine: #DAD0FE;
   --oxideDeep: #18181B;
   --link: #6544EE;
+  /* Edit pencil (all edit actions) - medium-strong blue. */
+  --editBlue: #2563EB;
+  --editBlueHover: #1D4ED8;
+  --editBlueTint: #EFF4FF;
+  /* Deactivate (red) / Reactivate (green) icon actions. */
+  --actDanger: #DC2626;
+  --actDangerTint: #FEF2F2;
+  --actOk: #16A34A;
+  --actOkTint: #F0FDF4;
   --teal: #1FA9B5;
   --avatar: #1FA9B5; /* Carbynetech teal */
 
@@ -199,6 +208,13 @@
 
 /* Display mode: Dark */
 :root[data-theme='dark'] {
+  --editBlue: #60A5FA;
+  --editBlueHover: #93C5FD;
+  --editBlueTint: rgba(96, 165, 250, 0.14);
+  --actDanger: #F87171;
+  --actDangerTint: rgba(248, 113, 113, 0.14);
+  --actOk: #4ADE80;
+  --actOkTint: rgba(74, 222, 128, 0.14);
   color-scheme: dark;
 
   --canvas: #0F0F12;
@@ -328,14 +344,15 @@
 :root[data-theme='glass'] {
   color-scheme: light;
 
-  /* Colour grading behind the glass - purple (default theme colour) */
-  --gradA: #F6F2FF;
-  --gradB: #E1D6FF;
-  --gradC: #BBA6FF;
+  /* Colour grading behind the glass - purple (default theme colour).
+     Stronger grading: pale lilac at the top-left deepening to violet. */
+  --gradA: #EAE1FF;
+  --gradB: #BFA8FF;
+  --gradC: #7C55F0;
 
   --chromeBg: transparent;
   --rail: transparent;
-  --panelBg: rgba(255, 255, 255, 0.66);
+  --panelBg: rgba(255, 255, 255, 0.54);
   --cardBg: rgba(255, 255, 255, 0.80);
   --stickyBg: rgba(255, 255, 255, 0.78);
   --glassBlur: blur(18px) saturate(150%);
@@ -348,14 +365,16 @@
   --sh1: 0 1px 2px rgba(16, 24, 40, 0.05), 0 8px 24px rgba(40, 30, 90, 0.06);
 }
 :root[data-theme='glass'][data-accent='teal'] {
-  --gradA: #EFFBFC;
-  --gradB: #CBEEF1;
-  --gradC: #8DD3DA;
+  /* Stronger grading: pale aqua at the top-left deepening to Carbynetech teal. */
+  --gradA: #E3F7F9;
+  --gradB: #A9E2E7;
+  --gradC: #1FA9B5;
   --sh1: 0 1px 2px rgba(16, 24, 40, 0.05), 0 8px 24px rgba(20, 90, 100, 0.07);
 }
 :root[data-theme='glass'][data-accent='blue'] {
-  --gradA: #F1F5FF;
-  --gradB: #D3E0FF;
-  --gradC: #9FBAF5;
+  /* Stronger grading: pale sky at the top-left deepening to royal blue. */
+  --gradA: #E2ECFF;
+  --gradB: #A3C0FF;
+  --gradC: #3F72E0;
   --sh1: 0 1px 2px rgba(16, 24, 40, 0.05), 0 8px 24px rgba(30, 60, 140, 0.07);
 }

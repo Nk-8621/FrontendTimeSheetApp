@@ -27,6 +27,7 @@ import { ProjectTypeDrawer } from '../components/masterdata/ProjectTypeDrawer';
 import { ProjectTypeTemplateDrawer } from '../components/masterdata/ProjectTypeTemplateDrawer';
 import { EmployeeAllocationsDrawer } from '../components/masterdata/EmployeeAllocationsDrawer';
 import { EmployeeEditDrawer } from '../components/masterdata/EmployeeEditDrawer';
+import { EditButton } from '../components/ui/EditButton';
 import { WeekOffsPanel } from '../components/masterdata/WeekOffsPanel';
 import { HolidayCalendarPanel } from '../components/masterdata/HolidayCalendarPanel';
 import controls from '../styles/controls.module.css';
@@ -496,7 +497,7 @@ export function MasterDataPage() {
                       <td className="num" style={{ textAlign: 'right' }}>{accounts.data?.filter((a) => a.departmentId === d.id).length ?? 0}</td>
                       <td className="num" style={{ textAlign: 'right' }}>{projects.data?.filter((p) => projAccount(p.accountId)?.departmentId === d.id).length ?? 0}</td>
                       <td className="num" style={{ textAlign: 'right' }}>{employees.data?.filter((e) => e.departmentId === d.id).length ?? 0}</td>
-                      <td className={styles.editCol}><button className={styles.editBtn} onClick={() => handleAddOrEditDepartment(d)} title="Edit department" aria-label={`Edit department ${d.name}`}>✎</button></td>
+                      <td className={styles.editCol}><EditButton label={`Edit department ${d.name}`} onClick={() => handleAddOrEditDepartment(d)} /></td>
                     </tr>
                   ))}
                 </tbody>
@@ -514,7 +515,7 @@ export function MasterDataPage() {
                       <td style={{ color: 'var(--slate)' }}>{deptName(a.departmentId)}</td>
                       <td style={{ color: 'var(--slate)' }}>{a.weekOffDays?.length ? a.weekOffDays.join(', ') : '—'}</td>
                       <td className="num" style={{ textAlign: 'right' }}>{projects.data?.filter((p) => p.accountId === a.id).length ?? 0}</td>
-                      <td className={styles.editCol}><button className={styles.editBtn} onClick={() => handleAddOrEditAccount(a)} title="Edit account" aria-label={`Edit account ${a.name}`}>✎</button></td>
+                      <td className={styles.editCol}><EditButton label={`Edit account ${a.name}`} onClick={() => handleAddOrEditAccount(a)} /></td>
                     </tr>
                   ))}
                 </tbody>
@@ -561,7 +562,7 @@ export function MasterDataPage() {
                           </button>
                         )}
                       </td>
-                      <td className={styles.editCol}><button className={styles.editBtn} onClick={() => handleAddOrEditProject(p)} title="Edit project" aria-label={`Edit project ${p.name}`}>✎</button></td>
+                      <td className={styles.editCol}><EditButton label={`Edit project ${p.name}`} onClick={() => handleAddOrEditProject(p)} /></td>
                     </tr>
                   ))}
                 </tbody>
@@ -597,7 +598,7 @@ export function MasterDataPage() {
                         <td className="num" style={{ textAlign: 'right' }}>{projectCount}</td>
                         <td style={{ width: 170, textAlign: 'right', display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
                           <button className={`${controls.btn} ${controls.sm}`} onClick={() => handleManageTemplates(t)}>Templates</button>
-                          <button className={styles.editBtn} onClick={() => handleAddOrEditProjectType(t)} title="Edit project type" aria-label={`Edit project type ${t.name}`}>✎</button>
+                          <EditButton label={`Edit project type ${t.name}`} onClick={() => handleAddOrEditProjectType(t)} />
                           <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--clay)' }} onClick={() => handleDeleteProjectType(t)} title="Delete project type" aria-label={`Delete project type ${t.name}`}>✕</button>
                         </td>
                       </tr>
@@ -609,7 +610,7 @@ export function MasterDataPage() {
 
             {tab === 'res' && (
               <RecordsCard count={filteredEmployees.length}>
-                <thead><tr><th>Resource</th><th>Designation</th><th>Department</th><th>Level 1 approver</th><th>Level 2 approver</th><th>Primary client</th><th>Status</th><th style={{ width: 160 }} /></tr></thead>
+                <thead><tr><th>Resource</th><th>Designation</th><th>Department</th><th>Level 1 approver</th><th>Level 2 approver</th><th>Primary client</th><th>Status</th><th style={{ width: 150 }} /></tr></thead>
                 <tbody>
                   {filteredEmployees.map((e) => (
                     <ResourceRow
@@ -698,22 +699,20 @@ function ResourceRow({
   return (
     <tr style={{ opacity: employee.isActive ? 1 : 0.55 }}>
       <td>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ width: 23, height: 23, borderRadius: '50%', background: 'var(--oxideTint)', color: 'var(--link)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--fs-2xs)', fontWeight: 700 }}>{employee.initials}</div>
-          <b>{employee.fullName}</b>
-        </div>
+        <b style={{ display: 'inline-block', minWidth: 160 }}>{employee.fullName}</b>
       </td>
       <td style={{ color: 'var(--slate)' }}>{employee.designation}</td>
-      <td style={{ color: 'var(--slate)' }}>{deptName(employee.departmentId)}</td>
-      <td>{manager?.fullName ?? '—'}</td>
-      <td>{skipManager?.fullName ?? '—'}</td>
+      <td style={{ color: 'var(--slate)', whiteSpace: 'nowrap' }}>{deptName(employee.departmentId)}</td>
+      <td style={{ whiteSpace: 'nowrap' }}>{manager?.fullName ?? '—'}</td>
+      <td style={{ whiteSpace: 'nowrap' }}>{skipManager?.fullName ?? '—'}</td>
       <td>
         <select
           className={controls.select}
           value={employee.primaryAccountId ?? ''}
           onChange={(e) => handleChange(e.target.value)}
           disabled={setPrimaryAccount.isPending || !employee.isActive}
-          style={{ fontSize: 12 }}
+          style={{ fontSize: 12, minWidth: 150 }}
+          title={accounts.find((a) => a.id === employee.primaryAccountId)?.name ?? 'No client set'}
         >
           <option value="">No client set</option>
           {accounts.map((a) => (
@@ -723,21 +722,15 @@ function ResourceRow({
       </td>
       <td><StatusPill status={employee.isActive ? 'Active' : 'Inactive'} labels={ACTIVE_STATUS_LABELS} /></td>
       <td>
-        <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-          <button className={`${controls.btn} ${controls.sm}`} onClick={() => onEdit(employee)} disabled={!employee.isActive}>
-            Edit
-          </button>
+        <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center' }}>
+          <EditButton label={`Edit employee ${employee.fullName}`} onClick={() => onEdit(employee)} disabled={!employee.isActive} />
           <button className={`${controls.btn} ${controls.sm}`} onClick={() => onEditAllocations(employee)}>
             Projects
           </button>
-          {isSelf ? null : employee.isActive ? (
-            <button className={`${controls.btn} ${controls.sm} ${controls.dgr}`} onClick={handleDeactivate} disabled={deactivate.isPending}>
-              Deactivate
-            </button>
+          {isSelf ? <span style={{ width: 30, flex: 'none' }} aria-hidden /> : employee.isActive ? (
+            <EditButton icon="userX" tone="danger" label={`Deactivate ${employee.fullName}`} onClick={handleDeactivate} disabled={deactivate.isPending} />
           ) : (
-            <button className={`${controls.btn} ${controls.sm}`} onClick={handleReactivate} disabled={reactivate.isPending}>
-              Reactivate
-            </button>
+            <EditButton icon="userCheck" tone="ok" label={`Reactivate ${employee.fullName}`} onClick={handleReactivate} disabled={reactivate.isPending} />
           )}
         </div>
       </td>

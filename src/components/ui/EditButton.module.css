@@ -1,0 +1,59 @@
+/* EDIT ACTION (Nov 2026): blue pencil icon used for every edit action.
+   Colour comes from --editBlue (styles/variables.css), lighter in dark mode. */
+.edit {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r);
+  background: none;
+  color: var(--editBlue);
+  cursor: pointer;
+  vertical-align: middle;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.edit svg {
+  width: 17px;
+  height: 17px;
+  stroke-width: 2.1;
+}
+.edit:hover:not(:disabled) {
+  background: var(--editBlueTint);
+  color: var(--editBlueHover);
+}
+.edit:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--editBlueTint), 0 0 0 1px var(--editBlue);
+}
+.edit:disabled {
+  color: var(--slate2);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+.sm {
+  width: 26px;
+  height: 26px;
+}
+.sm svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* Row actions shown as icons next to the pencil. */
+.danger {
+  color: var(--actDanger);
+}
+.danger:hover:not(:disabled) {
+  background: var(--actDangerTint);
+  color: var(--actDanger);
+}
+.ok {
+  color: var(--actOk);
+}
+.ok:hover:not(:disabled) {
+  background: var(--actOkTint);
+  color: var(--actOk);
+}

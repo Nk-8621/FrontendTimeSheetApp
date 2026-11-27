@@ -11,6 +11,7 @@ import { DownloadTemplateButton } from './DownloadTemplateButton';
 import controls from '../../styles/controls.module.css';
 import { Icon } from '../ui/Icon';
 import styles from './WeekGrid.module.css';
+import { EditButton } from '../ui/EditButton';
 
 interface WeekGridProps {
   employeeCode: string;
@@ -296,9 +297,7 @@ export function WeekGrid({
                       <td className={styles.tc}>
                         {editable && (
                           <>
-                           <button className={styles.editBtn} title="Edit task" aria-label={`Edit task ${r.note ?? taskName(r.taskId)}`} onClick={() => onEditLine(r.id)}>
-                              <Icon name="edit" />
-                            </button>
+                           <EditButton size="sm" label={`Edit task ${r.note ?? taskName(r.taskId)}`} onClick={() => onEditLine(r.id)} />
                           </>
                         )}
                       </td>

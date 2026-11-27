@@ -6,6 +6,7 @@ import type { ManagedProjectDto, ProjectStoryNameDto } from '../../api/types';
 import { dayMonth } from '../../lib/dates';
 import { Banner } from '../timesheet/Banner';
 import controls from '../../styles/controls.module.css';
+import { EditButton } from '../ui/EditButton';
 import drawerStyles from '../timesheet/EntryDrawer.module.css';
 import styles from './ProjectStories.module.css';
 
@@ -186,7 +187,7 @@ export function ProjectStoriesPanel() {
                       Used by {n.usedByEmployees} {n.usedByEmployees === 1 ? 'employee' : 'employees'}
                     </span>
                     {n.isActive && (
-                      <button className={`${controls.btn} ${controls.sm}`} onClick={() => openRename(project, n)}>Rename</button>
+                      <EditButton label={`Rename story name ${n.name}`} onClick={() => openRename(project, n)} />
                     )}
                     <button className={`${controls.btn} ${controls.sm}`} onClick={() => toggleActive(n)}>
                       {n.isActive ? 'Close' : 'Reopen'}

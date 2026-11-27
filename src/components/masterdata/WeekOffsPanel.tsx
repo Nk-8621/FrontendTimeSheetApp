@@ -8,6 +8,7 @@ import { useWeekOffMutations, useWeekOffOptions, useWeekOffs } from '../../hooks
 import { AssignEmployeesDrawer, ClientWeekOffDrawer, EmployeeWeekOffDrawer } from './WeekOffDrawer';
 import controls from '../../styles/controls.module.css';
 import styles from '../../pages/MasterData.module.css';
+import { EditButton } from '../ui/EditButton';
 
 // WEEK OFFS (Nov 2026): Master Data -> Week Offs tab.
 // One row per client week off with its employee count; click a row to see
@@ -245,7 +246,7 @@ export function WeekOffsPanel() {
                       <td className="num" style={{ textAlign: 'right', fontWeight: 600 }}>{c.employees.length}</td>
                       <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
                         <button className={`${controls.btn} ${controls.sm}`} onClick={() => handleAddEmployees(c)} disabled={!options}>Add Employees</button>
-                        <button className={styles.editBtn} onClick={() => handleAddOrEditClient(c)} title="Edit custom week off" aria-label={`Edit week off for ${c.clientName}`} style={{ marginLeft: 6 }}>✎</button>
+                        <span style={{ marginLeft: 6 }}><EditButton label={`Edit week off for ${c.clientName}`} onClick={() => handleAddOrEditClient(c)} /></span>
                       </td>
                     </tr>
                     {isOpen && c.employees.length === 0 && (
@@ -264,7 +265,7 @@ export function WeekOffsPanel() {
                         <td className="num" style={{ color: e.effectiveTo ? undefined : 'var(--slate)' }}>{showDate(e.effectiveTo)}</td>
                         <td />
                         <td style={{ textAlign: 'right' }}>
-                          <button className={styles.editBtn} onClick={() => handleEditEmployee(e, c.clientName)} title="Edit dates" aria-label={`Edit dates for ${e.employeeName}`}>✎</button>
+                          <EditButton label={`Edit dates for ${e.employeeName}`} onClick={() => handleEditEmployee(e, c.clientName)} />
                         </td>
                       </tr>
                     ))}
