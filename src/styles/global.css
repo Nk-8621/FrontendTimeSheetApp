@@ -203,6 +203,7 @@ input, select, textarea, option {
 @media (max-height: 820px) and (min-width: 961px) {
   :root {
     --headH: 52px;
+    --sideW: 200px; /* narrower sidebar on laptops (216px on larger screens) */
     /* Denser type scale, close to the earlier design's 13 px body text. */
     --fs-2xs: 10.5px;
     --fs-xs: 11.5px;

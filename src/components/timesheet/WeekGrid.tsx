@@ -56,7 +56,7 @@ export function WeekGrid({
   submitBlockedDetails,
   onRecall,
 }: WeekGridProps) {
-  const { deptName, accById, projById, projAccountId, projDeptId, modName, taskName } = useMasterDataLookup();
+  const { accById, projById, projAccountId, modName, taskName } = useMasterDataLookup();
   const { data: myAllocations } = useEmployeeProjectAllocations(employeeCode);
   // Billing classification is set by the admin at project-allocation time,
   // not chosen per line - the cycle-to-change button on this grid only
@@ -91,9 +91,19 @@ export function WeekGrid({
     setMaxGridHeight(firstHidden.offsetTop + (footer?.offsetHeight ?? 0) + horizontalScrollbar);
   }, [rows]);
 
-  const groups: Record<number, TimeEntryDto[]> = {};
+  // One group per project + user story (in the order the lines arrive), so
+  // the story is named once in the group header instead of on every task.
+  // Older lines without a story are grouped per project, as before.
+  const groups: { key: string; projectId: number; story: TimeEntryDto | null; rows: TimeEntryDto[] }[] = [];
   rows.forEach((r) => {
-    (groups[r.projectId] = groups[r.projectId] ?? []).push(r);
+    const hasStory = r.userStoryId !== null && r.userStoryId !== undefined;
+    const key = `${r.projectId}|${hasStory ? r.userStoryId : '-'}`;
+    let group = groups.find((g) => g.key === key);
+    if (!group) {
+      group = { key, projectId: r.projectId, story: hasStory ? r : null, rows: [] };
+      groups.push(group);
+    }
+    group.rows.push(r);
   });
 
   return (
@@ -166,42 +176,44 @@ export function WeekGrid({
                 </td>
               </tr>
             )}
-            {Object.keys(groups).map((pidStr) => {
-              const pid = Number(pidStr);
+            {groups.map((group) => {
+              const pid = group.projectId;
               const accountId = projAccountId(pid);
               const acc = accountId !== undefined ? accById(accountId) : undefined;
-              const deptId = projDeptId(pid);
               const proj = projById(pid);
+              const story = group.story;
+              const storyDates = story?.userStoryStartDate && story.userStoryEndDate
+                ? rangeLabel(story.userStoryStartDate, story.userStoryEndDate)
+                : null;
               return (
-                <Fragment key={pid}>
+                <Fragment key={group.key}>
                   <tr className={styles.subRow}>
                     <td colSpan={11}>
+                      {/* Client › Project › User story (department and client type left out on purpose). */}
                       <div className={styles.projPath}>
                         <Icon name="folder" className={styles.projIcon} />
-                        <span className={styles.projMuted}>{deptId !== undefined ? deptName(deptId) : '—'}</span>
-                        <Icon name="chevronRight" className={styles.projSep} />
-                        <span className={styles.projMuted}>{acc?.name}</span>
-                        {acc?.accountType && <span className={styles.projTag}>{acc.accountType}</span>}
+                        <span className={styles.projMuted}>{acc?.name ?? '—'}</span>
                         <Icon name="chevronRight" className={styles.projSep} />
                         <span className={styles.projName}>{proj?.name}</span>
                         {proj?.code && <span className={styles.projCode}>{proj.code}</span>}
+                        {story && (
+                          <>
+                            <Icon name="chevronRight" className={styles.projSep} />
+                            <Icon name="stories" className={styles.storyIcon} />
+                            <span className={styles.storyName}>{story.userStoryName}</span>
+                            {storyDates && <span className={styles.storyDates}>{storyDates}</span>}
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
-                  {groups[pid].map((r) => (
+                  {group.rows.map((r) => (
                     <tr key={r.id} data-task-row>
                       <td className={styles.hier}>
                         {r.userStoryId !== null && r.userStoryId !== undefined ? (
-                          // Task added under a user story: story on top, task name below.
+                          // Task added under a user story: the story is in the group
+                          // header above, so the row shows just the task name.
                           <div className={styles.hcell}>
-                            <div
-                              className={styles.hpath}
-                              title={`${r.userStoryName ?? ''}${r.userStoryStartDate && r.userStoryEndDate ? ` · ${rangeLabel(r.userStoryStartDate, r.userStoryEndDate)}` : ''}`}
-                            >
-                              <Icon name="stories" className={styles.storyIcon} />
-                              <b>{r.userStoryName}</b>
-                              {r.userStoryStartDate && r.userStoryEndDate && <> · {rangeLabel(r.userStoryStartDate, r.userStoryEndDate)}</>}
-                            </div>
                             <div className={styles.htask} title={r.note ?? undefined}>{r.note}</div>
                           </div>
                         ) : (

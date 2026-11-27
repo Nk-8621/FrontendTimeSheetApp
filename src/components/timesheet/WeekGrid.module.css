@@ -259,6 +259,17 @@
   letter-spacing: 0.02em;
 }
 
+/* User story in the group header (Client › Project › Story). */
+.storyName {
+  color: var(--ink);
+  font-weight: 600;
+}
+.storyDates {
+  color: var(--slate);
+  font-size: var(--fs-xs);
+  white-space: nowrap;
+}
+
 /* ---- Task cell ---- */
 .hcell {
   display: flex;
@@ -611,7 +622,7 @@ button.bt:hover {
   /* Compact task rows: story + dates on one line and the task name on one
      line (full text on hover), tighter cells and hour boxes. */
   .wk td {
-    padding: 5px 12px;
+    padding: 3px 12px;
   }
   /* Keep the first column at its normal width: without this, one-line text
      would widen the table and push the edit column off the right edge. */
@@ -640,13 +651,22 @@ button.bt:hover {
     line-height: 1.3;
   }
   .hr {
-    padding: 4px !important;
+    padding: 3px !important;
   }
   .hr input {
-    height: 30px;
+    height: 26px;
   }
   .bt {
-    height: 22px;
+    height: 20px;
+    font-size: var(--fs-2xs);
+  }
+  .editBtn {
+    width: 26px;
+    height: 26px;
+  }
+  .editBtn svg {
+    width: 14px;
+    height: 14px;
   }
   .totRow td,
   .capRow td {

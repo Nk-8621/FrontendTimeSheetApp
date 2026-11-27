@@ -143,10 +143,15 @@
   .section {
     padding: 5px 0;
   }
-  .label {
-    padding: 3px 10px 4px;
+  .side {
+    padding: 2px 8px 12px;
   }
   .item {
     height: 31px;
+    gap: 8px;
+    padding: 0 8px;
+  }
+  .label {
+    padding: 3px 8px 4px;
   }
 }
