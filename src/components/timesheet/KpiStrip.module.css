@@ -1,16 +1,13 @@
-/* KPI summary: one card split into equal cells (1px dividers), each with an icon tile + label, a large value with a % chip,
-   and a footer line. Shared by My Timesheet, Approvals, Team Compliance
-   and Reports. */
+/* KPI summary: a row of separate rounded cards (one per figure), each with
+   an icon tile + label, a large value with a % chip, and a footer line.
+   All cards always sit in one row, sharing the width equally. Shared by
+   My Timesheet, Approvals, Team Compliance and Reports. */
 .kpis {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(176px, 1fr));
-  gap: 0;
-  background: var(--paper);
-  border: 1px solid var(--rule);
-  border-radius: var(--rLg);
-  overflow: hidden;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 12px;
   margin-bottom: 20px;
-  box-shadow: var(--sh1);
 }
 .kpi {
   --tile: var(--tileGrey);
@@ -18,16 +15,18 @@
   --chipInk: var(--nonbillInk);
   display: flex;
   flex-direction: column;
+  min-width: 0;
   min-height: 132px;
   padding: 16px 18px 14px;
   background: var(--paper);
-  /* Dividers drawn on the cells (right + bottom), clipped by the card's
-     rounded border - so an empty slot in a wrapped row stays white. */
-  box-shadow: 1px 0 0 var(--rule), 0 1px 0 var(--rule);
-  transition: background 0.15s ease;
+  border: 1px solid var(--rule);
+  border-radius: var(--rLg);
+  box-shadow: var(--sh1);
+  transition: background 0.15s ease, box-shadow 0.15s ease;
 }
 .kpi:hover {
   background: var(--paperAlt);
+  box-shadow: var(--shHover);
 }
 .a { --tile: var(--tilePurple); --chipBg: var(--oxideTint); --chipInk: var(--link); }
 .g { --tile: var(--billable); --chipBg: var(--billableTint); --chipInk: var(--billableInk); }
@@ -110,7 +109,9 @@
 
 @media (max-width: 760px) {
   .kpis {
+    grid-auto-flow: row;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
   }
   .kpi {
     min-height: 0;
@@ -126,6 +127,7 @@
    larger screens and phones are unchanged. Spacing only - no content hidden. */
 @media (max-height: 820px) and (min-width: 961px) {
   .kpis {
+    gap: 10px;
     margin-bottom: 12px;
   }
   .kpi {
